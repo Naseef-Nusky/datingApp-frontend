@@ -1622,6 +1622,12 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false })
           {/* Input Field */}
           <div className="px-4 py-4 relative">
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="text-gray-600 hover:text-gray-800 p-2"
+              >
+                <FaSmile className="text-xl" />
+              </button>
               <input
                 type="text"
                 value={message}
@@ -1689,8 +1695,8 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false })
         </div>
       )}
 
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style={{ overflow: 'hidden' }}>
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md h-screen max-h-screen flex flex-col" style={{ maxHeight: '100vh', height: '100vh' }}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ overflow: 'hidden' }}>
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md h-[80vh] max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-nex text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
           <div>
