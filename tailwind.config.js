@@ -9,7 +9,7 @@ export default {
       colors: {
         'nex-orange': '#FF6B35',
         'nex-pink': '#FF1493',
-        'nex-blue': '#1a237e', // Dark navy blue
+        'nex-blue': '#0B1220', // Dark background (RGB: 11, 18, 32)
         'nex-dark': '#0d1440',
       },
       backgroundImage: {

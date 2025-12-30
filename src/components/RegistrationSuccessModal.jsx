@@ -113,3 +113,7 @@ const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
 
 export default RegistrationSuccessModal;
 
+
+
+
+

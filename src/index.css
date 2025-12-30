@@ -19,6 +19,15 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent layout shifts */
+  overflow-x: hidden;
+}
+
+/* Prevent layout shift when modals open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
 }
 
 @keyframes fade-in {

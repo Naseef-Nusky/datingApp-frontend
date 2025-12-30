@@ -8,7 +8,6 @@ import Dashboard from './pages/Dashboard';
 import TodayIAm from './pages/TodayIAm';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
-import Search from './pages/Search';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -48,14 +47,6 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TodayIAm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/search"
-              element={
-                <ProtectedRoute>
-                  <Search />
                 </ProtectedRoute>
               }
             />

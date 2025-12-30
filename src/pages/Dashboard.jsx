@@ -1,23 +1,174 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay } from 'react-icons/fa';
+import io from 'socket.io-client';
+import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import SearchFilterModal from '../components/SearchFilterModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const socketRef = useRef(null);
+  
+  // Filter states
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [filters, setFilters] = useState({
+    gender: '',
+    lookingFor: '',
+    ageMin: '',
+    ageMax: '',
+    location: '',
+    availableForVideoChat: false,
+  });
+
+  // Socket.IO setup for real-time call notifications
+  useEffect(() => {
+    if (user?.id) {
+      // Initialize socket connection - use same base URL as axios
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      console.log('🔌 Connecting to Socket.IO server:', apiUrl);
+      
+      const socket = io(apiUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 10,
+        timeout: 20000, // 20 seconds timeout
+        forceNew: false,
+        autoConnect: true,
+      });
+
+      socket.on('connect', () => {
+        console.log('✅ Socket connected:', socket.id);
+        // Join user's room
+        socket.emit('join-room', user.id);
+        console.log('📢 Joined room: user-' + user.id);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error);
+        // Don't show alert for timeout errors - they're common and will retry
+        if (error.message && !error.message.includes('timeout')) {
+          console.warn('Socket.IO connection issue - will retry automatically');
+        }
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('⚠️ Socket disconnected:', reason);
+      });
+
+      socket.on('reconnect', (attemptNumber) => {
+        console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+        socket.emit('join-room', user.id);
+      });
+
+      // Listen for incoming calls
+      socket.on('incoming-call', (data) => {
+        console.log('📞 Incoming call received:', data);
+        setIncomingCall({
+          callerId: data.callerId,
+          callType: data.callType,
+        });
+      });
+
+      // Listen for call accepted
+      socket.on('call-accepted', (data) => {
+        console.log('✅ Call accepted:', data);
+      });
+
+      // Listen for call rejected
+      socket.on('call-rejected', (data) => {
+        console.log('❌ Call rejected:', data);
+        setIncomingCall(null);
+      });
+
+      // Listen for call ended
+      socket.on('call-ended', (data) => {
+        console.log('📴 Call ended:', data);
+        setIncomingCall(null);
+      });
+
+      socketRef.current = socket;
+
+      return () => {
+        console.log('🔌 Disconnecting socket');
+        socket.disconnect();
+      };
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     fetchProfiles();
     fetchContacts();
     fetchChatRequests();
     fetchOnlineUsers();
+    
+    // Refresh contacts and chat requests periodically
+    const contactsInterval = setInterval(() => {
+      fetchContacts();
+    }, 10000); // Every 10 seconds
+    
+    const chatRequestsInterval = setInterval(() => {
+      fetchChatRequests();
+    }, 10000); // Every 10 seconds
+    
+    return () => {
+      clearInterval(contactsInterval);
+      clearInterval(chatRequestsInterval);
+    };
+  }, [user]);
+
+  // Check if we should open search modal from navigation
+  useEffect(() => {
+    if (location.state?.openSearchModal) {
+      setShowSearchModal(true);
+      // Clear the state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
+  // Listen for custom event to open search modal (when already on dashboard)
+  useEffect(() => {
+    const handleOpenSearchModal = () => {
+      setShowSearchModal(true);
+    };
+    
+    window.addEventListener('openSearchModal', handleOpenSearchModal);
+    
+    return () => {
+      window.removeEventListener('openSearchModal', handleOpenSearchModal);
+    };
   }, []);
+
+  // Refetch profiles when filters change
+  useEffect(() => {
+    if (user) {
+      fetchProfiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
+
+  // Handle filter modal apply
+  const handleApplyFilters = (appliedFilters) => {
+    setFilters({
+      gender: appliedFilters.gender || '',
+      lookingFor: appliedFilters.lookingFor || '',
+      ageMin: appliedFilters.ageMin || '',
+      ageMax: appliedFilters.ageMax || '',
+      location: appliedFilters.location || '',
+      availableForVideoChat: appliedFilters.availableForVideoChat || false,
+    });
+    setShowSearchModal(false);
+  };
 
   const fetchOnlineUsers = async () => {
     try {
@@ -46,7 +197,43 @@ const Dashboard = () => {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await axios.get('/api/profiles');
+      // Build query parameters
+      const params = new URLSearchParams();
+      
+      // Gender filter - lookingFor is what gender we're looking for
+      if (filters.lookingFor) {
+        if (filters.lookingFor === 'both') {
+          // Don't filter by gender if "both" is selected
+        } else {
+          params.append('gender', filters.lookingFor);
+        }
+      }
+      
+      // Age range filters
+      if (filters.ageMin) params.append('minAge', filters.ageMin.toString());
+      if (filters.ageMax) params.append('maxAge', filters.ageMax.toString());
+      
+      // Location filter
+      if (filters.location && filters.location.trim()) {
+        const locationParts = filters.location.split(',');
+        if (locationParts[0] && locationParts[0].trim()) {
+          params.append('city', locationParts[0].trim());
+        }
+        if (locationParts[1] && locationParts[1].trim()) {
+          params.append('country', locationParts[1].trim());
+        }
+      }
+      
+      // Video chat filter
+      if (filters.availableForVideoChat) {
+        params.append('videoChat', 'true');
+      }
+      
+      const queryString = params.toString();
+      const url = queryString ? `/api/profiles?${queryString}` : '/api/profiles';
+      
+      console.log('Fetching profiles with URL:', url);
+      const response = await axios.get(url);
       console.log('Profiles response:', response.data);
       console.log('Profiles count:', response.data?.profiles?.length || 0);
       
@@ -94,7 +281,52 @@ const Dashboard = () => {
 
   const fetchContacts = async () => {
     try {
-      // This would fetch contacts - placeholder for now
+      // Fetch conversations/chats from API
+      const response = await axios.get('/api/messages/conversations');
+      
+      if (response.data && Array.isArray(response.data)) {
+        const contactsList = response.data.map((conv) => {
+          const otherUser = conv.user;
+          const profile = otherUser?.profile; // Access profile data
+          
+          return {
+            id: conv.userId,
+            name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',
+            type: null,
+            message: conv.lastMessage?.content || 'No messages yet',
+            unreadCount: conv.unreadCount || 0,
+            avatar: profile?.photos?.[0]?.url || null,
+            lastMessageAt: conv.lastMessage?.createdAt,
+          };
+        });
+        
+        // Add system contact (Concierge) if needed
+        contactsList.unshift({
+          id: 'system-concierge',
+          name: 'Julia Concierge',
+          type: 'Concierge',
+          message: 'Welcome to Dating...',
+          unreadCount: 1,
+          avatar: null,
+        });
+        
+        setContacts(contactsList);
+      } else {
+        // Fallback to default contact
+        setContacts([
+          {
+            id: 1,
+            name: 'Julia Concierge',
+            type: 'Concierge',
+            message: 'Welcome to Dating...',
+            unreadCount: 1,
+            avatar: null,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Fetch contacts error:', error);
+      // Fallback to default contact on error
       setContacts([
         {
           id: 1,
@@ -105,22 +337,79 @@ const Dashboard = () => {
           avatar: null,
         },
       ]);
-    } catch (error) {
-      console.error('Fetch contacts error:', error);
     }
   };
 
   const fetchChatRequests = async () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
-      setChatRequests(response.data || []);
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Transform chat requests to include user profile data
+        const requests = await Promise.all(
+          response.data.map(async (request) => {
+            try {
+              // Fetch sender profile if available
+              let senderName = 'Unknown';
+              let senderAvatar = null;
+              
+              if (request.senderData?.id) {
+                try {
+                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
+                  if (profileResponse.data) {
+                    senderName = profileResponse.data.firstName || senderName;
+                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
+                  }
+                } catch (profileError) {
+                  // Use email as fallback
+                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
+                }
+              }
+              
+              // Check if it's a video/audio call request or regular message
+              const messageText = request.firstMessage || request.content || request.message || 'New message';
+              const isVideoChat = messageText.toLowerCase().includes('video chat') || messageText.toLowerCase().includes('inviting you to video');
+              const isAudioChat = messageText.toLowerCase().includes('audio chat') || messageText.toLowerCase().includes('voice chat');
+              const hasEmail = messageText.toLowerCase().includes('email') || request.messageType === 'email';
+              
+              return {
+                id: request.id,
+                name: senderName,
+                message: messageText,
+                avatar: senderAvatar,
+                createdAt: request.createdAt,
+                status: request.status || 'pending',
+                senderId: request.senderData?.id || request.senderId,
+                senderData: request.senderData,
+                isVideoChat: isVideoChat,
+                isAudioChat: isAudioChat,
+                hasEmail: hasEmail,
+              };
+            } catch (err) {
+              return {
+                id: request.id,
+                name: request.senderData?.email?.split('@')[0] || 'Unknown',
+                message: request.firstMessage || request.content || 'New message',
+                avatar: null,
+                createdAt: request.createdAt,
+                status: request.status || 'pending',
+                senderId: request.senderData?.id || request.senderId,
+                senderData: request.senderData,
+                isVideoChat: false,
+                isAudioChat: false,
+                hasEmail: false,
+              };
+            }
+          })
+        );
+        
+        setChatRequests(requests);
+      } else {
+        setChatRequests([]);
+      }
     } catch (error) {
       console.error('Fetch chat requests error:', error);
-      // Mock data for now
-      setChatRequests([
-        { id: 1, name: 'Nwogu Chi...', message: 'is inviting you to Video Chat...', avatar: null, isVideoChat: true },
-        { id: 2, name: 'Alex', message: 'Hi, beautiful 🌹, my name is Alex, and I decided to write to you', avatar: null, isVideoChat: false, hasEmail: true },
-      ]);
+      setChatRequests([]);
     }
   };
 
@@ -163,6 +452,30 @@ const Dashboard = () => {
     }
   };
 
+  const handleAcceptCall = () => {
+    if (incomingCall && socketRef.current && user?.id) {
+      // Emit call accepted event
+      socketRef.current.emit('call-accept', {
+        callerId: incomingCall.callerId,
+        receiverId: user.id,
+      });
+
+      // Navigate to caller's profile
+      navigate(`/profile/${incomingCall.callerId}`);
+      setIncomingCall(null);
+    }
+  };
+
+  const handleRejectCall = () => {
+    if (incomingCall && socketRef.current && user?.id) {
+      socketRef.current.emit('call-reject', {
+        callerId: incomingCall.callerId,
+        receiverId: user.id,
+      });
+      setIncomingCall(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -173,6 +486,42 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Incoming Call Notification */}
+      {incomingCall && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                {incomingCall.callType === 'video' ? (
+                  <FaVideo className="text-white text-3xl" />
+                ) : (
+                  <FaPhone className="text-white text-3xl" />
+                )}
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                Incoming {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+              </h3>
+              <p className="text-gray-600">Someone wants to {incomingCall.callType === 'video' ? 'video' : 'voice'} call you</p>
+            </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={handleRejectCall}
+                className="flex-1 bg-red-500 text-white py-3 px-6 rounded-lg hover:bg-red-600 transition font-semibold flex items-center justify-center space-x-2"
+              >
+                <FaTimes />
+                <span>Decline</span>
+              </button>
+              <button
+                onClick={handleAcceptCall}
+                className="flex-1 bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition font-semibold flex items-center justify-center space-x-2"
+              >
+                <FaPhone />
+                <span>Accept</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Top Row of Online Users */}
       <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -213,6 +562,13 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Search Filter Modal */}
+      <SearchFilterModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        onApplyFilters={handleApplyFilters}
+      />
 
       <div className="flex">
         {/* Main Content */}
@@ -321,42 +677,77 @@ const Dashboard = () => {
           <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-800 text-base">My Contacts</h3>
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">{contacts.length}</span>
+              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + c.unreadCount, 0)}
+              </span>
             </div>
 
             {contacts.length > 0 ? (
-              <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
                 {contacts.map((contact) => (
-                  <div key={contact.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {contact.avatar ? (
-                        <img src={contact.avatar} alt={contact.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        <span className="text-white font-semibold text-lg">{contact.name[0]}</span>
+                  <div 
+                    key={contact.id || `contact-${Math.random()}`} 
+                    className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group"
+                    onClick={() => {
+                      if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
+                        navigate(`/profile/${contact.id}`);
+                      }
+                    }}
+                  >
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-teal-300 transition">
+                        {contact.avatar ? (
+                          <img 
+                            src={contact.avatar} 
+                            alt={contact.name || 'Contact'} 
+                            className="w-full h-full rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-lg">{contact.name?.[0]?.toUpperCase() || '?'}</span>
+                        )}
+                      </div>
+                      {contact.unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                          {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
+                        </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-2 flex-1 min-w-0">
-                          <span className="font-medium text-gray-800 text-sm truncate">{contact.name}</span>
+                          <span className="font-semibold text-gray-800 text-sm truncate">{contact.name || 'Unknown'}</span>
                           {contact.type && (
-                            <span className="text-red-500 text-xs font-semibold whitespace-nowrap">{contact.type}</span>
+                            <span className="text-red-500 text-xs font-medium whitespace-nowrap bg-red-50 px-2 py-0.5 rounded">
+                              {contact.type}
+                            </span>
                           )}
                         </div>
-                        {contact.unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap ml-2">
-                            {contact.unreadCount}
-                          </span>
-                        )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{contact.message}</p>
+                      <p className="text-sm text-gray-600 truncate">{contact.message || 'No messages yet'}</p>
+                      {contact.lastMessageAt && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(contact.lastMessageAt).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-4 text-gray-500 text-sm mb-4">
-                No contacts yet
+              <div className="text-center py-8 mb-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FaEnvelope className="text-gray-400 text-2xl" />
+                </div>
+                <p className="text-sm text-gray-500">No contacts yet</p>
+                <p className="text-xs text-gray-400 mt-1">Start chatting to see your contacts here</p>
               </div>
             )}
 
@@ -386,32 +777,69 @@ const Dashboard = () => {
 
             <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
               {displayedChatRequests.length > 0 ? (
-                displayedChatRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {request.avatar ? (
-                        <img src={request.avatar} alt={request.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        <span className="text-white text-sm font-semibold">{request.name[0]}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 text-sm mb-1 truncate">{request.name}</p>
-                      <div className="flex items-center space-x-1">
-                        {request.isVideoChat && (
-                          <FaVideo className="text-green-500 text-xs flex-shrink-0" />
-                        )}
-                        {request.hasEmail && (
-                          <FaEnvelope className="text-red-500 text-xs flex-shrink-0" />
-                        )}
-                        <p className="text-xs text-gray-600 truncate">{request.message}</p>
+                displayedChatRequests
+                  .filter((request) => request.status === 'pending')
+                  .map((request) => {
+                    // Determine button text and action
+                    const isVideoOrAudio = request.isVideoChat || request.isAudioChat;
+                    const buttonText = isVideoOrAudio ? 'Start' : 'Reply';
+                    const buttonColor = isVideoOrAudio ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
+                    
+                    return (
+                      <div
+                        key={request.id}
+                        className="border-b border-gray-200 pb-3 last:border-b-0"
+                      >
+                        {/* Name and Action Button Row */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {request.avatar ? (
+                                <img 
+                                  src={request.avatar} 
+                                  alt={request.name || 'User'} 
+                                  className="w-full h-full rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-white text-sm font-semibold">{request.name?.[0]?.toUpperCase() || '?'}</span>
+                              )}
+                            </div>
+                            <h4 className="font-semibold text-gray-900 text-sm truncate">{request.name || 'Unknown'}</h4>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (request.senderId) {
+                                navigate(`/profile/${request.senderId}`);
+                              }
+                            }}
+                            className={`${buttonColor} text-white text-xs font-semibold px-3 py-1.5 rounded transition flex-shrink-0`}
+                          >
+                            {buttonText}
+                          </button>
+                        </div>
+                        
+                        {/* Message Preview */}
+                        <div className="flex items-center space-x-1 ml-12">
+                          {request.isVideoChat && (
+                            <FaVideo className="text-green-500 text-xs flex-shrink-0" />
+                          )}
+                          {request.isAudioChat && (
+                            <FaVolumeUp className="text-blue-500 text-xs flex-shrink-0" />
+                          )}
+                          {request.hasEmail && (
+                            <FaEnvelope className="text-red-500 text-xs flex-shrink-0" />
+                          )}
+                          <p className="text-xs text-gray-600 truncate flex-1">
+                            {request.message || 'New chat request'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })
               ) : (
                 <div className="text-center py-8 text-gray-500 text-sm">
                   No chat requests
@@ -425,4 +853,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

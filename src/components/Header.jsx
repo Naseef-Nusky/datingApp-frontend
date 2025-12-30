@@ -66,16 +66,25 @@ const Header = () => {
                 <span>{getStatusLabel(todayStatus)}</span>
                 <span className="text-xs">?</span>
               </Link>
-              <Link
-                to="/search"
-                className={`transition ${
-                  window.location.pathname === '/search'
-                    ? 'text-nex-orange font-semibold'
-                    : 'text-white hover:text-nex-orange'
-                }`}
-              >
-                SEARCH
-              </Link>
+              {location.pathname === '/dashboard' ? (
+                <button
+                  onClick={() => {
+                    // Dispatch custom event to open modal
+                    window.dispatchEvent(new CustomEvent('openSearchModal'));
+                  }}
+                  className="text-white hover:text-nex-orange transition"
+                >
+                  SEARCH
+                </button>
+              ) : (
+                <Link
+                  to="/dashboard"
+                  state={{ openSearchModal: true }}
+                  className="text-white hover:text-nex-orange transition"
+                >
+                  SEARCH
+                </Link>
+              )}
               <Link
                 to="/inbox"
                 className="relative text-white hover:text-nex-orange transition"

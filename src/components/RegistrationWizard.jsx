@@ -9,7 +9,9 @@ const RegistrationWizard = () => {
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
 
@@ -126,7 +128,27 @@ const RegistrationWizard = () => {
     return null;
   };
 
-  const validateStep = (step) => {
+  const checkEmailExists = async (email) => {
+    if (!email || !email.includes('@')) {
+      return false; // Invalid email format, let validation handle it
+    }
+    
+    try {
+      setCheckingEmail(true);
+      setEmailError('');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/auth/check-email`, { email });
+      return response.data.exists;
+    } catch (error) {
+      console.error('Email check error:', error);
+      // If there's an error, don't block the user - let backend handle it during registration
+      return false;
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const validateStep = async (step) => {
     switch (step) {
       case 0:
         if (!formData.email || !formData.password) {
@@ -137,6 +159,14 @@ const RegistrationWizard = () => {
           setError('Password must be at least 6 characters');
           return false;
         }
+        
+        // Check if email already exists
+        const emailExists = await checkEmailExists(formData.email);
+        if (emailExists) {
+          setEmailError('This email address is already registered. Please use a different email or log in.');
+          return false;
+        }
+        
         return true;
       case 1:
         if (!formData.firstName || !formData.gender || !formData.seeking) {
@@ -170,9 +200,11 @@ const RegistrationWizard = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError('');
-    if (validateStep(currentStep)) {
+    setEmailError('');
+    const isValid = await validateStep(currentStep);
+    if (isValid) {
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
       } else {
@@ -280,11 +312,22 @@ const RegistrationWizard = () => {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                onChange={(e) => {
+                  handleChange('email', e.target.value);
+                  setEmailError(''); // Clear error when user types
+                }}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                  emailError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Enter your email"
                 required
               />
+              {emailError && (
+                <p className="mt-2 text-sm text-red-600">{emailError}</p>
+              )}
+              {checkingEmail && (
+                <p className="mt-2 text-sm text-gray-500">Checking email availability...</p>
+              )}
             </div>
 
             <div>
@@ -581,14 +624,14 @@ const RegistrationWizard = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={loading}
                 className={`px-12 py-3 rounded-lg font-semibold transition ${
                   currentStep === 5
                     ? 'bg-red-500 text-white hover:bg-red-600'
                     : 'bg-red-500 text-white hover:bg-red-600'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${loading || checkingEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={loading || checkingEmail}
               >
-                {loading ? 'Registering...' : currentStep === 5 ? 'Complete Registration' : 'NEXT'}
+                {loading ? 'Registering...' : checkingEmail ? 'Checking...' : currentStep === 5 ? 'Complete Registration' : 'NEXT'}
               </button>
 
               <div className="flex space-x-2 mt-4">
