@@ -16,6 +16,7 @@ const Dashboard = () => {
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
   const socketRef = useRef(null);
   
   // Filter states
@@ -32,9 +33,10 @@ const Dashboard = () => {
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
     if (user?.id) {
-      // Initialize socket connection - use same base URL as axios
-      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      console.log('🔌 Connecting to Socket.IO server:', apiUrl);
+      // Initialize socket connection - Socket.IO needs direct connection to backend
+      // Vite proxy doesn't work for WebSockets, so connect directly to backend port
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
         transports: ['websocket', 'polling'],
@@ -47,10 +49,15 @@ const Dashboard = () => {
       });
 
       socket.on('connect', () => {
-        console.log('✅ Socket connected:', socket.id);
+        console.log('✅ [RECEIVER] Socket connected:', socket.id);
+        console.log('✅ [RECEIVER] User ID:', user.id);
+        console.log('✅ [RECEIVER] Socket URL:', apiUrl);
         // Join user's room
-        socket.emit('join-room', user.id);
-        console.log('📢 Joined room: user-' + user.id);
+        socket.emit('join-room', String(user.id));
+        console.log('📢 [RECEIVER] Emitted join-room for user-' + user.id);
+        
+        // Verify socket is ready to receive calls
+        console.log('✅ [RECEIVER] Socket ready to receive incoming calls');
       });
 
       socket.on('connect_error', (error) => {
@@ -67,16 +74,37 @@ const Dashboard = () => {
 
       socket.on('reconnect', (attemptNumber) => {
         console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
-        socket.emit('join-room', user.id);
+        socket.emit('join-room', String(user.id));
       });
 
-      // Listen for incoming calls
-      socket.on('incoming-call', (data) => {
-        console.log('📞 Incoming call received:', data);
+      // Listen for incoming calls - CRITICAL: Must be set up before any calls are made
+      socket.on('incoming-call', async (data) => {
+        console.log('📞 [RECEIVER] ========== INCOMING CALL RECEIVED ==========');
+        console.log('📞 [RECEIVER] Full data:', JSON.stringify(data, null, 2));
+        console.log('📞 [RECEIVER] Caller ID:', data.callerId);
+        console.log('📞 [RECEIVER] Call Type:', data.callType);
+        console.log('📞 [RECEIVER] Channel Name:', data.channelName);
+        
+        // Use channel name from caller if provided
+        const channelName = data.channelName || null;
+        
         setIncomingCall({
           callerId: data.callerId,
           callType: data.callType,
+          channelName: channelName, // Store channel name for when accepting call
         });
+        
+        // Fetch caller's profile to show in notification
+        try {
+          const profileResponse = await axios.get(`/api/profiles/${data.callerId}`);
+          setCallerProfile(profileResponse.data);
+          console.log('✅ [RECEIVER] Fetched caller profile:', profileResponse.data.firstName);
+        } catch (error) {
+          console.error('⚠️ [RECEIVER] Could not fetch caller profile:', error);
+          // Continue without profile - notification will still work
+        }
+        
+        console.log('✅ [RECEIVER] Incoming call state set - UI should show call notification');
       });
 
       // Listen for call accepted
@@ -88,12 +116,49 @@ const Dashboard = () => {
       socket.on('call-rejected', (data) => {
         console.log('❌ Call rejected:', data);
         setIncomingCall(null);
+        setCallerProfile(null);
+      });
+
+      // Listen for call cancelled (when caller cancels before receiver accepts)
+      socket.on('call-cancelled', (data) => {
+        console.log('❌ [RECEIVER] Call cancelled by caller:', data);
+        setIncomingCall(null);
+        setCallerProfile(null);
       });
 
       // Listen for call ended
       socket.on('call-ended', (data) => {
         console.log('📴 Call ended:', data);
         setIncomingCall(null);
+      });
+
+      // Listen for new chat requests
+      socket.on('new-chat-request', (data) => {
+        console.log('📬 New chat request received:', data);
+        // Refresh chat requests list
+        fetchChatRequests();
+      });
+
+      // Listen for contact updates (new messages, new chats)
+      socket.on('contact-update', (data) => {
+        console.log('👥 Contact update received:', data);
+        // Refresh contacts list
+        fetchContacts();
+      });
+
+      // Listen for new messages
+      socket.on('new-message', (data) => {
+        console.log('💬 New message received:', data);
+        // Refresh contacts to update last message
+        fetchContacts();
+      });
+
+      // Listen for chat request accepted
+      socket.on('chat-request-accepted', (data) => {
+        console.log('✅ Chat request accepted:', data);
+        // Refresh chat requests and contacts
+        fetchChatRequests();
+        fetchContacts();
       });
 
       socketRef.current = socket;
@@ -454,20 +519,38 @@ const Dashboard = () => {
 
   const handleAcceptCall = () => {
     if (incomingCall && socketRef.current && user?.id) {
+      console.log('✅ [RECEIVER] Accepting call:', incomingCall);
+      
       // Emit call accepted event
       socketRef.current.emit('call-accept', {
         callerId: incomingCall.callerId,
         receiverId: user.id,
       });
 
+      // Store call info for navigation
+      if (incomingCall.channelName) {
+        sessionStorage.setItem('pendingCall', JSON.stringify({
+          callType: incomingCall.callType,
+          channelName: incomingCall.channelName,
+          callerId: incomingCall.callerId
+        }));
+      }
+
       // Navigate to caller's profile
       navigate(`/profile/${incomingCall.callerId}`);
       setIncomingCall(null);
+    } else {
+      console.error('❌ [RECEIVER] Cannot accept call - missing data:', {
+        hasIncomingCall: !!incomingCall,
+        hasSocket: !!socketRef.current,
+        hasUserId: !!user?.id
+      });
     }
   };
 
   const handleRejectCall = () => {
     if (incomingCall && socketRef.current && user?.id) {
+      console.log('❌ [RECEIVER] Rejecting call:', incomingCall);
       socketRef.current.emit('call-reject', {
         callerId: incomingCall.callerId,
         receiverId: user.id,
@@ -488,34 +571,60 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Incoming Call Notification */}
       {incomingCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in">
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                {incomingCall.callType === 'video' ? (
-                  <FaVideo className="text-white text-3xl" />
-                ) : (
-                  <FaPhone className="text-white text-3xl" />
-                )}
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Incoming {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+              {/* Caller Avatar or Icon */}
+              {(callerProfile?.photos?.[0]?.url || (typeof callerProfile?.photos?.[0] === 'string' ? callerProfile.photos[0] : null)) ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-teal-400 shadow-lg">
+                  <img 
+                    src={callerProfile.photos[0]?.url || callerProfile.photos[0]} 
+                    alt={callerProfile.firstName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  {incomingCall.callType === 'video' ? (
+                    <FaVideo className="text-white text-4xl" />
+                  ) : (
+                    <FaPhone className="text-white text-4xl" />
+                  )}
+                </div>
+              )}
+              
+              {/* Caller Name */}
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">
+                {callerProfile?.firstName || 'Incoming Call'}
               </h3>
-              <p className="text-gray-600">Someone wants to {incomingCall.callType === 'video' ? 'video' : 'voice'} call you</p>
+              
+              {/* Call Type */}
+              <p className="text-gray-600 mb-4">
+                {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+              </p>
+              
+              {/* Animated indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+              </div>
             </div>
+            
+            {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 onClick={handleRejectCall}
-                className="flex-1 bg-red-500 text-white py-3 px-6 rounded-lg hover:bg-red-600 transition font-semibold flex items-center justify-center space-x-2"
+                className="flex-1 bg-red-500 text-white py-4 px-6 rounded-xl hover:bg-red-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
               >
-                <FaTimes />
+                <FaTimes size={18} />
                 <span>Decline</span>
               </button>
               <button
                 onClick={handleAcceptCall}
-                className="flex-1 bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition font-semibold flex items-center justify-center space-x-2"
+                className="flex-1 bg-green-500 text-white py-4 px-6 rounded-xl hover:bg-green-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
               >
-                <FaPhone />
+                {incomingCall.callType === 'video' ? <FaVideo size={18} /> : <FaPhone size={18} />}
                 <span>Accept</span>
               </button>
             </div>

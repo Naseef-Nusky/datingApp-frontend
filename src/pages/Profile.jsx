@@ -22,6 +22,7 @@ const Profile = () => {
   const [similarProfiles, setSimilarProfiles] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
+  const [callRequests, setCallRequests] = useState([]); // Missed calls
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [message, setMessage] = useState('');
   const [showFullBio, setShowFullBio] = useState(false);
@@ -29,14 +30,19 @@ const Profile = () => {
   const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [callChannelName, setCallChannelName] = useState(null); // Store channel name for RTC
+  const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
+  const [outgoingCall, setOutgoingCall] = useState(null); // Track outgoing call waiting for acceptance
+  const outgoingCallRef = useRef(null); // Ref to track outgoing call (for socket handlers)
   const socketRef = useRef(null);
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
     if (user?.id) {
-      // Initialize socket connection - use same base URL as axios
-      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      console.log('🔌 Connecting to Socket.IO server:', apiUrl);
+      // Initialize socket connection - Socket.IO needs direct connection to backend
+      // Vite proxy doesn't work for WebSockets, so connect directly to backend port
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
         transports: ['websocket', 'polling'],
@@ -49,10 +55,15 @@ const Profile = () => {
       });
 
       socket.on('connect', () => {
-        console.log('✅ Socket connected:', socket.id);
+        console.log('✅ [RECEIVER] Socket connected:', socket.id);
+        console.log('✅ [RECEIVER] User ID:', user.id);
+        console.log('✅ [RECEIVER] Socket URL:', apiUrl);
         // Join user's room
-        socket.emit('join-room', user.id);
-        console.log('📢 Joined room: user-' + user.id);
+        socket.emit('join-room', String(user.id));
+        console.log('📢 [RECEIVER] Emitted join-room for user-' + user.id);
+        
+        // Verify socket is ready to receive calls
+        console.log('✅ [RECEIVER] Socket ready to receive incoming calls');
       });
 
       socket.on('connect_error', (error) => {
@@ -69,31 +80,92 @@ const Profile = () => {
 
       socket.on('reconnect', (attemptNumber) => {
         console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
-        socket.emit('join-room', user.id);
+        socket.emit('join-room', String(user.id));
       });
 
-      // Listen for incoming calls
-      socket.on('incoming-call', (data) => {
-        console.log('📞 Incoming call received:', data);
-        // Create channel name that matches what caller is using
-        const channelName = createSafeChannelName('call', data.callerId, user.id);
+      // Listen for incoming calls - CRITICAL: Must be set up before any calls are made
+      socket.on('incoming-call', async (data) => {
+        console.log('📞 [RECEIVER] ========== INCOMING CALL RECEIVED ==========');
+        console.log('📞 [RECEIVER] Full data:', JSON.stringify(data, null, 2));
+        console.log('📞 [RECEIVER] Caller ID:', data.callerId);
+        console.log('📞 [RECEIVER] Call Type:', data.callType);
+        console.log('📞 [RECEIVER] Channel Name:', data.channelName);
+        
+        // Use channel name from caller if provided, otherwise create one (should match caller's)
+        const channelName = data.channelName || createSafeChannelName('call', data.callerId, user.id);
+        console.log('🔑 [RECEIVER] Using channel name:', channelName, '(from caller:', !!data.channelName, ')');
+        
         setIncomingCall({
           callerId: data.callerId,
           callType: data.callType,
           channelName: channelName, // Store channel name to ensure both users use same channel
         });
+        
+        // Fetch caller's profile to show in notification
+        try {
+          const profileResponse = await axios.get(`/api/profiles/${data.callerId}`);
+          setCallerProfile(profileResponse.data);
+          console.log('✅ [RECEIVER] Fetched caller profile:', profileResponse.data.firstName);
+        } catch (error) {
+          console.error('⚠️ [RECEIVER] Could not fetch caller profile:', error);
+          // Continue without profile - notification will still work
+        }
+        
+        console.log('✅ [RECEIVER] Incoming call state set - UI should show call notification');
       });
 
-      // Listen for call accepted
+      // Listen for call accepted (CALLER side - receiver accepted the call)
       socket.on('call-accepted', (data) => {
-        console.log('✅ Call accepted:', data);
-        // Call is accepted, continue with call
+        console.log('✅ [CALLER] Call accepted by receiver:', data);
+        console.log('✅ [CALLER] Current outgoingCallRef:', outgoingCallRef.current);
+        
+        // Receiver accepted, now start the call
+        // Use ref to get current value (not stale closure)
+        const currentOutgoingCall = outgoingCallRef.current;
+        
+        if (currentOutgoingCall) {
+          console.log('✅ [CALLER] Starting call now that receiver accepted:', currentOutgoingCall);
+          
+          // Ensure channel name is set
+          if (currentOutgoingCall.channelName) {
+            setCallChannelName(currentOutgoingCall.channelName);
+            console.log('✅ [CALLER] Set channel name:', currentOutgoingCall.channelName);
+          }
+          
+          // Start the appropriate call type
+          if (currentOutgoingCall.callType === 'video') {
+            console.log('✅ [CALLER] Starting video call');
+            setShowVideoCall(true);
+          } else if (currentOutgoingCall.callType === 'voice') {
+            console.log('✅ [CALLER] Starting voice call');
+            setShowVoiceCall(true);
+          }
+          
+          // Clear outgoing call state and ref
+          setOutgoingCall(null);
+          outgoingCallRef.current = null;
+        } else {
+          console.warn('⚠️ [CALLER] Received call-accepted but no outgoingCall found');
+        }
       });
 
       // Listen for call rejected
       socket.on('call-rejected', (data) => {
         console.log('❌ Call rejected:', data);
         setIncomingCall(null);
+        setCallerProfile(null);
+        // Also clear outgoing call if caller's call was rejected
+        setOutgoingCall(null);
+        outgoingCallRef.current = null;
+        setShowVideoCall(false);
+        setShowVoiceCall(false);
+      });
+
+      // Listen for call cancelled (when caller cancels before receiver accepts)
+      socket.on('call-cancelled', (data) => {
+        console.log('❌ [RECEIVER] Call cancelled by caller:', data);
+        setIncomingCall(null);
+        setCallerProfile(null);
       });
 
       // Listen for call ended
@@ -102,6 +174,36 @@ const Profile = () => {
         setShowVideoCall(false);
         setShowVoiceCall(false);
         setIncomingCall(null);
+        setOutgoingCall(null);
+        outgoingCallRef.current = null;
+      });
+
+      // Listen for new chat requests
+      socket.on('new-chat-request', (data) => {
+        console.log('📬 New chat request received:', data);
+        // Refresh chat requests list
+        fetchChatRequests();
+      });
+
+      // Listen for contact updates (new messages, new chats, calls)
+      socket.on('contact-update', (data) => {
+        console.log('👥 Contact update received:', data);
+        // Refresh contacts list
+        fetchContacts();
+      });
+
+      // Listen for call request updates (missed calls)
+      socket.on('call-request-update', (data) => {
+        console.log('📞 Call request update received:', data);
+        // Refresh call requests list
+        fetchCallRequests();
+      });
+
+      // Listen for new messages
+      socket.on('new-message', (data) => {
+        console.log('💬 New message received:', data);
+        // Refresh contacts to update last message
+        fetchContacts();
       });
 
       socketRef.current = socket;
@@ -118,6 +220,7 @@ const Profile = () => {
       fetchProfile();
       fetchContacts();
       fetchChatRequests();
+      fetchCallRequests();
     }
   }, [id]);
   
@@ -130,6 +233,12 @@ const Profile = () => {
           const callData = JSON.parse(pendingCall);
           // Only start call if we're on the caller's profile
           if (callData.callerId === id) {
+            // CRITICAL: Use the channel name from sessionStorage (must match caller's)
+            if (callData.channelName) {
+              setCallChannelName(callData.channelName);
+              console.log('🔑 [RECEIVER] Using channel name from sessionStorage:', callData.channelName);
+            }
+            
             if (callData.callType === 'video') {
               setShowVideoCall(true);
             } else if (callData.callType === 'voice') {
@@ -191,6 +300,15 @@ const Profile = () => {
       // Fetch conversations/chats from API
       const response = await axios.get('/api/messages/conversations');
       
+      // Fetch call requests to get call history
+      let callRequestsData = [];
+      try {
+        const callResponse = await axios.get('/api/messages/call-requests');
+        callRequestsData = callResponse.data || [];
+      } catch (callError) {
+        console.error('Error fetching call requests:', callError);
+      }
+      
       if (response.data && Array.isArray(response.data)) {
         const contactsList = response.data.map((conv) => {
           const otherUser = conv.user || {};
@@ -215,7 +333,55 @@ const Profile = () => {
           
           // Get last message content
           let lastMessage = 'No messages yet';
-          if (conv.lastMessage) {
+          let lastMessageAt = conv.lastMessage?.createdAt || conv.lastMessage?.created_at;
+          
+          // Check for call history (missed or ended calls)
+          const userId = conv.userId || otherUser?.id;
+          // Find the most recent call where this user is involved (either as caller or receiver)
+          const recentCall = callRequestsData
+            .filter(call => {
+              // Check if this contact is involved in the call
+              const isContactCaller = call.callerId === userId;
+              const isContactReceiver = call.receiverId === userId;
+              const isCurrentUserCaller = call.callerId === user?.id;
+              const isCurrentUserReceiver = call.receiverId === user?.id;
+              
+              // The call must involve both the current user and this contact
+              return (isContactCaller || isContactReceiver) && 
+                     (isCurrentUserCaller || isCurrentUserReceiver) &&
+                     (call.status === 'missed' || call.status === 'completed') &&
+                     (call.createdAt || call.created_at); // Handle both camelCase and snake_case
+            })
+            .sort((a, b) => {
+              // Sort by most recent first
+              const dateA = new Date(a.endedAt || a.ended_at || a.createdAt || a.created_at);
+              const dateB = new Date(b.endedAt || b.ended_at || b.createdAt || b.created_at);
+              return dateB - dateA;
+            })[0]; // Get the most recent call
+          
+          // Prioritize call messages over regular messages
+          if (recentCall) {
+            const callDate = new Date(recentCall.endedAt || recentCall.ended_at || recentCall.createdAt || recentCall.created_at);
+            const formattedDate = callDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            
+            if (recentCall.status === 'missed') {
+              const callType = recentCall.callType === 'video' ? 'Video Chat' : 'Voice Call';
+              const isReceiver = recentCall.receiverId === user?.id;
+              lastMessage = isReceiver 
+                ? `You missed a ${callType} on ${formattedDate}`
+                : `${callType} was missed on ${formattedDate}`;
+              lastMessageAt = recentCall.createdAt || recentCall.created_at;
+            } else if (recentCall.status === 'completed') {
+              const callType = recentCall.callType === 'video' ? 'Video Chat' : 'Voice Call';
+              lastMessage = `${callType} has ended on ${formattedDate}`;
+              lastMessageAt = recentCall.endedAt || recentCall.ended_at || recentCall.createdAt || recentCall.created_at;
+            }
+          } else if (conv.lastMessage) {
             if (typeof conv.lastMessage === 'object') {
               lastMessage = conv.lastMessage.content || conv.lastMessage.message || lastMessage;
             } else {
@@ -223,29 +389,121 @@ const Profile = () => {
             }
           }
           
+          // Determine if contact has call history (for icon overlay)
+          // Check if there's any call between current user and this contact
+          const hasCallHistory = callRequestsData.some(call => {
+            const isContactCaller = call.callerId === userId;
+            const isContactReceiver = call.receiverId === userId;
+            const isCurrentUserCaller = call.callerId === user?.id;
+            const isCurrentUserReceiver = call.receiverId === user?.id;
+            
+            // The call must involve both the current user and this contact
+            return (isContactCaller || isContactReceiver) && 
+                   (isCurrentUserCaller || isCurrentUserReceiver) &&
+                   (call.status === 'missed' || call.status === 'completed');
+          });
+          
+          // Check if it's a birthday (placeholder - can be enhanced later)
+          const isBirthday = false; // Can be enhanced with birthday detection
+          
           return {
-            id: conv.userId || otherUser?.id,
+            id: userId,
             name: contactName,
-            type: null,
+            type: contactName === 'Concierge' || contactName.includes('Concierge') ? 'Concierge' : null,
             message: lastMessage,
             unreadCount: conv.unreadCount || 0,
             avatar: avatar,
-            lastMessageAt: conv.lastMessage?.createdAt || conv.lastMessage?.created_at,
+            lastMessageAt: lastMessageAt,
+            hasCallHistory: hasCallHistory,
+            recentCallType: recentCall?.callType || null,
+            isBirthday: isBirthday,
+            isCallMessage: recentCall ? true : false,
           };
+        });
+        
+        // Add system contact (Concierge/Julia) at the beginning if not already present
+        const hasConcierge = contactsList.some(c => c.id === 'system-concierge' || c.name?.includes('Concierge'));
+        if (!hasConcierge) {
+          contactsList.unshift({
+            id: 'system-concierge',
+            name: 'Julia',
+            type: 'Concierge',
+            message: 'Hello! Today your p...',
+            unreadCount: 1,
+            avatar: null,
+            lastMessageAt: new Date(),
+            hasCallHistory: false,
+            isBirthday: false,
+            isCallMessage: false,
+          });
+        }
+        
+        // Sort contacts: Concierge first, then by lastMessageAt (most recent first)
+        contactsList.sort((a, b) => {
+          // Concierge always first
+          if (a.id === 'system-concierge') return -1;
+          if (b.id === 'system-concierge') return 1;
+          
+          // Then sort by last message time (most recent first)
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
         });
         
         setContacts(contactsList);
         console.log('✅ Loaded', contactsList.length, 'contacts');
       } else {
-        // No conversations found
-        console.log('⚠️ No conversations found');
-        setContacts([]);
+        // No conversations found - still show Concierge
+        console.log('⚠️ No conversations found, showing Concierge only');
+        setContacts([{
+          id: 'system-concierge',
+          name: 'Julia',
+          type: 'Concierge',
+          message: 'Hello! Today your p...',
+          unreadCount: 1,
+          avatar: null,
+          lastMessageAt: new Date(),
+          hasCallHistory: false,
+          isBirthday: false,
+          isCallMessage: false,
+        }]);
       }
     } catch (error) {
       console.error('❌ Fetch contacts error:', error);
       console.error('Error details:', error.response?.data || error.message);
       // Do not set any fallback contacts on error (just clear list)
       setContacts([]);
+    }
+  };
+
+  const fetchCallRequests = async () => {
+    try {
+      const response = await axios.get('/api/messages/call-requests');
+      
+      if (response.data && Array.isArray(response.data)) {
+        const requests = response.data.map((request) => {
+          const caller = request.callerData || {};
+          const profile = caller.profile || {};
+          
+          return {
+            id: request.id,
+            name: profile.firstName || caller.email?.split('@')[0] || 'Unknown',
+            callType: request.callType, // 'video' or 'voice'
+            status: request.status, // 'missed', 'pending', 'rejected'
+            createdAt: request.createdAt,
+            avatar: profile.photos?.[0]?.url || null,
+            callerId: request.callerId,
+          };
+        });
+        
+        setCallRequests(requests);
+        console.log('✅ Loaded', requests.length, 'call requests');
+      } else {
+        setCallRequests([]);
+      }
+    } catch (error) {
+      console.error('❌ Fetch call requests error:', error);
+      setCallRequests([]);
     }
   };
 
@@ -333,12 +591,20 @@ const Profile = () => {
 
   const handleVideoCall = async () => {
     try {
+      // Create channel name BEFORE emitting call request (must match receiver's channel name)
+      const channelName = createSafeChannelName('call', user.id, id);
+      console.log('🔑 [CALLER] Channel name created:', channelName);
+      
+      // Store channel name for RTC connection
+      setCallChannelName(channelName);
+      
       // Emit Socket.IO event for real-time notification
       if (socketRef.current && socketRef.current.connected && user?.id) {
         const callData = {
-          callerId: user.id,
-          receiverId: id,
+          callerId: String(user.id),
+          receiverId: String(id),
           callType: 'video',
+          channelName: channelName, // Send channel name to receiver
         };
         console.log('📞 Emitting call-request:', callData);
         socketRef.current.emit('call-request', callData);
@@ -365,22 +631,37 @@ const Profile = () => {
         console.error('Error creating video call notification:', notifError);
       }
       
-      setShowVideoCall(true);
+      // Store outgoing call info - wait for receiver to accept
+      const outgoingCallData = {
+        callType: 'video',
+        channelName: channelName,
+        receiverId: id,
+      };
+      setOutgoingCall(outgoingCallData);
+      outgoingCallRef.current = outgoingCallData; // Also store in ref for socket handler
+      // Don't start call yet - wait for receiver to accept
+      console.log('⏳ [CALLER] Waiting for receiver to accept call...');
     } catch (error) {
       console.error('Error initiating video call:', error);
-      // Continue with call even if notification fails
-      setShowVideoCall(true);
     }
   };
 
   const handleAudioCall = async () => {
     try {
+      // Create channel name BEFORE emitting call request (must match receiver's channel name)
+      const channelName = createSafeChannelName('call', user.id, id);
+      console.log('🔑 [CALLER] Channel name created:', channelName);
+      
+      // Store channel name for RTC connection
+      setCallChannelName(channelName);
+      
       // Emit Socket.IO event for real-time notification
       if (socketRef.current && socketRef.current.connected && user?.id) {
         const callData = {
-          callerId: user.id,
-          receiverId: id,
+          callerId: String(user.id),
+          receiverId: String(id),
           callType: 'voice',
+          channelName: channelName, // Send channel name to receiver
         };
         console.log('📞 Emitting call-request:', callData);
         socketRef.current.emit('call-request', callData);
@@ -407,36 +688,51 @@ const Profile = () => {
         console.error('Error creating voice call notification:', notifError);
       }
       
-      setShowVoiceCall(true);
+      // Store outgoing call info - wait for receiver to accept
+      const outgoingCallData = {
+        callType: 'voice',
+        channelName: channelName,
+        receiverId: id,
+      };
+      setOutgoingCall(outgoingCallData);
+      outgoingCallRef.current = outgoingCallData; // Also store in ref for socket handler
+      // Don't start call yet - wait for receiver to accept
+      console.log('⏳ [CALLER] Waiting for receiver to accept call...');
     } catch (error) {
       console.error('Error initiating voice call:', error);
-      // Continue with call even if notification fails
-      setShowVoiceCall(true);
     }
   };
 
   const handleAcceptCall = async () => {
     if (incomingCall && socketRef.current && user?.id) {
+      console.log('✅ [RECEIVER] Accepting call:', incomingCall);
+      
       // Emit call accepted event
       socketRef.current.emit('call-accept', {
         callerId: incomingCall.callerId,
         receiverId: user.id,
       });
 
-      // Use the channel name from incoming call to ensure both users join same channel
+      // CRITICAL: Use the channel name from incoming call (must match caller's exactly)
       const callChannelName = incomingCall.channelName || createSafeChannelName('call', incomingCall.callerId, user.id);
+      console.log('🔑 [RECEIVER] Channel name for RTC:', callChannelName);
+      
+      // Store channel name in state for RTC connection
+      setCallChannelName(callChannelName);
       
       // Navigate to caller's profile if we're not already there
       if (id !== incomingCall.callerId) {
         // Store call info in sessionStorage for after navigation
         sessionStorage.setItem('pendingCall', JSON.stringify({
           callType: incomingCall.callType,
-          channelName: callChannelName,
+          channelName: callChannelName, // CRITICAL: Must match caller's channel name
           callerId: incomingCall.callerId
         }));
+        console.log('🔑 [RECEIVER] Stored channel name in sessionStorage:', callChannelName);
         navigate(`/profile/${incomingCall.callerId}`);
       } else {
         // Already on caller's profile, start call immediately
+        console.log('🔑 [RECEIVER] Already on caller profile, starting call with channel:', callChannelName);
         if (incomingCall.callType === 'video') {
           setShowVideoCall(true);
         } else {
@@ -444,6 +740,12 @@ const Profile = () => {
         }
       }
       setIncomingCall(null);
+    } else {
+      console.error('❌ [RECEIVER] Cannot accept call - missing data:', {
+        hasIncomingCall: !!incomingCall,
+        hasSocket: !!socketRef.current,
+        hasUserId: !!user?.id
+      });
     }
   };
 
@@ -876,7 +1178,7 @@ const Profile = () => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 text-base">My Contacts</h3>
             {contacts.length > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+              <span className="bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-semibold">
                 {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
               </span>
             )}
@@ -891,69 +1193,87 @@ const Profile = () => {
               <p className="text-xs text-gray-400 mt-1">Start chatting to see your contacts here</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {contacts.map((contact) => (
-                <div 
-                  key={contact.id || `contact-${Math.random()}`} 
-                  className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group"
-                  onClick={() => {
-                    if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                      navigate(`/profile/${contact.id}`);
-                    }
-                  }}
-                >
-                  <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-teal-300 transition">
-                      {contact.avatar ? (
-                        <img 
-                          src={contact.avatar} 
-                          alt={contact.name || 'Contact'} 
-                          className="w-full h-full rounded-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span className="text-white font-semibold text-lg">
-                          {(contact.name && contact.name[0]?.toUpperCase()) || '?'}
-                        </span>
-                      )}
-                    </div>
-                    {contact.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                        {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                      </span>
+            <div className="space-y-1 max-h-96 overflow-y-auto">
+              {contacts.map((contact) => {
+                // Check if message is about a missed/ended call
+                const isCallMessage = contact.isCallMessage || contact.message?.includes('missed') || contact.message?.includes('ended');
+                const isBirthday = contact.isBirthday;
+                
+                return (
+                  <div 
+                    key={contact.id || `contact-${Math.random()}`} 
+                    className={`relative flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group ${
+                      isBirthday ? 'bg-blue-50' : ''
+                    }`}
+                    onClick={() => {
+                      if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
+                        navigate(`/profile/${contact.id}`);
+                      }
+                    }}
+                  >
+                    {/* Birthday background decoration */}
+                    {isBirthday && (
+                      <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-20">
+                          <div className="absolute top-2 left-4 w-3 h-3 bg-pink-300 rounded-full"></div>
+                          <div className="absolute top-4 right-8 w-2 h-2 bg-yellow-300 rounded-full"></div>
+                          <div className="absolute bottom-2 left-8 w-2.5 h-2.5 bg-green-300 rounded-full"></div>
+                          <div className="absolute bottom-4 right-4 w-2 h-2 bg-purple-300 rounded-full"></div>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-2 flex-1 min-w-0">
-                        <span className="font-semibold text-gray-800 text-sm truncate">
-                          {contact.name || 'Unknown'}
-                        </span>
-                        {contact.type && (
-                          <span className="text-red-500 text-xs font-medium whitespace-nowrap bg-red-50 px-2 py-0.5 rounded">
-                            {contact.type}
+                    
+                    <div className="relative flex-shrink-0 z-10">
+                      {/* Use square avatar for Concierge, circular for others */}
+                      <div className={`w-14 h-14 ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-teal-300 transition`}>
+                        {contact.avatar ? (
+                          <img 
+                            src={contact.avatar} 
+                            alt={contact.name || 'Contact'} 
+                            className={`w-full h-full ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} object-cover`}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-white font-semibold text-lg">
+                            {(contact.name && contact.name[0]?.toUpperCase()) || '?'}
                           </span>
                         )}
                       </div>
+                      {/* Video/Call icon overlay - only show for non-Concierge contacts with call history */}
+                      {contact.hasCallHistory && contact.id !== 'system-concierge' && (
+                        <div className="absolute bottom-0 right-0 w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center border-2 border-white z-10">
+                          <FaVideo className="text-gray-600 text-xs" />
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">
-                      {contact.message || 'No messages yet'}
-                    </p>
-                    {contact.lastMessageAt && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(contact.lastMessageAt).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                    <div className="flex-1 min-w-0 ml-3 z-10">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center space-x-2 flex-1 min-w-0">
+                          <span className="font-semibold text-gray-800 text-sm truncate">
+                            {contact.name || 'Unknown'}
+                          </span>
+                          {contact.type && (
+                            <span className="text-red-500 text-xs font-medium whitespace-nowrap bg-red-50 px-2 py-0.5 rounded">
+                              {contact.type}
+                            </span>
+                          )}
+                        </div>
+                        {/* Unread badge on the right */}
+                        {contact.unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
+                            {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm truncate ${isCallMessage ? 'text-gray-500 italic' : 'text-gray-600'}`}>
+                        {contact.message || 'No messages yet'}
                       </p>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -969,10 +1289,10 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Chat Requests */}
+        {/* Chat Requests & Call Requests */}
         <div className="p-4 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Chat Requests</h3>
+            <h3 className="font-semibold text-gray-800">Chat & Call Requests</h3>
             <button
               onClick={() => setShowLessChatRequests(!showLessChatRequests)}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -982,8 +1302,70 @@ const Profile = () => {
           </div>
 
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {displayedChatRequests.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No chat requests</p>
+            {/* Call Requests (Missed Calls) */}
+            {callRequests.filter(r => r.status === 'missed').length > 0 && (
+              <div className="mb-4 pb-4 border-b border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Missed Calls</h4>
+                {callRequests
+                  .filter((request) => request.status === 'missed')
+                  .map((request) => {
+                    return (
+                      <div
+                        key={`call-${request.id}`}
+                        className="border-b border-gray-200 pb-3 mb-3 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1">
+                            {request.avatar ? (
+                              <img
+                                src={request.avatar}
+                                alt={request.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                                <span className="text-white font-semibold text-sm">
+                                  {request.name?.[0]?.toUpperCase() || '?'}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-gray-900 text-sm truncate">
+                                  {request.name}
+                                </span>
+                                {request.callType === 'video' ? (
+                                  <FaVideo className="text-teal-600 text-xs" />
+                                ) : (
+                                  <FaPhone className="text-teal-600 text-xs" />
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Missed {request.callType} call
+                              </p>
+                              {request.createdAt && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {new Date(request.createdAt).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/profile/${request.callerId}`)}
+                            className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded transition"
+                          >
+                            Call Back
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {/* Chat Requests */}
+            {displayedChatRequests.length === 0 && callRequests.filter(r => r.status === 'missed').length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">No requests</p>
             ) : (
               displayedChatRequests
                 .filter((request) => request.status === 'pending')
@@ -1032,34 +1414,60 @@ const Profile = () => {
 
       {/* Incoming Call Notification */}
       {incomingCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in">
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                {incomingCall.callType === 'video' ? (
-                  <FaVideo className="text-white text-3xl" />
-                ) : (
-                  <FaPhone className="text-white text-3xl" />
-                )}
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Incoming {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+              {/* Caller Avatar or Icon */}
+              {(callerProfile?.photos?.[0]?.url || (typeof callerProfile?.photos?.[0] === 'string' ? callerProfile.photos[0] : null)) ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-teal-400 shadow-lg">
+                  <img 
+                    src={callerProfile.photos[0]?.url || callerProfile.photos[0]} 
+                    alt={callerProfile.firstName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  {incomingCall.callType === 'video' ? (
+                    <FaVideo className="text-white text-4xl" />
+                  ) : (
+                    <FaPhone className="text-white text-4xl" />
+                  )}
+                </div>
+              )}
+              
+              {/* Caller Name */}
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">
+                {callerProfile?.firstName || 'Incoming Call'}
               </h3>
-              <p className="text-gray-600">Someone wants to {incomingCall.callType === 'video' ? 'video' : 'voice'} call you</p>
+              
+              {/* Call Type */}
+              <p className="text-gray-600 mb-4">
+                {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+              </p>
+              
+              {/* Animated indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+              </div>
             </div>
+            
+            {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 onClick={handleRejectCall}
-                className="flex-1 bg-red-500 text-white py-3 px-6 rounded-lg hover:bg-red-600 transition font-semibold flex items-center justify-center space-x-2"
+                className="flex-1 bg-red-500 text-white py-4 px-6 rounded-xl hover:bg-red-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
               >
-                <FaTimes />
+                <FaTimes size={18} />
                 <span>Decline</span>
               </button>
               <button
                 onClick={handleAcceptCall}
-                className="flex-1 bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition font-semibold flex items-center justify-center space-x-2"
+                className="flex-1 bg-green-500 text-white py-4 px-6 rounded-xl hover:bg-green-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
               >
-                <FaPhone />
+                {incomingCall.callType === 'video' ? <FaVideo size={18} /> : <FaPhone size={18} />}
                 <span>Accept</span>
               </button>
             </div>
@@ -1075,19 +1483,78 @@ const Profile = () => {
         </button>
       </div>
 
-      {/* Agora Components */}
-      {showVideoCall && user?.id && profile && (
+      {/* Outgoing Call Waiting UI (Caller side - waiting for receiver to accept) */}
+      {outgoingCall && !showVideoCall && !showVoiceCall && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
+            {(profile?.photos?.[0]?.url || (typeof profile?.photos?.[0] === 'string' ? profile.photos[0] : null)) ? (
+              <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-6 border-4 border-teal-400 shadow-lg animate-pulse">
+                <img 
+                  src={profile.photos[0]?.url || profile.photos[0]} 
+                  alt={profile.firstName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-32 h-32 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+                <span className="text-5xl font-bold text-white">
+                  {profile?.firstName?.[0]?.toUpperCase() || '?'}
+                </span>
+              </div>
+            )}
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              {profile?.firstName || 'Calling...'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {outgoingCall.callType === 'video' ? 'Video' : 'Voice'} Call
+            </p>
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+            </div>
+            <p className="text-gray-500 mb-6">Waiting for {profile?.firstName || 'user'} to accept...</p>
+            <button
+              onClick={() => {
+                console.log('❌ [CALLER] Canceling call');
+                if (socketRef.current && socketRef.current.connected && user?.id && outgoingCall) {
+                  // Emit call-cancel event to notify receiver
+                  socketRef.current.emit('call-cancel', {
+                    callerId: String(user.id),
+                    receiverId: String(outgoingCall.receiverId),
+                  });
+                  console.log('✅ [CALLER] Call cancel event emitted');
+                }
+                // Clear local state
+                setOutgoingCall(null);
+                outgoingCallRef.current = null;
+                setCallChannelName(null);
+                console.log('✅ [CALLER] Call canceled, UI cleared');
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-xl transition-all duration-200 font-semibold"
+            >
+              Cancel Call
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Agora Components - Only show after receiver accepts */}
+      {showVideoCall && user?.id && callChannelName && (
         <AgoraVideoCall
-          channelName={createSafeChannelName('call', user.id, id)}
+          channelName={callChannelName}
           userId={user.id}
-          remoteUserId={profile.firstName || profile.id}
-          onEndCall={() => {
+          remoteUserId={profile?.firstName || profile?.userId || id || 'Unknown'}
+          remoteUserProfile={profile || null} // Pass full profile object (may be null if still loading)
+          onEndCall={(duration) => {
             setShowVideoCall(false);
-            // Emit call end event
+            setCallChannelName(null); // Clear channel name
+            // Emit call end event with duration
             if (socketRef.current && socketRef.current.connected) {
               socketRef.current.emit('call-end', {
                 userId: user.id,
                 otherUserId: id,
+                duration: duration || 0, // Pass call duration in seconds
               });
             }
           }}
@@ -1095,18 +1562,21 @@ const Profile = () => {
         />
       )}
 
-      {showVoiceCall && user?.id && profile && (
+      {showVoiceCall && user?.id && callChannelName && (
         <AgoraVoiceCall
-          channelName={createSafeChannelName('call', user.id, id)}
+          channelName={callChannelName}
           userId={user.id}
-          remoteUserId={profile.firstName || profile.id}
-          onEndCall={() => {
+          remoteUserId={profile?.firstName || profile?.userId || id || 'Unknown'}
+          remoteUserProfile={profile || null} // Pass full profile object (may be null if still loading)
+          onEndCall={(duration) => {
             setShowVoiceCall(false);
-            // Emit call end event
+            setCallChannelName(null); // Clear channel name
+            // Emit call end event with duration
             if (socketRef.current && socketRef.current.connected) {
               socketRef.current.emit('call-end', {
                 userId: user.id,
                 otherUserId: id,
+                duration: duration || 0, // Pass call duration in seconds
               });
             }
           }}
