@@ -489,8 +489,8 @@ const Profile = () => {
             id: request.id,
             name: profile.firstName || caller.email?.split('@')[0] || 'Unknown',
             callType: request.callType, // 'video' or 'voice'
-            status: request.status, // 'missed', 'pending', 'rejected'
-            createdAt: request.createdAt,
+            status: request.status, // 'missed', 'completed'
+            createdAt: request.createdAt || request.created_at, // Handle both camelCase and snake_case
             avatar: profile.photos?.[0]?.url || null,
             callerId: request.callerId,
           };
@@ -1343,9 +1343,9 @@ const Profile = () => {
                               <p className="text-xs text-gray-500">
                                 Missed {request.callType} call
                               </p>
-                              {request.createdAt && (
+                              {(request.createdAt || request.created_at) && (
                                 <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(request.createdAt).toLocaleString()}
+                                  {new Date(request.createdAt || request.created_at).toLocaleString()}
                                 </p>
                               )}
                             </div>
