@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [incomingCall, setIncomingCall] = useState(null);
   const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
   const socketRef = useRef(null);
+  const ringtoneRef = useRef(null); // Ref for ringtone audio element
   
   // Filter states
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -104,6 +105,35 @@ const Dashboard = () => {
           // Continue without profile - notification will still work
         }
         
+        // Play ringtone for incoming call
+        try {
+          // Get user's profile to check for custom ringtone
+          const userProfileResponse = await axios.get('/api/profiles/me');
+          const ringtoneFile = userProfileResponse.data.ringtone || 'defaultRingtone.mp3';
+          const ringtonePath = `/ringtones/${ringtoneFile}`;
+          
+          if (ringtoneRef.current) {
+            ringtoneRef.current.src = ringtonePath;
+            ringtoneRef.current.loop = true;
+            ringtoneRef.current.volume = 0.7;
+            ringtoneRef.current.play().catch(err => {
+              console.error('Error playing ringtone:', err);
+            });
+            console.log('🔔 Playing ringtone:', ringtonePath);
+          }
+        } catch (error) {
+          console.error('Error setting up ringtone:', error);
+          // Try default ringtone if user profile fetch fails
+          if (ringtoneRef.current) {
+            ringtoneRef.current.src = '/ringtones/defaultRingtone.mp3';
+            ringtoneRef.current.loop = true;
+            ringtoneRef.current.volume = 0.7;
+            ringtoneRef.current.play().catch(err => {
+              console.error('Error playing default ringtone:', err);
+            });
+          }
+        }
+        
         console.log('✅ [RECEIVER] Incoming call state set - UI should show call notification');
       });
 
@@ -115,6 +145,11 @@ const Dashboard = () => {
       // Listen for call rejected
       socket.on('call-rejected', (data) => {
         console.log('❌ Call rejected:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setIncomingCall(null);
         setCallerProfile(null);
       });
@@ -122,6 +157,11 @@ const Dashboard = () => {
       // Listen for call cancelled (when caller cancels before receiver accepts)
       socket.on('call-cancelled', (data) => {
         console.log('❌ [RECEIVER] Call cancelled by caller:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setIncomingCall(null);
         setCallerProfile(null);
       });
@@ -129,6 +169,11 @@ const Dashboard = () => {
       // Listen for call ended
       socket.on('call-ended', (data) => {
         console.log('📴 Call ended:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setIncomingCall(null);
       });
 
@@ -521,6 +566,12 @@ const Dashboard = () => {
     if (incomingCall && socketRef.current && user?.id) {
       console.log('✅ [RECEIVER] Accepting call:', incomingCall);
       
+      // Stop ringtone
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+      }
+      
       // Emit call accepted event
       socketRef.current.emit('call-accept', {
         callerId: incomingCall.callerId,
@@ -551,6 +602,13 @@ const Dashboard = () => {
   const handleRejectCall = () => {
     if (incomingCall && socketRef.current && user?.id) {
       console.log('❌ [RECEIVER] Rejecting call:', incomingCall);
+      
+      // Stop ringtone
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+      }
+      
       socketRef.current.emit('call-reject', {
         callerId: incomingCall.callerId,
         receiverId: user.id,
@@ -569,6 +627,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Ringtone Audio Element */}
+      <audio ref={ringtoneRef} preload="auto" />
+      
       {/* Incoming Call Notification */}
       {incomingCall && (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center backdrop-blur-sm">

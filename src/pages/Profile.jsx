@@ -35,6 +35,7 @@ const Profile = () => {
   const [outgoingCall, setOutgoingCall] = useState(null); // Track outgoing call waiting for acceptance
   const outgoingCallRef = useRef(null); // Ref to track outgoing call (for socket handlers)
   const socketRef = useRef(null);
+  const ringtoneRef = useRef(null); // Ref for ringtone audio element
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
@@ -111,6 +112,35 @@ const Profile = () => {
           // Continue without profile - notification will still work
         }
         
+        // Play ringtone for incoming call
+        try {
+          // Get user's profile to check for custom ringtone
+          const userProfileResponse = await axios.get('/api/profiles/me');
+          const ringtoneFile = userProfileResponse.data.ringtone || 'defaultRingtone.mp3';
+          const ringtonePath = `/ringtones/${ringtoneFile}`;
+          
+          if (ringtoneRef.current) {
+            ringtoneRef.current.src = ringtonePath;
+            ringtoneRef.current.loop = true;
+            ringtoneRef.current.volume = 0.7;
+            ringtoneRef.current.play().catch(err => {
+              console.error('Error playing ringtone:', err);
+            });
+            console.log('🔔 Playing ringtone:', ringtonePath);
+          }
+        } catch (error) {
+          console.error('Error setting up ringtone:', error);
+          // Try default ringtone if user profile fetch fails
+          if (ringtoneRef.current) {
+            ringtoneRef.current.src = '/ringtones/defaultRingtone.mp3';
+            ringtoneRef.current.loop = true;
+            ringtoneRef.current.volume = 0.7;
+            ringtoneRef.current.play().catch(err => {
+              console.error('Error playing default ringtone:', err);
+            });
+          }
+        }
+        
         console.log('✅ [RECEIVER] Incoming call state set - UI should show call notification');
       });
 
@@ -152,6 +182,11 @@ const Profile = () => {
       // Listen for call rejected
       socket.on('call-rejected', (data) => {
         console.log('❌ Call rejected:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setIncomingCall(null);
         setCallerProfile(null);
         // Also clear outgoing call if caller's call was rejected
@@ -164,6 +199,11 @@ const Profile = () => {
       // Listen for call cancelled (when caller cancels before receiver accepts)
       socket.on('call-cancelled', (data) => {
         console.log('❌ [RECEIVER] Call cancelled by caller:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setIncomingCall(null);
         setCallerProfile(null);
       });
@@ -171,6 +211,11 @@ const Profile = () => {
       // Listen for call ended
       socket.on('call-ended', (data) => {
         console.log('📴 Call ended:', data);
+        // Stop ringtone
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
         setShowVideoCall(false);
         setShowVoiceCall(false);
         setIncomingCall(null);
@@ -707,6 +752,12 @@ const Profile = () => {
     if (incomingCall && socketRef.current && user?.id) {
       console.log('✅ [RECEIVER] Accepting call:', incomingCall);
       
+      // Stop ringtone
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+      }
+      
       // Emit call accepted event
       socketRef.current.emit('call-accept', {
         callerId: incomingCall.callerId,
@@ -751,6 +802,12 @@ const Profile = () => {
 
   const handleRejectCall = () => {
     if (incomingCall && socketRef.current && user?.id) {
+      // Stop ringtone
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.currentTime = 0;
+      }
+      
       socketRef.current.emit('call-reject', {
         callerId: incomingCall.callerId,
         receiverId: user.id,
@@ -796,6 +853,9 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Ringtone Audio Element */}
+      <audio ref={ringtoneRef} preload="auto" />
+      
       <div className="container mx-auto max-w-[1920px] px-4" style={{ paddingRight: showChat ? '320px' : '384px' }}>
         <div className={`flex ${showChat ? 'gap-6' : ''}`}>
           {/* Main Content */}
