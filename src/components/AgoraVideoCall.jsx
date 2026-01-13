@@ -351,9 +351,9 @@ const AgoraVideoCall = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen w-screen overflow-hidden">
       {/* Remote Video Container */}
-      <div className="flex-1 relative bg-gray-900">
+      <div className="flex-1 relative bg-gray-900 overflow-hidden" style={{ minHeight: 0 }}>
         {/* Show waiting UI until remote user connects */}
         {!isRemoteConnected ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -395,7 +395,11 @@ const AgoraVideoCall = ({
           <div
             ref={remoteVideoContainerRef}
             className="w-full h-full"
-            style={{ minHeight: '100%' }}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              objectFit: 'contain'
+            }}
           />
         ) : (
           // Waiting for video after connection
@@ -457,7 +461,7 @@ const AgoraVideoCall = ({
       </div>
 
       {/* Controls */}
-      <div className="bg-gray-900 p-4 flex items-center justify-center space-x-4 border-t border-gray-800">
+      <div className="bg-gray-900 p-4 flex items-center justify-center space-x-4 border-t border-gray-800 flex-shrink-0">
         <button
           onClick={toggleMute}
           className={`p-4 rounded-full ${

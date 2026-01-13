@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes } from 'react-icons/fa';
+import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
+import PhotoUploadModal from '../components/PhotoUploadModal';
+import PhotoViewModal from '../components/PhotoViewModal';
 
 const MyProfile = () => {
   const { user } = useAuth();
@@ -15,6 +17,11 @@ const MyProfile = () => {
   const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAdditionalPhoto, setUploadingAdditionalPhoto] = useState(false);
+  const [showProfilePhotoModal, setShowProfilePhotoModal] = useState(false);
+  const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+  const [showPhotoViewModal, setShowPhotoViewModal] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState(null);
   const [showBioModal, setShowBioModal] = useState(false);
   const [bioText, setBioText] = useState('');
   const [savingBio, setSavingBio] = useState(false);
@@ -94,19 +101,14 @@ const MyProfile = () => {
   };
 
   // Handle main profile photo upload (replaces first photo)
-  const handleProfilePhotoUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleProfilePhotoUpload = async (file, isPublic) => {
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
 
     setUploadingProfilePhoto(true);
     try {
       const formData = new FormData();
       formData.append('photo', file);
+      formData.append('isPublic', isPublic);
 
       // This updates/replaces the main profile photo
       const response = await axios.post('/api/profiles/me/photos', formData, {
@@ -121,31 +123,25 @@ const MyProfile = () => {
         photos: response.data.photos,
       }));
 
+      setShowProfilePhotoModal(false);
       alert('Profile photo updated successfully!');
     } catch (error) {
       console.error('Upload profile photo error:', error);
       alert(error.response?.data?.message || 'Failed to upload profile photo');
     } finally {
       setUploadingProfilePhoto(false);
-      // Reset file input
-      e.target.value = '';
     }
   };
 
   // Handle adding additional photos (adds to gallery, doesn't replace first)
-  const handleAddMorePhotos = async (e) => {
-    const file = e.target.files[0];
+  const handleAddMorePhotos = async (file, isPublic) => {
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
 
     setUploadingAdditionalPhoto(true);
     try {
       const formData = new FormData();
       formData.append('photo', file);
+      formData.append('isPublic', isPublic);
 
       // This adds a new photo to the gallery (doesn't replace first)
       const response = await axios.post('/api/profiles/me/photos/add', formData, {
@@ -160,15 +156,66 @@ const MyProfile = () => {
         photos: response.data.photos,
       }));
 
+      setShowAddPhotoModal(false);
       alert('Photo added successfully!');
     } catch (error) {
       console.error('Add photo error:', error);
       alert(error.response?.data?.message || 'Failed to add photo');
     } finally {
       setUploadingAdditionalPhoto(false);
-      // Reset file input
-      e.target.value = '';
     }
+  };
+
+  // Handle toggling photo privacy
+  const handleTogglePhotoPrivacy = async (photoIndex) => {
+    try {
+      const photo = profile.photos[photoIndex];
+      // Handle both string and object formats
+      const currentPrivacy = typeof photo === 'string' ? true : (photo?.isPublic !== false);
+      const newPrivacy = !currentPrivacy;
+
+      const response = await axios.put(`/api/profiles/me/photos/${photoIndex}/privacy`, {
+        isPublic: newPrivacy,
+      });
+
+      // Update profile with updated photos
+      setProfile((prev) => ({
+        ...prev,
+        photos: response.data.photos,
+      }));
+
+      // Update the modal if it's open
+      if (showPhotoViewModal && selectedPhotoIndex === photoIndex) {
+        // Modal will re-render with updated photo
+      }
+    } catch (error) {
+      console.error('Toggle photo privacy error:', error);
+      alert(error.response?.data?.message || 'Failed to update photo privacy');
+    }
+  };
+
+  // Handle setting photo as thumbnail
+  const handleSetAsThumbnail = async (photoIndex) => {
+    try {
+      const response = await axios.put(`/api/profiles/me/photos/${photoIndex}/set-thumbnail`);
+
+      // Update profile with updated photos
+      setProfile((prev) => ({
+        ...prev,
+        photos: response.data.photos,
+      }));
+
+      alert('Photo set as thumbnail successfully!');
+    } catch (error) {
+      console.error('Set thumbnail error:', error);
+      alert(error.response?.data?.message || 'Failed to set photo as thumbnail');
+    }
+  };
+
+  // Handle opening photo view modal
+  const handlePhotoClick = (index) => {
+    setSelectedPhotoIndex(index);
+    setShowPhotoViewModal(true);
   };
 
   const handleCoverPhotoUpload = async (e) => {
@@ -740,30 +787,42 @@ const MyProfile = () => {
                 <div className="absolute bottom-0 left-6 transform translate-y-1/2 z-20">
                   <div className="relative">
                     {profile.photos && profile.photos.length > 0 ? (
-                      <img
-                        src={profile.photos[0].url}
-                        alt={profile.firstName}
-                        className="w-48 h-48 object-cover border-4 border-white shadow-xl"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/192';
-                        }}
-                      />
+                      <div className="relative">
+                        <img
+                          src={typeof profile.photos[0] === 'string' ? profile.photos[0] : profile.photos[0]?.url}
+                          alt={profile.firstName}
+                          className="w-48 h-48 object-cover border-4 border-white shadow-xl cursor-pointer hover:opacity-90 transition"
+                          onClick={() => handlePhotoClick(0)}
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/192';
+                          }}
+                        />
+                        {/* Upload Photo Button Overlay */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setButtonPosition({
+                              top: rect.top,
+                              bottom: rect.bottom,
+                              left: rect.left,
+                              right: rect.right,
+                              width: rect.width,
+                              height: rect.height
+                            });
+                            setShowProfilePhotoModal(true);
+                          }}
+                          className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-90 text-white px-4 py-2 text-center cursor-pointer hover:bg-opacity-100 transition"
+                          disabled={uploadingProfilePhoto}
+                        >
+                          {uploadingProfilePhoto ? 'UPLOADING...' : 'UPLOAD PHOTO'}
+                        </button>
+                      </div>
                     ) : (
                       <div className="w-48 h-48 bg-gray-300 border-4 border-white shadow-xl flex items-center justify-center">
                         <FaHeart className="text-6xl text-gray-500" />
                       </div>
                     )}
-                    {/* Upload Photo Button Overlay */}
-                    <label className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-90 text-white px-4 py-2 text-center cursor-pointer hover:bg-opacity-100 transition">
-                      {uploadingProfilePhoto ? 'UPLOADING...' : 'UPLOAD PHOTO'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProfilePhotoUpload}
-                        className="hidden"
-                        disabled={uploadingProfilePhoto}
-                      />
-                    </label>
                   </div>
                 </div>
 
@@ -832,42 +891,69 @@ const MyProfile = () => {
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Add more photos</h2>
-                <label className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition cursor-pointer inline-block">
+                <button
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setButtonPosition({
+                      top: rect.top,
+                      bottom: rect.bottom,
+                      left: rect.left,
+                      right: rect.right,
+                      width: rect.width,
+                      height: rect.height
+                    });
+                    setShowAddPhotoModal(true);
+                  }}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition cursor-pointer"
+                  disabled={uploadingAdditionalPhoto}
+                >
                   {uploadingAdditionalPhoto ? 'UPLOADING...' : 'ADD'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAddMorePhotos}
-                    className="hidden"
-                    disabled={uploadingAdditionalPhoto}
-                  />
-                </label>
+                </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {profile.photos && profile.photos.length > 0 ? (
-                  profile.photos.map((photo, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={photo.url}
-                        alt={`Photo ${index + 1}`}
-                        className="w-full h-48 object-cover rounded"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/200';
-                        }}
-                      />
-                      {photo.isPublic && (
-                        <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                          Public
-                        </span>
-                      )}
-                      <button
-                        onClick={() => handleDeletePhoto(index)}
-                        className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))
+                  profile.photos.map((photo, index) => {
+                    // Handle both string and object formats
+                    const photoUrl = typeof photo === 'string' ? photo : photo?.url;
+                    const isPublic = typeof photo === 'string' ? true : (photo?.isPublic !== false);
+                    
+                    return (
+                      <div key={index} className="relative group cursor-pointer" onClick={() => handlePhotoClick(index)}>
+                        <img
+                          src={photoUrl}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-48 object-cover rounded transition hover:opacity-90"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/200';
+                          }}
+                        />
+                        {/* Privacy Indicator */}
+                        <div className="absolute top-2 right-2 flex items-center space-x-1">
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            isPublic
+                              ? 'bg-green-500 text-white'
+                              : 'bg-red-500 text-white'
+                          }`}>
+                            {isPublic ? 'Public' : 'Private'}
+                          </span>
+                        </div>
+                        {index === 0 && (
+                          <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                            Thumbnail
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePhoto(index);
+                          }}
+                          className="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="col-span-1">
                     <div className="w-full h-48 bg-gray-200 rounded flex items-center justify-center">
@@ -1557,6 +1643,51 @@ const MyProfile = () => {
           </p>
         </div>
       </footer>
+
+      {/* Photo Upload Modals */}
+      <PhotoUploadModal
+        isOpen={showProfilePhotoModal}
+        onClose={() => {
+          setShowProfilePhotoModal(false);
+          setButtonPosition(null);
+        }}
+        onUpload={handleProfilePhotoUpload}
+        isMainPhoto={true}
+        uploading={uploadingProfilePhoto}
+        buttonPosition={buttonPosition}
+      />
+      <PhotoUploadModal
+        isOpen={showAddPhotoModal}
+        onClose={() => {
+          setShowAddPhotoModal(false);
+          setButtonPosition(null);
+        }}
+        onUpload={handleAddMorePhotos}
+        isMainPhoto={false}
+        uploading={uploadingAdditionalPhoto}
+        buttonPosition={buttonPosition}
+      />
+
+      {/* Photo View Modal */}
+      {showPhotoViewModal && profile.photos && selectedPhotoIndex !== null && (
+        <PhotoViewModal
+          isOpen={showPhotoViewModal}
+          onClose={() => {
+            setShowPhotoViewModal(false);
+            setSelectedPhotoIndex(null);
+          }}
+          photo={profile.photos[selectedPhotoIndex]}
+          photoIndex={selectedPhotoIndex}
+          onTogglePrivacy={handleTogglePhotoPrivacy}
+          onSetAsThumbnail={handleSetAsThumbnail}
+          onDelete={(index) => {
+            handleDeletePhoto(index);
+            setShowPhotoViewModal(false);
+            setSelectedPhotoIndex(null);
+          }}
+          isThumbnail={selectedPhotoIndex === 0}
+        />
+      )}
     </div>
   );
 };
