@@ -20,7 +20,8 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
     kids: '',
     smoke: '',
     drink: '',
-    height: '',
+    heightMin: '',
+    heightMax: '',
     bodyType: '',
     eyes: '',
     hair: '',
@@ -68,16 +69,17 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
     'Meditation & Yoga',
   ];
 
-  const educationOptions = ['High School', 'Some College', 'Bachelor\'s Degree', 'Master\'s Degree', 'PhD', 'Other'];
-  const languageOptions = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Russian', 'Arabic', 'Hindi', 'Other'];
+  const educationOptions = ['Associate\'s degree', 'Bachelor\'s degree', 'College', 'Graduate degree', 'PhD', 'High school'];
+  const languageOptions = ['Afar', 'Afrikaans', 'Amharic', 'Arabic', 'Armenian', 'Azerbaijani', 'Basque', 'Belarusian', 'Bengali', 'Bosnian', 'Bulgarian', 'Catalan', 'Cebuano', 'Chinese', 'Croatian', 'Czech', 'Danish', 'Dutch', 'English', 'Esperanto', 'Estonian', 'Filipino', 'Finnish', 'French', 'Galician', 'Georgian', 'German', 'Greek', 'Gujarati', 'Haitian Creole', 'Hebrew', 'Hindi', 'Hungarian', 'Icelandic', 'Indonesian', 'Irish', 'Italian', 'Japanese', 'Javanese', 'Kannada', 'Kazakh', 'Khmer', 'Korean', 'Kurdish', 'Kyrgyz', 'Lao', 'Latin', 'Latvian', 'Lithuanian', 'Macedonian', 'Malagasy', 'Malay', 'Malayalam', 'Maltese', 'Maori', 'Marathi', 'Mongolian', 'Myanmar', 'Nepali', 'Norwegian', 'Pashto', 'Persian', 'Polish', 'Portuguese', 'Punjabi', 'Romanian', 'Russian', 'Samoan', 'Scottish Gaelic', 'Serbian', 'Sesotho', 'Shona', 'Sindhi', 'Sinhala', 'Slovak', 'Slovenian', 'Somali', 'Spanish', 'Sundanese', 'Swahili', 'Swedish', 'Tajik', 'Tamil', 'Telugu', 'Thai', 'Turkish', 'Ukrainian', 'Urdu', 'Uzbek', 'Vietnamese', 'Welsh', 'Xhosa', 'Yiddish', 'Yoruba', 'Zulu'];
   const relationshipOptions = ['Single', 'Divorced', 'Widowed', 'Separated', 'In a relationship', 'Married', 'It\'s complicated'];
-  const kidsOptions = ['No kids', 'Has kids', 'Wants kids', 'Doesn\'t want kids', 'Has kids and wants more', 'Has kids and doesn\'t want more'];
-  const smokeOptions = ['Non-smoker', 'Light smoker', 'Regular smoker', 'Social smoker'];
-  const drinkOptions = ['Non-drinker', 'Light drinker', 'Social drinker', 'Regular drinker'];
-  const heightOptions = ['4\'0" - 4\'5"', '4\'6" - 4\'11"', '5\'0" - 5\'5"', '5\'6" - 5\'11"', '6\'0" - 6\'5"', '6\'6" and above'];
-  const bodyTypeOptions = ['Slim', 'Athletic', 'Average', 'Curvy', 'Heavyset', 'Muscular'];
-  const eyesOptions = ['Blue', 'Brown', 'Green', 'Hazel', 'Gray', 'Other'];
-  const hairOptions = ['Black', 'Brown', 'Blonde', 'Red', 'Gray', 'Bald', 'Other'];
+  const kidsOptions = ['No kids', 'Have kids'];
+  const smokeOptions = ['Never', 'Occasionally', 'Regularly'];
+  const drinkOptions = ['Never', 'Occasionally', 'Regularly'];
+  // Height options: 90 cm to 240 cm
+  const heightOptions = Array.from({ length: 151 }, (_, i) => `${90 + i} cm`);
+  const bodyTypeOptions = ['Athletic', 'Average', 'Full figured', 'Toned', 'Slim'];
+  const eyesOptions = ['Blue eyes', 'Brown eyes', 'Gray eyes', 'Green eyes', 'Hazel eyes'];
+  const hairOptions = ['Bald hair', 'Black hair', 'Blond hair', 'Brown hair', 'Chestnut hair', 'Fair hair', 'Red hair'];
 
   const handleChange = (field, value) => {
     setFilters(prev => ({
@@ -137,7 +139,8 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
       kids: '',
       smoke: '',
       drink: '',
-      height: '',
+      heightMin: '',
+      heightMax: '',
       bodyType: '',
       eyes: '',
       hair: '',
@@ -431,21 +434,24 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
                     )}
 
                     {selectedCategory === 'languages' && (
-                      <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
-                        {languageOptions.map((language) => (
-                          <label
-                            key={language}
-                            className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded border border-gray-200"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={filters.languages.includes(language)}
-                              onChange={() => toggleLanguage(language)}
-                              className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
-                            />
-                            <span className="text-sm text-gray-700">{language}</span>
-                          </label>
-                        ))}
+                      <div className="max-h-96 overflow-y-auto">
+                        <select
+                          multiple
+                          value={filters.languages}
+                          onChange={(e) => {
+                            const selected = Array.from(e.target.selectedOptions, option => option.value);
+                            handleChange('languages', selected);
+                          }}
+                          className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                          size={10}
+                        >
+                          {languageOptions.map((language) => (
+                            <option key={language} value={language}>
+                              {language}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-2">Hold Ctrl (or Cmd on Mac) to select multiple languages</p>
                       </div>
                     )}
 
@@ -523,19 +529,36 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
 
                     {selectedCategory === 'height' && (
                       <div className="space-y-2">
-                        {heightOptions.map((option) => (
-                          <label key={option} className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded">
-                            <input
-                              type="radio"
-                              name="height"
-                              value={option}
-                              checked={filters.height === option}
-                              onChange={(e) => handleChange('height', e.target.value)}
-                              className="w-4 h-4 text-red-500 border-gray-300 focus:ring-red-500"
-                            />
-                            <span className="text-sm text-gray-700">{option}</span>
-                          </label>
-                        ))}
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={filters.heightMin}
+                            onChange={(e) => handleChange('heightMin', e.target.value)}
+                            className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
+                          >
+                            <option value="">From</option>
+                            {heightOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-gray-500">-</span>
+                          <select
+                            value={filters.heightMax}
+                            onChange={(e) => handleChange('heightMax', e.target.value)}
+                            className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
+                          >
+                            <option value="">To</option>
+                            {heightOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Select minimum and maximum height (90 cm to 240 cm)
+                        </p>
                       </div>
                     )}
 

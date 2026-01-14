@@ -65,6 +65,74 @@ const Search = () => {
         params.append('videoChat', 'true');
       }
 
+      // Zodiac signs
+      if (filters.zodiacSigns && filters.zodiacSigns.length > 0) {
+        params.append('zodiacSigns', filters.zodiacSigns.join(','));
+      }
+
+      // Interests (array)
+      if (filters.interests && filters.interests.length > 0) {
+        params.append('interests', filters.interests.join(','));
+      }
+
+      // Education
+      if (filters.education) {
+        params.append('education', filters.education);
+      }
+
+      // Languages (array)
+      if (filters.languages && filters.languages.length > 0) {
+        params.append('languages', filters.languages.join(','));
+      }
+
+      // Relationship
+      if (filters.relationship) {
+        params.append('relationship', filters.relationship);
+      }
+
+      // Kids
+      if (filters.kids) {
+        params.append('kids', filters.kids);
+      }
+
+      // Smoke
+      if (filters.smoke) {
+        params.append('smoke', filters.smoke);
+      }
+
+      // Drink
+      if (filters.drink) {
+        params.append('drink', filters.drink);
+      }
+
+      // Height range (90 cm - 240 cm)
+      if (filters.heightMin) {
+        params.append('minHeight', filters.heightMin);
+      }
+      if (filters.heightMax) {
+        params.append('maxHeight', filters.heightMax);
+      }
+
+      // Body type
+      if (filters.bodyType) {
+        params.append('bodyType', filters.bodyType);
+      }
+
+      // Eyes
+      if (filters.eyes) {
+        params.append('eyes', filters.eyes);
+      }
+
+      // Hair
+      if (filters.hair) {
+        params.append('hair', filters.hair);
+      }
+
+      // Compatible zodiac only flag
+      if (filters.compatibleZodiacOnly) {
+        params.append('compatibleZodiacOnly', 'true');
+      }
+
       console.log('Fetching profiles with filters:', params.toString());
       const response = await axios.get(`/api/profiles?${params.toString()}`);
       console.log('Profiles response:', response.data);
