@@ -15,17 +15,84 @@ const AgoraVideoCall = ({
   const [isJoined, setIsJoined] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [remoteUsers, setRemoteUsers] = useState([]);
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [callDuration, setCallDuration] = useState(0); // Call duration in seconds
   const [isRemoteConnected, setIsRemoteConnected] = useState(false); // Track if remote user is connected
+  const [isRemoteVideoActive, setIsRemoteVideoActive] = useState(false); // Track if remote user has video active
+  const [networkQuality, setNetworkQuality] = useState({ uplink: 0, downlink: 0 }); // Network quality (1-6)
+  const [availableCameras, setAvailableCameras] = useState([]); // Available cameras
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0); // Current camera index
+  const [connectionState, setConnectionState] = useState('DISCONNECTED'); // Connection state
+  const [isReconnecting, setIsReconnecting] = useState(false); // Reconnection state
   
   const clientRef = useRef(null);
   const localVideoContainerRef = useRef(null);
   const remoteVideoContainerRef = useRef(null);
   const callStartTimeRef = useRef(null); // Track when call started
   const durationIntervalRef = useRef(null); // Interval for updating duration display
+  const networkQualityIntervalRef = useRef(null); // Interval for network quality monitoring
+  const localUidRef = useRef(null); // Store local UID to filter out local user events
+  const remoteVideoTrackRef = useRef(null); // Store remote video track reference
+
+  // Helper function to extract profile data (avoid duplication)
+  const getProfileData = () => {
+    const profileImage = 
+      remoteUserProfile?.photos?.[0]?.url || 
+      (typeof remoteUserProfile?.photos?.[0] === 'string' ? remoteUserProfile.photos[0] : null) ||
+      remoteUserProfile?.photo ||
+      remoteUserProfile?.profilePhoto ||
+      remoteUserProfile?.avatar ||
+      null;
+    
+    const firstName = remoteUserProfile?.firstName || remoteUserProfile?.name || remoteUserId || 'Unknown';
+    const lastName = remoteUserProfile?.lastName || '';
+    
+    return { profileImage, firstName, lastName };
+  };
+
+  // Helper component to render profile image
+  const ProfileImage = ({ animate = false, size = 'w-48 h-48' }) => {
+    const { profileImage, firstName } = getProfileData();
+    const animateClass = animate ? 'animate-pulse' : '';
+    
+    return profileImage ? (
+      <div className={`${size} rounded-full overflow-hidden mx-auto mb-6 border-4 border-white border-opacity-30 shadow-2xl ${animateClass}`}>
+        <img 
+          src={profileImage} 
+          alt={firstName}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            console.warn('⚠️ [PROFILE] Image failed to load, showing initial');
+            e.target.style.display = 'none';
+            const parent = e.target.parentElement;
+            if (parent) {
+              parent.innerHTML = `<span class="text-6xl font-bold text-white">${firstName[0]?.toUpperCase() || 'U'}</span>`;
+              parent.className = `${size} bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white border-opacity-30 shadow-2xl ${animateClass}`;
+            }
+          }}
+        />
+      </div>
+    ) : (
+      <div className={`${size} bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white border-opacity-30 shadow-2xl ${animateClass}`}>
+        <span className="text-6xl font-bold text-white">
+          {firstName[0]?.toUpperCase() || 'U'}
+        </span>
+      </div>
+    );
+  };
+
+  // Helper function to clear video container (avoid duplication)
+  const clearVideoContainer = () => {
+    if (remoteVideoContainerRef.current) {
+      const container = remoteVideoContainerRef.current;
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      container.innerHTML = '';
+      console.log('🧹 [CLEANUP] Remote video container cleared');
+    }
+  };
 
   useEffect(() => {
     initializeAgora();
@@ -37,6 +104,47 @@ const AgoraVideoCall = ({
       leaveChannel();
     };
   }, []);
+
+  // Clear video container when remote video becomes inactive
+  useEffect(() => {
+    if (!isRemoteVideoActive) {
+      clearVideoContainer();
+      
+      // Also stop any playing video tracks
+      if (remoteVideoTrackRef.current) {
+        try {
+          remoteVideoTrackRef.current.stop();
+          console.log('🧹 [CLEANUP] Stopped remote video track');
+        } catch (error) {
+          console.warn('⚠️ [CLEANUP] Error stopping video track:', error);
+        }
+        remoteVideoTrackRef.current = null;
+      }
+    }
+  }, [isRemoteVideoActive]);
+
+  // Play video when container becomes available and video is active
+  useEffect(() => {
+    if (isRemoteVideoActive && remoteVideoContainerRef.current && remoteVideoTrackRef.current) {
+      // Wait a bit for React to render the container
+      const timeoutId = setTimeout(() => {
+        if (remoteVideoContainerRef.current && remoteVideoTrackRef.current) {
+          try {
+            // Check if track is already playing
+            if (!remoteVideoTrackRef.current.isPlaying) {
+              remoteVideoTrackRef.current.play(remoteVideoContainerRef.current);
+              console.log('📹 [EFFECT] Playing remote video track in container');
+            }
+          } catch (error) {
+            console.warn('⚠️ [EFFECT] Error playing video track:', error);
+          }
+        }
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isRemoteVideoActive]);
+
 
   const initializeAgora = async () => {
     try {
@@ -110,13 +218,32 @@ const AgoraVideoCall = ({
         }
       });
 
-      // Connection state monitoring
+      // Connection state monitoring with reconnect handling
       client.on('connection-state-change', (curState, revState) => {
         console.log(`🔄 [RTC CONNECTION] State changed: ${revState} -> ${curState}`);
+        setConnectionState(curState);
+        
         if (curState === 'CONNECTED') {
           console.log('✅ [RTC CONNECTION] Successfully connected to Agora');
+          setIsReconnecting(false);
+        } else if (curState === 'RECONNECTING') {
+          console.warn('🔄 [RTC CONNECTION] Reconnecting...');
+          setIsReconnecting(true);
         } else if (curState === 'DISCONNECTED' || curState === 'FAILED') {
           console.warn(`⚠️ [RTC CONNECTION] Connection issue: ${curState}`);
+          setIsReconnecting(false);
+        }
+      });
+
+      // Network quality monitoring
+      client.on('network-quality', (stats) => {
+        const uplinkQuality = stats.uplinkNetworkQuality || 0;
+        const downlinkQuality = stats.downlinkNetworkQuality || 0;
+        setNetworkQuality({ uplink: uplinkQuality, downlink: downlinkQuality });
+        
+        // Log poor network quality
+        if (uplinkQuality >= 5 || downlinkQuality >= 5) {
+          console.warn(`⚠️ [NETWORK] Poor network quality - Uplink: ${uplinkQuality}, Downlink: ${downlinkQuality}`);
         }
       });
 
@@ -149,9 +276,10 @@ const AgoraVideoCall = ({
       // Pass token as string (not null) - Agora requires the token parameter
       try {
         console.log('🔄 [RTC JOIN] Attempting to join...');
-        await client.join(appId, safeChannelName, token, agoraUid);
+        const uid = await client.join(appId, safeChannelName, token, agoraUid);
+        localUidRef.current = uid; // Store local UID to filter out local user events
         setIsJoined(true);
-        console.log('✅ [RTC JOIN] Successfully joined channel:', safeChannelName, 'UID:', agoraUid);
+        console.log('✅ [RTC JOIN] Successfully joined channel:', safeChannelName, 'UID:', uid);
         console.log('✅ [RTC JOIN] User is now in the channel and ready to publish tracks');
         
         // Don't start timer yet - wait for call to be accepted (receiver accepts)
@@ -173,10 +301,22 @@ const AgoraVideoCall = ({
           console.log('Retrying join with new UID:', newUid);
           
           // Retry join with new token and UID
-          await client.join(newAppId, safeChannelName, newToken, newUid);
+          const retryUid = await client.join(newAppId, safeChannelName, newToken, newUid);
+          localUidRef.current = retryUid; // Store local UID
           setIsJoined(true);
         } else {
           throw joinError; // Re-throw if it's not a UID_CONFLICT error
+        }
+      }
+
+      // Get available cameras for switching
+      if (callType === 'video') {
+        try {
+          const cameras = await AgoraRTC.getCameras();
+          setAvailableCameras(cameras);
+          console.log(`📹 [CAMERA] Found ${cameras.length} camera(s):`, cameras.map(c => c.label || c.deviceId));
+        } catch (error) {
+          console.warn('⚠️ [CAMERA] Could not get camera list:', error);
         }
       }
 
@@ -247,57 +387,61 @@ const AgoraVideoCall = ({
   const handleUserPublished = async (user, mediaType) => {
     console.log('✅ [RTC EVENT] User published:', user.uid, 'MediaType:', mediaType);
     
-    // Subscribe to the remote user (as per Agora documentation)
+    // Ignore local user events
+    if (user.uid === localUidRef.current) {
+      console.log('📹 [RTC EVENT] Ignoring local user published event');
+      return;
+    }
+
     await clientRef.current.subscribe(user, mediaType);
 
     if (mediaType === 'video') {
-      // Get the RemoteVideoTrack object from the AgoraRTCRemoteUser object
-      const remoteVideoTrack = user.videoTrack;
-      
-      // Add user to remote users list (avoid duplicates)
-      setRemoteUsers((prev) => {
-        if (prev.find(u => u.uid === user.uid)) return prev;
-        return [...prev, user];
-      });
-      
-      // Play the remote video track (as per Agora documentation)
-      // Use setTimeout to ensure DOM element is ready
-      setTimeout(() => {
-        if (remoteVideoContainerRef.current && remoteVideoTrack) {
-          remoteVideoTrack.play(remoteVideoContainerRef.current);
-          console.log('✅ [RTC EVENT] Remote video playing for user:', user.uid);
-        }
-      }, 100);
+      console.log('📹 [RTC EVENT] Remote video published - setting isRemoteVideoActive to true');
+      // Store the video track reference
+      remoteVideoTrackRef.current = user.videoTrack;
+      setIsRemoteVideoActive(true);
     }
 
     if (mediaType === 'audio') {
-      // Get the RemoteAudioTrack object from the AgoraRTCRemoteUser object
-      const remoteAudioTrack = user.audioTrack;
-      
-      // Play the remote audio track (as per Agora documentation)
-      if (remoteAudioTrack) {
-        remoteAudioTrack.play();
-        console.log('✅ [RTC EVENT] Remote audio playing for user:', user.uid);
-      }
+      user.audioTrack?.play();
     }
   };
 
   const handleUserUnpublished = (user, mediaType) => {
     console.log('⚠️ [RTC EVENT] User unpublished:', user.uid, 'MediaType:', mediaType);
     
-    // Handle user-unpublished event (as per Agora documentation)
-    // The SDK automatically releases the RemoteTrack object, so we just update UI
-    if (mediaType === 'video') {
-      setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
+    if (mediaType !== 'video') return;
+
+    // Ignore local user events
+    if (user.uid === localUidRef.current) {
+      console.log('📹 [RTC EVENT] Ignoring local user unpublished event');
+      return;
     }
-    // Note: For audio, the SDK automatically stops playback when track is unpublished
+
+    // Stop the video track to prevent frozen video
+    if (user.videoTrack) {
+      try {
+        user.videoTrack.stop();
+        console.log('📹 [RTC EVENT] Remote video track stopped');
+      } catch (error) {
+        console.warn('⚠️ [RTC EVENT] Error stopping video track:', error);
+      }
+    }
+
+    // Clear the video track reference
+    remoteVideoTrackRef.current = null;
+    
+    // Immediately clear the video container
+    clearVideoContainer();
+    
+    console.log('📹 [RTC EVENT] Remote video unpublished - setting isRemoteVideoActive to false');
+    setIsRemoteVideoActive(false);
   };
 
   const handleUserLeft = (user) => {
     console.log('👋 [RTC EVENT] User left channel:', user.uid);
-    // Remove user from remote users list when they leave
-    setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
     setIsRemoteConnected(false); // Remote user disconnected
+    setIsRemoteVideoActive(false); // Reset video state
   };
 
   const toggleMute = async () => {
@@ -308,14 +452,57 @@ const AgoraVideoCall = ({
   };
 
   const toggleVideo = async () => {
-    if (localVideoTrack) {
-      await localVideoTrack.setEnabled(isVideoOff);
-      setIsVideoOff(!isVideoOff);
+    if (!localVideoTrack) return;
+
+    try {
+      const nextState = !isVideoOff;
+
+      await localVideoTrack.setEnabled(!nextState);
+      setIsVideoOff(nextState);
+
+      console.log(
+        nextState
+          ? '📹 Camera turned OFF'
+          : '📹 Camera turned ON'
+      );
+    } catch (err) {
+      console.error('❌ Video toggle failed:', err);
+    }
+  };
+
+  // Switch between front and back camera (mobile)
+  const switchCamera = async () => {
+    if (!localVideoTrack || availableCameras.length < 2) {
+      console.warn('⚠️ [CAMERA] Cannot switch - not enough cameras available');
+      return;
+    }
+    
+    try {
+      // Toggle between cameras
+      const nextCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+      const nextCamera = availableCameras[nextCameraIndex];
+      
+      console.log(`📹 [CAMERA] Switching to camera ${nextCameraIndex}:`, nextCamera.label || nextCamera.deviceId);
+      
+      // Switch camera device
+      await localVideoTrack.setDevice(nextCamera.deviceId);
+      setCurrentCameraIndex(nextCameraIndex);
+      
+      console.log('✅ [CAMERA] Camera switched successfully');
+    } catch (error) {
+      console.error('❌ [CAMERA] Error switching camera:', error);
+      alert('Failed to switch camera. Please try again.');
     }
   };
 
   const leaveChannel = async () => {
     try {
+      // Clear network quality monitoring
+      if (networkQualityIntervalRef.current) {
+        clearInterval(networkQualityIntervalRef.current);
+        networkQualityIntervalRef.current = null;
+      }
+      
       if (localVideoTrack) {
         localVideoTrack.stop();
         localVideoTrack.close();
@@ -354,83 +541,102 @@ const AgoraVideoCall = ({
     <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen w-screen overflow-hidden">
       {/* Remote Video Container */}
       <div className="flex-1 relative bg-gray-900 overflow-hidden" style={{ minHeight: 0 }}>
-        {/* Show waiting UI until remote user connects */}
+        {/* Show waiting UI until remote user connects - Always show REMOTE user's profile */}
         {!isRemoteConnected ? (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-gray-900">
             <div className="text-center text-white">
-              {/* Show profile photo if available */}
-              {remoteUserProfile?.photos?.[0]?.url || (typeof remoteUserProfile?.photos?.[0] === 'string' ? remoteUserProfile.photos[0] : null) ? (
-                <div className="w-40 h-40 rounded-full overflow-hidden mx-auto mb-6 border-4 border-white border-opacity-30 animate-pulse">
-                  <img 
-                    src={remoteUserProfile.photos[0]?.url || remoteUserProfile.photos[0]} 
-                    alt={remoteUserProfile.firstName || remoteUserId}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-40 h-40 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                  <span className="text-5xl font-bold">
-                    {(remoteUserProfile?.firstName || remoteUserId)?.[0]?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-              )}
-              <h2 className="text-3xl font-semibold mb-2">
-                {remoteUserProfile?.firstName || remoteUserId || 'Unknown'}
-              </h2>
-              {remoteUserProfile?.lastName && (
-                <h3 className="text-2xl text-gray-300 mb-4">{remoteUserProfile.lastName}</h3>
-              )}
+              {/* Show REMOTE user's profile photo if available */}
+              <ProfileImage animate={true} />
+              
+              {/* Show REMOTE user's name */}
+              {(() => {
+                const { firstName, lastName } = getProfileData();
+                return (
+                  <>
+                    <h2 className="text-4xl font-bold mb-2 text-white">{firstName}</h2>
+                    {lastName && (
+                      <h3 className="text-3xl text-gray-200 mb-6 font-semibold">{lastName}</h3>
+                    )}
+                  </>
+                );
+              })()}
+              
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
                 <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
                 <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
               </div>
               <p className="text-gray-300 text-lg">
-                {isJoined ? 'Waiting for user to connect...' : 'Connecting...'}
+                {isJoined ? 'Calling...' : 'Connecting...'}
               </p>
             </div>
           </div>
-        ) : remoteUsers.length > 0 ? (
-          // Show remote video when connected
+        ) : isRemoteConnected && isRemoteVideoActive ? (
+          // Show remote video when connected and video is active
           <div
             ref={remoteVideoContainerRef}
-            className="w-full h-full"
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              objectFit: 'contain'
-            }}
+            className="w-full h-full bg-black relative z-10"
+            key="remote-video-active"
           />
-        ) : (
-          // Waiting for video after connection
-          <div className="w-full h-full flex items-center justify-center">
+        ) : isRemoteConnected ? (
+          // Show remote person's profile when connected but video is off or not started
+          <div className="w-full h-full flex items-center justify-center bg-gray-900 relative z-10">
             <div className="text-center text-white">
-              {(remoteUserProfile?.photos?.[0]?.url || (typeof remoteUserProfile?.photos?.[0] === 'string' ? remoteUserProfile.photos[0] : null)) ? (
-                <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-white border-opacity-30">
-                  <img 
-                    src={remoteUserProfile.photos[0]?.url || remoteUserProfile.photos[0]} 
-                    alt={remoteUserProfile.firstName || remoteUserId}
-                    className="w-full h-full object-cover"
-                  />
+              {/* Remote Person's Profile Image */}
+              {(() => {
+                // Debug: Log the profile data
+                if (process.env.NODE_ENV === 'development') {
+                  const { profileImage, firstName } = getProfileData();
+                  console.log('📸 [PROFILE] Remote user profile:', remoteUserProfile);
+                  console.log('📸 [PROFILE] Remote user ID:', remoteUserId);
+                  console.log('📸 [PROFILE] Profile image found:', profileImage);
+                  console.log('📸 [PROFILE] First name:', firstName);
+                }
+                return <ProfileImage />;
+              })()}
+              
+              {/* Remote Person's Name - Always show something */}
+              {(() => {
+                const { firstName, lastName } = getProfileData();
+                return (
+                  <>
+                    <h2 className="text-4xl font-bold mb-2 text-white">{firstName}</h2>
+                    {lastName && (
+                      <h3 className="text-3xl text-gray-200 mb-6 font-semibold">{lastName}</h3>
+                    )}
+                  </>
+                );
+              })()}
+              
+              {/* Show "Video Off" message if connected but video is not active */}
+              {isRemoteConnected && !isRemoteVideoActive ? (
+                <div className="mt-6">
+                  <div className="flex items-center justify-center space-x-3 mb-3">
+                    <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 1l22 22" />
+                    </svg>
+                    <p className="text-red-400 text-xl font-bold">Video Off</p>
+                  </div>
+                  <p className="text-gray-300 text-base">Their camera is turned off</p>
                 </div>
               ) : (
-                <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-4xl font-bold">
-                    {(remoteUserProfile?.firstName || remoteUserId)?.[0]?.toUpperCase() || 'U'}
-                  </span>
+                <div className="mt-6">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                  </div>
+                  <p className="text-gray-400 text-base">Waiting for video...</p>
                 </div>
               )}
-              <p className="text-xl font-semibold mb-2">
-                {remoteUserProfile?.firstName || remoteUserId || 'Unknown'}
-              </p>
-              <p className="text-gray-400">Waiting for video...</p>
             </div>
           </div>
-        )}
+        ) : null}
         
         {/* Local Video Container (Picture-in-Picture) - Only show when remote is connected */}
         {callType === 'video' && localVideoTrack && isRemoteConnected && (
-          <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white">
+          <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
             <div ref={localVideoContainerRef} className="w-full h-full" />
           </div>
         )}
@@ -442,9 +648,16 @@ const AgoraVideoCall = ({
             {remoteUserProfile?.lastName && ` ${remoteUserProfile.lastName}`}
           </p>
           <div className="flex items-center space-x-2 mt-1">
-            <div className={`w-2 h-2 rounded-full ${isJoined ? 'bg-green-500' : 'bg-yellow-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${
+              isReconnecting ? 'bg-yellow-500 animate-pulse' : 
+              connectionState === 'CONNECTED' ? 'bg-green-500' : 
+              'bg-yellow-500'
+            }`} />
             <p className="text-xs text-gray-300">
-              {isJoined ? 'Connected' : 'Connecting...'}
+              {isReconnecting ? 'Reconnecting...' : 
+               connectionState === 'CONNECTED' ? 'Connected' : 
+               connectionState === 'RECONNECTING' ? 'Reconnecting...' :
+               'Connecting...'}
             </p>
           </div>
           {isJoined && callDuration > 0 && (
@@ -454,8 +667,24 @@ const AgoraVideoCall = ({
           )}
           {isRemoteConnected && (
             <p className="text-xs text-green-400 mt-1">
-              {remoteUsers.length > 0 ? '✓ Remote video active' : '✓ Connected'}
+              {isRemoteVideoActive ? '✓ Remote video active' : '✓ Connected (video off)'}
             </p>
+          )}
+          {/* Network Quality Indicator */}
+          {(networkQuality.uplink > 0 || networkQuality.downlink > 0) && (
+            <div className="flex items-center space-x-2 mt-1">
+              <span className="text-xs text-gray-400">Network:</span>
+              <div className={`w-2 h-2 rounded-full ${
+                networkQuality.downlink <= 2 ? 'bg-green-500' :
+                networkQuality.downlink <= 4 ? 'bg-yellow-500' :
+                'bg-red-500'
+              }`} title={`Uplink: ${networkQuality.uplink}, Downlink: ${networkQuality.downlink}`} />
+              <span className="text-xs text-gray-400">
+                {networkQuality.downlink <= 2 ? 'Good' :
+                 networkQuality.downlink <= 4 ? 'Medium' :
+                 'Poor'}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -472,16 +701,31 @@ const AgoraVideoCall = ({
           {isMuted ? <FaMicrophoneSlash size={20} /> : <FaMicrophone size={20} />}
         </button>
 
-        {callType === 'video' && (
-          <button
-            onClick={toggleVideo}
-            className={`p-4 rounded-full ${
-              isVideoOff ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700 hover:bg-gray-600'
-            } text-white transition-all duration-200 transform hover:scale-110`}
-            title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
-          >
-            {isVideoOff ? <FaVideoSlash size={20} /> : <FaVideo size={20} />}
-          </button>
+        {callType === 'video' && localVideoTrack && (
+          <>
+            <button
+              onClick={toggleVideo}
+              disabled={!localVideoTrack}
+              className={`p-4 rounded-full ${
+                isVideoOff ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700 hover:bg-gray-600'
+              } text-white transition-all duration-200 transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
+            >
+              {isVideoOff ? <FaVideoSlash size={20} /> : <FaVideo size={20} />}
+            </button>
+            {/* Camera Switch Button (only show if multiple cameras available and video is on) */}
+            {availableCameras.length > 1 && !isVideoOff && localVideoTrack && (
+              <button
+                onClick={switchCamera}
+                className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-all duration-200 transform hover:scale-110"
+                title={`Switch camera (${currentCameraIndex + 1}/${availableCameras.length})`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
+          </>
         )}
 
         <button
