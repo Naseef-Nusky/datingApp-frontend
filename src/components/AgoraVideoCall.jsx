@@ -445,9 +445,20 @@ const AgoraVideoCall = ({
   };
 
   const toggleMute = async () => {
-    if (localAudioTrack) {
-      await localAudioTrack.setEnabled(!isMuted);
-      setIsMuted(!isMuted);
+    if (!localAudioTrack) {
+      console.warn('⚠️ [MUTE] No audio track available');
+      return;
+    }
+
+    try {
+      const newMuteState = !isMuted;
+      // setEnabled(true) = unmuted, setEnabled(false) = muted
+      await localAudioTrack.setEnabled(!newMuteState);
+      setIsMuted(newMuteState);
+      console.log(`🎤 [MUTE] Microphone ${newMuteState ? 'MUTED' : 'UNMUTED'}`);
+    } catch (error) {
+      console.error('❌ [MUTE] Error toggling mute:', error);
+      alert('Failed to toggle microphone. Please try again.');
     }
   };
 
