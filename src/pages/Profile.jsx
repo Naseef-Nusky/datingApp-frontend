@@ -11,6 +11,7 @@ import {
 import AgoraVideoCall from '../components/AgoraVideoCall';
 import AgoraVoiceCall from '../components/AgoraVoiceCall';
 import AgoraChat from '../components/AgoraChat';
+import ProfileEmailComposer from '../components/ProfileEmailComposer';
 import { createSafeChannelName } from '../utils/agoraUtils';
 
 const Profile = () => {
@@ -29,6 +30,7 @@ const Profile = () => {
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callChannelName, setCallChannelName] = useState(null); // Store channel name for RTC
   const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
@@ -817,7 +819,12 @@ const Profile = () => {
   };
 
   const handleSendEmail = () => {
-    navigate(`/send-email/${id}`);
+    setShowEmailComposer(true);
+  };
+
+  const handleEmailSent = () => {
+    setShowEmailComposer(false);
+    // Refresh contacts or show success message
   };
 
   const displayedChatRequests = showLessChatRequests ? chatRequests.slice(0, 5) : chatRequests;
@@ -856,10 +863,10 @@ const Profile = () => {
       {/* Ringtone Audio Element */}
       <audio ref={ringtoneRef} preload="auto" />
       
-      <div className="container mx-auto max-w-[1920px] px-4" style={{ paddingRight: showChat ? '320px' : '384px' }}>
-        <div className={`flex ${showChat ? 'gap-6' : ''}`}>
-          {/* Main Content */}
-          <div className={`${showChat ? 'w-full' : 'flex-1'}`}>
+      <div className="container mx-auto max-w-[1920px] px-4" style={{ paddingRight: (showChat || showEmailComposer) ? '320px' : '384px' }}>
+        <div className={`flex ${(showChat || showEmailComposer) ? 'gap-6' : ''}`}>
+          {/* Main Content - Left Column */}
+          <div className={`${(showChat || showEmailComposer) ? 'w-full' : 'flex-1'}`}>
             {/* Cover Photo Banner */}
             <div className="relative h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
               {profile.coverPhoto ? (
@@ -1228,11 +1235,22 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Email Composer - Middle Panel (when email composer is open) */}
+          {showEmailComposer && profile && (
+            <div className="w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-4">
+              <ProfileEmailComposer
+                profile={profile}
+                onClose={() => setShowEmailComposer(false)}
+                onSent={handleEmailSent}
+              />
+            </div>
+          )}
+
         </div>
       </div>
 
       {/* Right Sidebar - Outside Container */}
-      <div className={`${showChat ? 'w-80' : 'w-96'} bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto z-40 pt-4`}>
+      <div className={`${(showChat || showEmailComposer) ? 'w-80' : 'w-96'} bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto z-40 pt-4`}>
         {/* My Contacts */}
         <div className="p-4 pt-8 border-b border-gray-200 bg-white mt-6">
           <div className="flex items-center justify-between mb-4">

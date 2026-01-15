@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import TodayIAm from './pages/TodayIAm';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
+import Inbox from './pages/Inbox';
+import ComposeEmail from './pages/ComposeEmail';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -68,6 +70,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inbox"
+              element={
+                <ProtectedRoute>
+                  <Inbox />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/compose-email"
+              element={
+                <ProtectedRoute>
+                  <ComposeEmail />
                 </ProtectedRoute>
               }
             />
