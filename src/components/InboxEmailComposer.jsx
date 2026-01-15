@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
 
@@ -9,6 +9,10 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [sending, setSending] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState('snow');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   if (!email) return null;
 
@@ -48,8 +52,8 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   };
 
   const handleSend = async () => {
-    if (!message.trim()) {
-      alert('Please enter a message');
+    if (!message.trim() && !selectedMedia) {
+      alert('Please enter a message or attach a photo/video');
       return;
     }
 
@@ -57,19 +61,30 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
       setSending(true);
       const receiverId = getReceiverId();
       
-      const payload = {
-        receiverId: receiverId,
-        content: message.trim(),
-      };
+      const formData = new FormData();
+      formData.append('receiverId', receiverId);
+      formData.append('content', message.trim());
       
       if (subject && subject.trim()) {
-        payload.subject = subject.trim();
+        formData.append('subject', subject.trim());
       }
       
-      await axios.post('/api/messages/send-email', payload);
+      if (selectedMedia) {
+        formData.append('media', selectedMedia);
+      }
+      
+      await axios.post('/api/messages/send-email', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
       alert('Email sent successfully!');
       setSubject('');
       setMessage('');
+      setSelectedMedia(null);
+      setMediaPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       if (onSent) onSent();
       if (onClose) onClose();
     } catch (error) {
@@ -100,6 +115,43 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const insertSticker = (emoji) => {
     setMessage(prev => prev + emoji + ' ');
   };
+
+  const handlePhotoVideoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedMedia(file);
+      // Create preview
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMediaPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMediaPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleSmilesClick = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  const insertEmoji = (emoji) => {
+    setMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Common emojis
+  const commonEmojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
 
   const senderName = getSenderName();
   const senderImage = getSenderImage();
@@ -145,86 +197,68 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
                 </h2>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Options Menu */}
-              <div className="relative">
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2">
+                {/* Options Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowOptions(!showOptions)}
+                    className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {showOptions && (
+                    <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-10">
+                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                        Block User
+                      </button>
+                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                        Report a Violation
+                      </button>
+                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                        Disable Sound
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
-                  onClick={() => setShowOptions(!showOptions)}
+                  onClick={onClose}
                   className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition"
                 >
-                  <FaEllipsisV />
+                  <FaTimes />
                 </button>
-                {showOptions && (
-                  <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-10">
-                    <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                      Block User
-                    </button>
-                    <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                      Report a Violation
-                    </button>
-                    <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                      Disable Sound
-                    </button>
-                  </div>
-                )}
               </div>
-              <button
-                onClick={onClose}
-                className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition"
-              >
-                <FaTimes />
-              </button>
+              {/* Small Photo/Video & Smiles links in header right corner */}
+              <div className="flex items-center gap-4 text-xs text-gray-600">
+                <button 
+                  onClick={handlePhotoVideoClick}
+                  className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                >
+                  <FaCamera className="text-sm" />
+                  <span>Photo/Video</span>
+                </button>
+                <button 
+                  onClick={handleSmilesClick}
+                  className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                >
+                  <FaSmile className="text-sm" />
+                  <span>Smiles</span>
+                </button>
+              </div>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'chat'
-                ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Chat
-          </button>
-          <button
-            onClick={() => setActiveTab('email')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'email'
-                ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Email
-          </button>
-          <button
-            onClick={() => setActiveTab('photo')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'photo'
-                ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Photo/Video
-          </button>
-          <button
-            onClick={() => setActiveTab('smiles')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'smiles'
-                ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Smiles
-          </button>
-        </div>
-
         {/* Email Composition Area */}
-        {activeTab === 'email' && (
-          <div className="p-6">
+        <div className="p-6">
             {/* Subject Field */}
             <input
               type="text"
@@ -243,17 +277,44 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
             />
 
-            {/* Action Icons */}
-            <div className="flex items-center gap-4 mb-4">
-              <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition">
-                <FaCamera className="text-lg" />
-                <span className="text-sm">Photo/Video</span>
-              </button>
-              <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition">
-                <FaSmile className="text-lg" />
-                <span className="text-sm">Smiles</span>
-              </button>
-            </div>
+            {/* Media Preview */}
+            {mediaPreview && (
+              <div className="mb-4 relative">
+                {selectedMedia?.type.startsWith('image/') ? (
+                  <img src={mediaPreview} alt="Preview" className="max-w-full max-h-48 rounded-lg" />
+                ) : selectedMedia?.type.startsWith('video/') ? (
+                  <video src={mediaPreview} controls className="max-w-full max-h-48 rounded-lg" />
+                ) : null}
+                <button
+                  onClick={() => {
+                    setSelectedMedia(null);
+                    setMediaPreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            )}
+
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+              <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-8 gap-2">
+                  {commonEmojis.map((emoji, index) => (
+                    <button
+                      key={index}
+                      onClick={() => insertEmoji(emoji)}
+                      className="text-2xl hover:bg-gray-100 rounded p-2 transition-colors"
+                      title={emoji}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Stickers/Gifts Bar */}
             <div className="mb-4">

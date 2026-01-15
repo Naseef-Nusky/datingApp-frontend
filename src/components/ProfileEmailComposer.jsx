@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 
 const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
-  const [activeTab, setActiveTab] = useState('email'); // 'chat', 'email', 'photo', 'smiles'
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleSend = async () => {
-    if (!message.trim()) {
-      alert('Please enter a message');
+    if (!message.trim() && !selectedMedia) {
+      alert('Please enter a message or attach a photo/video');
       return;
     }
 
@@ -33,24 +36,34 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
         return;
       }
       
-      const payload = {
-        receiverId: receiverId,
-        content: message.trim(),
-      };
+      const formData = new FormData();
+      formData.append('receiverId', receiverId);
+      formData.append('content', message.trim());
       
       // Only include subject if it's not empty
       if (subject && subject.trim()) {
-        payload.subject = subject.trim();
+        formData.append('subject', subject.trim());
       }
       
-      console.log('📧 Sending email payload:', { receiverId, hasSubject: !!payload.subject, contentLength: payload.content.length });
+      if (selectedMedia) {
+        formData.append('media', selectedMedia);
+      }
       
-      const response = await axios.post('/api/messages/send-email', payload);
+      console.log('📧 Sending email payload:', { receiverId, hasSubject: !!subject, contentLength: message.length, hasMedia: !!selectedMedia });
+      
+      const response = await axios.post('/api/messages/send-email', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       console.log('✅ Email sent successfully:', response.data);
       
       alert('Email sent successfully!');
       setSubject('');
       setMessage('');
+      setSelectedMedia(null);
+      setMediaPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       if (onSent) onSent();
       if (onClose) onClose();
     } catch (error) {
@@ -97,61 +110,43 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
             My Email to {profile.firstName}
           </h3>
         </div>
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-100 transition"
-        >
-          <FaTimes />
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-gray-50">
-        <button
-          onClick={() => setActiveTab('chat')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'chat'
-              ? 'bg-white border-b-2 border-green-500 text-green-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Chat
-        </button>
-        <button
-          onClick={() => setActiveTab('email')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'email'
-              ? 'bg-white border-b-2 border-green-500 text-green-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Email
-        </button>
-        <button
-          onClick={() => setActiveTab('photo')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'photo'
-              ? 'bg-white border-b-2 border-green-500 text-green-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Photo/Video
-        </button>
-        <button
-          onClick={() => setActiveTab('smiles')}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'smiles'
-              ? 'bg-white border-b-2 border-green-500 text-green-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Smiles
-        </button>
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {/* Small Photo/Video & Smiles links in header right corner */}
+          <div className="flex items-center gap-3 text-xs text-white bg-white bg-opacity-20 rounded-lg px-3 py-1">
+            <button 
+              onClick={handlePhotoVideoClick}
+              className="flex items-center gap-1 hover:text-white transition-colors"
+            >
+              <FaCamera className="text-sm" />
+              <span>Photo/Video</span>
+            </button>
+            <button 
+              onClick={handleSmilesClick}
+              className="flex items-center gap-1 hover:text-white transition-colors"
+            >
+              <FaSmile className="text-sm" />
+              <span>Smiles</span>
+            </button>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-600 hover:text-gray-800 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-100 transition"
+          >
+            <FaTimes />
+          </button>
+        </div>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
       </div>
 
       {/* Email Composition Area */}
-      {activeTab === 'email' && (
-        <div className="p-6">
+      <div className="p-6">
           {/* Subject Field */}
           <input
             type="text"
@@ -169,6 +164,45 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
             rows={8}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           />
+
+          {/* Media Preview */}
+          {mediaPreview && (
+            <div className="mb-4 relative">
+              {selectedMedia?.type.startsWith('image/') ? (
+                <img src={mediaPreview} alt="Preview" className="max-w-full max-h-48 rounded-lg" />
+              ) : selectedMedia?.type.startsWith('video/') ? (
+                <video src={mediaPreview} controls className="max-w-full max-h-48 rounded-lg" />
+              ) : null}
+              <button
+                onClick={() => {
+                  setSelectedMedia(null);
+                  setMediaPreview(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          )}
+
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-8 gap-2">
+                {commonEmojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    onClick={() => insertEmoji(emoji)}
+                    className="text-2xl hover:bg-gray-100 rounded p-2 transition-colors"
+                    title={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Stickers/Emojis */}
           <div className="mb-4">
@@ -204,39 +238,6 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
             {sending ? 'SENDING...' : 'SEND EMAIL'}
           </button>
         </div>
-      )}
-
-      {/* Chat Tab */}
-      {activeTab === 'chat' && (
-        <div className="p-6 text-center text-gray-500">
-          <p>Chat functionality coming soon</p>
-        </div>
-      )}
-
-      {/* Photo/Video Tab */}
-      {activeTab === 'photo' && (
-        <div className="p-6 text-center text-gray-500">
-          <p>Photo/Video upload coming soon</p>
-        </div>
-      )}
-
-      {/* Smiles Tab */}
-      {activeTab === 'smiles' && (
-        <div className="p-6">
-          <div className="grid grid-cols-6 gap-2">
-            {stickers.map((sticker, index) => (
-              <button
-                key={index}
-                onClick={() => insertSticker(sticker.emoji)}
-                className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-2xl transition-colors"
-                title={sticker.label}
-              >
-                {sticker.emoji}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

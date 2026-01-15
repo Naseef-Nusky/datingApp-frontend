@@ -33,10 +33,13 @@ const Inbox = () => {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 10,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity,
         timeout: 20000,
         forceNew: false,
         autoConnect: true,
+        upgrade: true,
+        rememberUpgrade: true,
       });
 
       socket.on('connect', () => {
@@ -47,15 +50,36 @@ const Inbox = () => {
 
       socket.on('connect_error', (error) => {
         console.error('❌ [INBOX] Socket connection error:', error);
+        // Don't show error to user - socket will auto-reconnect
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('⚠️ [INBOX] Socket disconnected:', reason);
+        if (reason === 'io server disconnect') {
+          // Server disconnected the socket, need to manually reconnect
+          console.log('⚠️ [INBOX] Socket disconnected by server, reconnecting...');
+          socket.connect();
+        } else {
+          // Client disconnected or transport error - will auto-reconnect
+          console.log('⚠️ [INBOX] Socket disconnected:', reason);
+        }
       });
 
       socket.on('reconnect', (attemptNumber) => {
         console.log('🔄 [INBOX] Socket reconnected after', attemptNumber, 'attempts');
         socket.emit('join-room', String(user.id));
+      });
+
+      socket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('🔄 [INBOX] Reconnection attempt', attemptNumber);
+      });
+
+      socket.on('reconnect_error', (error) => {
+        console.error('❌ [INBOX] Reconnection error:', error);
+      });
+
+      socket.on('reconnect_failed', () => {
+        console.error('❌ [INBOX] Reconnection failed after all attempts');
+        // Could show a notification to user here
       });
 
       // Listen for new emails
@@ -247,6 +271,8 @@ const Inbox = () => {
     try {
       const response = await axios.get(`/api/messages/emails/${email.id}`);
       const updatedEmail = response.data;
+      setSelectedEmail(updatedEmail);
+      setShowEmailModal(true);
       
       // Update email in list with read status
       setEmails(prevEmails => 
@@ -256,10 +282,6 @@ const Inbox = () => {
             : e
         )
       );
-      
-      // Open email composer directly (same as clicking REPLY)
-      setComposerEmail(updatedEmail);
-      setShowComposer(true);
     } catch (error) {
       console.error('Error fetching email:', error);
     }
@@ -296,7 +318,18 @@ const Inbox = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) {
+      return 'Just now';
+    }
+
     const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date:', dateString);
+      return 'Just now';
+    }
+
     const now = new Date();
     const diff = now - date;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -470,7 +503,7 @@ const Inbox = () => {
                            </p>
                            <div className="flex items-center gap-2 flex-shrink-0">
                              <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
-                               {formatDate(email.createdAt)}
+                               {formatDate(email.createdAt || email.created_at)}
                              </span>
                              <button
                                onClick={(e) => {
