@@ -3,7 +3,7 @@ import AgoraChat from 'agora-chat';
 import axios from 'axios';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 
-const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false }) => {
+const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -1501,7 +1501,13 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false })
               </button>
               <button
                 onClick={() => {
-                  setActiveTab('email');
+                  if (onOpenEmail) {
+                    // Open the email composer component
+                    onOpenEmail();
+                  } else {
+                    // Fallback: just set tab (for backward compatibility)
+                    setActiveTab('email');
+                  }
                   setShowEmojiPicker(false);
                 }}
                 className={`py-3 flex items-center space-x-2 ${

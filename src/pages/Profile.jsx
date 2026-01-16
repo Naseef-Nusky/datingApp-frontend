@@ -634,6 +634,7 @@ const Profile = () => {
   const handleChatNow = () => {
     // Open chat directly without requiring a request
     setShowChat(true);
+    setShowEmailComposer(false); // Close email if open
   };
 
   const handleVideoCall = async () => {
@@ -820,6 +821,7 @@ const Profile = () => {
 
   const handleSendEmail = () => {
     setShowEmailComposer(true);
+    setShowChat(false); // Close chat if open
   };
 
   const handleEmailSent = () => {
@@ -1230,6 +1232,10 @@ const Profile = () => {
                   remoteUserId={id}
                   onClose={() => setShowChat(false)}
                   embedded={true}
+                  onOpenEmail={() => {
+                    setShowChat(false); // Close chat
+                    setShowEmailComposer(true); // Open email composer
+                  }}
                 />
               </div>
             </div>
@@ -1242,6 +1248,10 @@ const Profile = () => {
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}
                 onSent={handleEmailSent}
+                onOpenChat={() => {
+                  setShowEmailComposer(false); // Close email composer
+                  setShowChat(true); // Open chat
+                }}
               />
             </div>
           )}

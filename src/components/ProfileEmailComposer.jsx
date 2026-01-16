@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes } from 'react-icons/fa';
+import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 
-const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
+const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -87,8 +87,39 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
     setMessage(prev => prev + emoji + ' ');
   };
 
+  const handlePhotoVideoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedMedia(file);
+      // Create preview for both images and videos
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMediaPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleSmilesClick = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  const insertEmoji = (emoji) => {
+    setMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Common emojis
+  const commonEmojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
+
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
       {/* Header with decorative background - watercolor style */}
       <div className="relative h-40 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
         {/* Decorative elements */}
@@ -103,31 +134,26 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
           <span className="text-2xl font-bold text-gray-700 opacity-40">PARIS</span>
         </div>
         <div className="relative h-full flex flex-col items-center justify-center p-4">
-          <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center mb-3">
-            <span className="text-3xl">👤</span>
+          <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center mb-3 overflow-hidden">
+            {profile.photos && profile.photos.length > 0 ? (
+              <img 
+                src={profile.photos[0]?.url || profile.photos[0]} 
+                alt={profile.firstName}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<span class="text-3xl">👤</span>';
+                }}
+              />
+            ) : (
+              <span className="text-3xl">👤</span>
+            )}
           </div>
           <h3 className="text-xl font-bold text-gray-800">
             My Email to {profile.firstName}
           </h3>
         </div>
         <div className="absolute top-3 right-3 flex items-center gap-2">
-          {/* Small Photo/Video & Smiles links in header right corner */}
-          <div className="flex items-center gap-3 text-xs text-white bg-white bg-opacity-20 rounded-lg px-3 py-1">
-            <button 
-              onClick={handlePhotoVideoClick}
-              className="flex items-center gap-1 hover:text-white transition-colors"
-            >
-              <FaCamera className="text-sm" />
-              <span>Photo/Video</span>
-            </button>
-            <button 
-              onClick={handleSmilesClick}
-              className="flex items-center gap-1 hover:text-white transition-colors"
-            >
-              <FaSmile className="text-sm" />
-              <span>Smiles</span>
-            </button>
-          </div>
           <button
             onClick={onClose}
             className="text-gray-600 hover:text-gray-800 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-100 transition"
@@ -147,6 +173,48 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
 
       {/* Email Composition Area */}
       <div className="p-6">
+          {/* Chat, Email, Photo/Video, Smiles - Same line, 2 corners */}
+          <div className="flex items-center justify-between mb-4">
+            {/* Left corner - Chat and Email */}
+            <div className="flex items-center gap-4">
+              {onOpenChat && (
+                <button
+                  onClick={onOpenChat}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  <FaComments className="text-lg" />
+                  <span className="font-medium">Chat</span>
+                </button>
+              )}
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-teal-600 transition-colors"
+              >
+                <FaEnvelope className="text-lg" />
+                <span className="font-medium">Email</span>
+              </button>
+            </div>
+            
+            {/* Right corner - Photo/Video and Smiles */}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handlePhotoVideoClick}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                title="Photo/Video"
+              >
+                <FaCamera className="text-base" />
+                <span>Photo/Video</span>
+              </button>
+              <button 
+                onClick={handleSmilesClick}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                title="Smiles"
+              >
+                <FaSmile className="text-base" />
+                <span>Smiles</span>
+              </button>
+            </div>
+          </div>
+
           {/* Subject Field */}
           <input
             type="text"
@@ -231,7 +299,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent }) => {
           {/* Send Button */}
           <button
             onClick={handleSend}
-            disabled={sending || !message.trim()}
+            disabled={sending || (!message.trim() && !selectedMedia)}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <FaEnvelope />

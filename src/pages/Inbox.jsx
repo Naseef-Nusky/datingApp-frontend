@@ -391,10 +391,10 @@ const Inbox = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex h-[calc(100vh-64px)]">
            {/* Main Inbox Area */}
-           <div className="flex-1 flex flex-col overflow-hidden" style={{ marginRight: '384px' }}>
+           <div className="flex-1 flex flex-col overflow-hidden">
           {/* Filter Tabs */}
           <div className="flex border-b border-gray-200 bg-white">
             <button

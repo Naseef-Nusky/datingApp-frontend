@@ -3,7 +3,6 @@ import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllips
 import axios from 'axios';
 
 const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
-  const [activeTab, setActiveTab] = useState('email');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -369,39 +368,6 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               ))}
             </div>
           </div>
-        )}
-
-        {/* Chat Tab */}
-        {activeTab === 'chat' && (
-          <div className="p-6 text-center text-gray-500">
-            <p>Chat functionality coming soon</p>
-          </div>
-        )}
-
-        {/* Photo/Video Tab */}
-        {activeTab === 'photo' && (
-          <div className="p-6 text-center text-gray-500">
-            <p>Photo/Video upload coming soon</p>
-          </div>
-        )}
-
-        {/* Smiles Tab */}
-        {activeTab === 'smiles' && (
-          <div className="p-6">
-            <div className="grid grid-cols-6 gap-2">
-              {stickers.map((sticker, index) => (
-                <button
-                  key={index}
-                  onClick={() => insertSticker(sticker.emoji)}
-                  className="w-12 h-12 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg flex items-center justify-center text-2xl transition-colors"
-                  title={sticker.label}
-                >
-                  {sticker.emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
