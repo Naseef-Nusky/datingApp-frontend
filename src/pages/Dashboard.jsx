@@ -693,9 +693,9 @@ const Dashboard = () => {
         </div>
       )}
       {/* Top Row of Online Users */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4 overflow-x-auto scrollbar-hide">
+      <div className="bg-white border-b border-gray-200 sticky top-16 z-10">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto scrollbar-hide pb-2">
             {onlineUsers.map((user) => (
               <Link
                 key={user.id || user.userId}
@@ -707,21 +707,21 @@ const Dashboard = () => {
                     <img
                       src={user.photos[0].url}
                       alt={user.firstName}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-300"
+                      className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full object-cover border-2 border-gray-300"
                       onError={(e) => {
                         e.target.style.display = 'none';
                       }}
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center border-2 border-gray-300">
-                      <span className="text-white font-semibold text-lg">{user.firstName?.[0] || 'U'}</span>
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center border-2 border-gray-300">
+                      <span className="text-white font-semibold text-sm sm:text-base lg:text-lg">{user.firstName?.[0] || 'U'}</span>
                     </div>
                   )}
                   {user.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 bg-green-500 rounded-full border-2 border-white"></div>
                   )}
                 </div>
-                <span className="text-xs text-gray-700 mt-1 text-center max-w-[60px] truncate">
+                <span className="text-[10px] sm:text-xs text-gray-700 mt-1 text-center max-w-[50px] sm:max-w-[60px] truncate">
                   {user.firstName}
                 </span>
               </Link>
@@ -740,11 +740,11 @@ const Dashboard = () => {
         onApplyFilters={handleApplyFilters}
       />
 
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Main Content */}
-        <div className="flex-1 min-w-0" style={{ marginRight: '320px' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="flex-1 min-w-0 lg:mr-80">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 lg:py-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
             {profiles.map((profile) => {
               const photoCount = profile.photos?.length || 0;
               const videoCount = Math.floor(Math.random() * 3); // Random video count for demo
@@ -762,66 +762,66 @@ const Dashboard = () => {
                         <img
                           src={profile.photos[0].url}
                           alt={profile.firstName}
-                          className="w-full h-96 object-cover"
+                          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextSibling.style.display = 'flex';
                           }}
                         />
                         {/* Top-left flame icon */}
-                        <div className="absolute top-3 left-3">
-                          <div className="bg-orange-500 rounded-full p-2">
-                            <FaFire className="text-white text-sm" />
+                        <div className="absolute top-1 left-1 sm:top-3 sm:left-3">
+                          <div className="bg-orange-500 rounded-full p-1 sm:p-2">
+                            <FaFire className="text-white text-xs sm:text-sm" />
                           </div>
                         </div>
                         
                         {/* Top-right checkmark */}
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-blue-500 rounded-full p-2">
-                            <FaCheckCircle className="text-white text-sm" />
+                        <div className="absolute top-1 right-1 sm:top-3 sm:right-3">
+                          <div className="bg-blue-500 rounded-full p-1 sm:p-2">
+                            <FaCheckCircle className="text-white text-xs sm:text-sm" />
                           </div>
                         </div>
                         
                         {/* Bottom-left photo/video count */}
-                        <div className="absolute bottom-3 left-3 flex items-center space-x-3">
+                        <div className="absolute bottom-1 left-1 sm:bottom-3 sm:left-3 flex items-center space-x-1 sm:space-x-3">
                           {photoCount > 0 && (
-                            <span className="flex items-center space-x-1 text-white text-xs bg-black bg-opacity-60 rounded px-2 py-1">
-                              <FaCamera className="text-xs" />
+                            <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
+                              <FaCamera className="text-[10px] sm:text-xs" />
                               <span className="font-semibold">{photoCount}</span>
                             </span>
                           )}
                           {videoCount > 0 && (
-                            <span className="flex items-center space-x-1 text-white text-xs bg-black bg-opacity-60 rounded px-2 py-1">
-                              <FaPlay className="text-xs" />
+                            <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
+                              <FaPlay className="text-[10px] sm:text-xs" />
                               <span className="font-semibold">{videoCount}</span>
                             </span>
                           )}
                         </div>
                       </>
                     ) : (
-                      <div className="w-full h-96 bg-gray-200 flex items-center justify-center">
-                        <FaHeart className="text-6xl text-gray-400" />
+                      <div className="w-full h-48 sm:h-64 md:h-80 lg:h-96 bg-gray-200 flex items-center justify-center">
+                        <FaHeart className="text-3xl sm:text-4xl lg:text-6xl text-gray-400" />
                       </div>
                     )}
                   </div>
 
                   {/* Profile Info */}
-                  <div className="p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-800">
+                  <div className="p-2 sm:p-4">
+                    <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+                      <h3 className="text-xs sm:text-sm lg:text-lg font-semibold text-gray-800 truncate">
                         {profile.firstName} {profile.lastName ? profile.lastName : ''}, {profile.age}
                       </h3>
                       {profile.isOnline && (
-                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-500 rounded-full flex-shrink-0"></div>
                       )}
                       {profile.user?.userType === 'streamer' && (
-                        <FaVideo className="text-gray-400 text-sm" />
+                        <FaVideo className="text-gray-400 text-xs sm:text-sm flex-shrink-0" />
                       )}
                     </div>
                     
                     {/* Bio */}
                     {profile.bio && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 hidden sm:block">
                         {profile.bio}
                       </p>
                     )}
@@ -841,8 +841,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Fixed */}
-        <div className="w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-20 shadow-lg">
+        {/* Right Sidebar - Fixed - Hidden on mobile */}
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-20 shadow-lg">
           {/* My Contacts - Fixed Section */}
           <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
             <div className="flex items-center justify-between mb-4">

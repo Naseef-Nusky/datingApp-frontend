@@ -728,11 +728,11 @@ const MyProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Main Content */}
-        <div className="flex-1 overflow-visible">
+        <div className="flex-1 overflow-visible lg:mr-80">
           {/* Cover Photo Banner */}
-          <div className="relative h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
+          <div className="relative h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
             {profile.coverPhoto ? (
               <img
                 src={profile.coverPhoto}
@@ -748,23 +748,23 @@ const MyProfile = () => {
 
             {/* Banner Overlay Content with Container */}
             <div className="absolute inset-0 overflow-visible">
-              <div className="container mx-auto px-6 h-full relative max-w-6xl overflow-visible">
+              <div className="container mx-auto px-2 sm:px-4 lg:px-6 h-full relative max-w-6xl overflow-visible">
                 {/* Top Left */}
-                <div className="absolute top-4 left-6 space-y-2 z-10">
+                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 lg:top-4 lg:left-6 space-y-1 sm:space-y-2 z-10">
                   <button
                     onClick={() => navigate(-1)}
-                    className="bg-gray-800 bg-opacity-90 text-white px-4 py-2 rounded hover:bg-opacity-100 transition"
+                    className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition"
                   >
                     BACK
                   </button>
-                  <button className="bg-gray-800 bg-opacity-90 text-white px-4 py-2 rounded hover:bg-opacity-100 transition block">
+                  <button className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition block">
                     CHANGE SUBSCRIPTION PLAN
                   </button>
                 </div>
 
                 {/* Top Right */}
-                <div className="absolute top-4 right-6 z-10">
-                  <label className="bg-gray-800 bg-opacity-90 text-white px-4 py-2 rounded hover:bg-opacity-100 transition cursor-pointer inline-block">
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 lg:top-4 lg:right-6 z-10">
+                  <label className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition cursor-pointer inline-block">
                     {uploadingCover ? 'UPLOADING...' : 'UPDATE COVER'}
                     <input
                       type="file"
@@ -777,21 +777,21 @@ const MyProfile = () => {
                 </div>
 
                 {/* Bottom Right - Credits */}
-                <div className="absolute bottom-4 right-6 z-10">
-                  <button className="bg-black bg-opacity-70 text-white px-6 py-2 rounded hover:bg-opacity-90 transition font-semibold">
+                <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 lg:bottom-4 lg:right-6 z-10">
+                  <button className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold">
                     {user?.credits || 135} CREDITS - REFILL
                   </button>
                 </div>
 
                 {/* Profile Picture - Left Side, Overlapping Bottom */}
-                <div className="absolute bottom-0 left-6 transform translate-y-1/2 z-20">
+                <div className="absolute bottom-0 left-2 sm:left-4 lg:left-6 transform translate-y-1/2 z-20">
                   <div className="relative">
                     {profile.photos && profile.photos.length > 0 ? (
                       <div className="relative">
                         <img
                           src={typeof profile.photos[0] === 'string' ? profile.photos[0] : profile.photos[0]?.url}
                           alt={profile.firstName}
-                          className="w-48 h-48 object-cover border-4 border-white shadow-xl cursor-pointer hover:opacity-90 transition"
+                          className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 object-cover border-2 sm:border-4 border-white shadow-xl cursor-pointer hover:opacity-90 transition"
                           onClick={() => handlePhotoClick(0)}
                           onError={(e) => {
                             e.target.src = 'https://via.placeholder.com/192';
@@ -812,63 +812,63 @@ const MyProfile = () => {
                             });
                             setShowProfilePhotoModal(true);
                           }}
-                          className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-90 text-white px-4 py-2 text-center cursor-pointer hover:bg-opacity-100 transition"
+                          className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm text-center cursor-pointer hover:bg-opacity-100 transition"
                           disabled={uploadingProfilePhoto}
                         >
                           {uploadingProfilePhoto ? 'UPLOADING...' : 'UPLOAD PHOTO'}
                         </button>
                       </div>
                     ) : (
-                      <div className="w-48 h-48 bg-gray-300 border-4 border-white shadow-xl flex items-center justify-center">
-                        <FaHeart className="text-6xl text-gray-500" />
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 bg-gray-300 border-2 sm:border-4 border-white shadow-xl flex items-center justify-center">
+                        <FaHeart className="text-2xl sm:text-4xl lg:text-6xl text-gray-500" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Name, Age, and ID - Right of Profile Picture, Overlaid on Cover */}
-                <div className="absolute bottom-8 left-64 z-10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h1 className="text-3xl font-bold text-white">
+                <div className="absolute bottom-2 sm:bottom-4 lg:bottom-8 left-28 sm:left-36 md:left-40 lg:left-64 z-10 max-w-[calc(100%-120px)] sm:max-w-[calc(100%-160px)] md:max-w-none">
+                  <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2 flex-wrap">
+                    <h1 className="text-base sm:text-lg md:text-xl lg:text-3xl font-bold text-white truncate">
                       {profile.firstName}
                     </h1>
-                    <button className="text-white hover:text-gray-200 text-xl">×</button>
-                    <h1 className="text-3xl font-bold text-white">
+                    <button className="text-white hover:text-gray-200 text-xs sm:text-sm md:text-xl flex-shrink-0">×</button>
+                    <h1 className="text-base sm:text-lg md:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>
-                    <button className="text-white hover:text-gray-200">
-                      <FaEdit className="text-sm" />
+                    <button className="text-white hover:text-gray-200 flex-shrink-0">
+                      <FaEdit className="text-xs sm:text-sm" />
                     </button>
                   </div>
-                  <p className="text-white text-sm">ID: {user?.id?.substring(0, 12) || '112305522631'}</p>
+                  <p className="text-white text-[10px] sm:text-xs md:text-sm truncate">ID: {user?.id?.substring(0, 12) || '112305522631'}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Main Content Sections - Container */}
-          <div className="container mx-auto px-6 py-8 max-w-6xl">
+          <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-6xl">
             {/* A Few Words About Myself */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6 mt-24">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">A Few Words About Myself</h2>
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 mt-12 sm:mt-16 lg:mt-24">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold">A Few Words About Myself</h2>
                 <button 
                   onClick={handleOpenBioModal}
                   className="text-gray-600 hover:text-gray-800"
                 >
-                  <FaEdit className="text-sm" />
+                  <FaEdit className="text-xs sm:text-sm" />
                 </button>
               </div>
-              <p className="text-gray-700">
+              <p className="text-gray-700 text-sm sm:text-base">
                 {profile.bio || 'To meet someone to have a loving relationship'}
               </p>
             </div>
 
             {/* Your Wishlist */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Your Wishlist</h2>
-                <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold">Your Wishlist</h2>
+                <button className="bg-gray-300 text-gray-700 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-gray-400 transition">
                   EDIT WISHLIST
                 </button>
               </div>
@@ -888,9 +888,9 @@ const MyProfile = () => {
             </div>
 
             {/* Photos Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Add more photos</h2>
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold">Add more photos</h2>
                 <button
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -904,13 +904,13 @@ const MyProfile = () => {
                     });
                     setShowAddPhotoModal(true);
                   }}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition cursor-pointer"
+                  className="bg-gray-300 text-gray-700 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-gray-400 transition cursor-pointer"
                   disabled={uploadingAdditionalPhoto}
                 >
                   {uploadingAdditionalPhoto ? 'UPLOADING...' : 'ADD'}
                 </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
                 {profile.photos && profile.photos.length > 0 ? (
                   profile.photos.map((photo, index) => {
                     // Handle both string and object formats
@@ -922,7 +922,7 @@ const MyProfile = () => {
                         <img
                           src={photoUrl}
                           alt={`Photo ${index + 1}`}
-                          className="w-full h-48 object-cover rounded transition hover:opacity-90"
+                          className="w-full h-32 sm:h-40 md:h-48 object-cover rounded transition hover:opacity-90"
                           onError={(e) => {
                             e.target.src = 'https://via.placeholder.com/200';
                           }}
@@ -965,50 +965,50 @@ const MyProfile = () => {
             </div>
 
             {/* My Interests and About Me Side by Side */}
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
               {/* My Interests */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">My Interests</h2>
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold">My Interests</h2>
                   <button 
                     onClick={handleOpenInterestsModal}
                     className="text-gray-600 hover:text-gray-800"
                   >
-                    <FaEdit />
+                    <FaEdit className="text-sm sm:text-base" />
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3 sm:gap-4">
                   {profile.interests && profile.interests.length > 0 ? (
                     profile.interests.slice(0, 3).map((interest, index) => {
                       const interestData = interestIcons[interest] || { icon: FaHeart, color: 'bg-blue-500' };
                       const Icon = interestData.icon;
                       return (
                         <div key={index} className="flex flex-col items-center">
-                          <div className={`w-16 h-16 ${interestData.color} rounded-full flex items-center justify-center text-white text-2xl mb-2`}>
+                          <div className={`w-12 h-12 sm:w-16 sm:h-16 ${interestData.color} rounded-full flex items-center justify-center text-white text-xl sm:text-2xl mb-1 sm:mb-2`}>
                             <Icon />
                           </div>
-                          <span className="text-sm text-gray-700 text-center">{interest}</span>
+                          <span className="text-xs sm:text-sm text-gray-700 text-center">{interest}</span>
                         </div>
                       );
                     })
                   ) : (
-                    <p className="text-gray-600">No interests added yet</p>
+                    <p className="text-gray-600 text-sm">No interests added yet</p>
                   )}
                 </div>
               </div>
 
               {/* About Me */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">About Me</h2>
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold">About Me</h2>
                   <button 
                     onClick={handleOpenAboutMeModal}
                     className="text-gray-600 hover:text-gray-800"
                   >
-                    <FaEdit />
+                    <FaEdit className="text-sm sm:text-base" />
                   </button>
                 </div>
-                <div className="space-y-2 text-sm text-gray-700">
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-700">
                   <p>Zodiac sign: {profile.lifestyle?.zodiac || 'No answer'}</p>
                   <p>Live in: {profile.location?.city || 'No answer'}, {profile.location?.country || ''}</p>
                   <p>Work as: {profile.lifestyle?.work || 'No answer'}</p>
@@ -1027,17 +1027,17 @@ const MyProfile = () => {
             </div>
 
             {/* I'm Looking for */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">I'm Looking for</h2>
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold">I'm Looking for</h2>
                 <button 
                   onClick={handleOpenLookingForModal}
                   className="text-gray-600 hover:text-gray-800"
                 >
-                  <FaEdit />
+                  <FaEdit className="text-sm sm:text-base" />
                 </button>
               </div>
-              <div className="text-gray-700">
+              <div className="text-gray-700 text-sm sm:text-base">
                 <p>
                   {profile.preferences?.lookingFor === 'male' && 'Man'}
                   {profile.preferences?.lookingFor === 'female' && 'Woman'}
@@ -1051,8 +1051,8 @@ const MyProfile = () => {
             </div>
 
             {/* Sparks Button */}
-            <div className="text-center mb-6">
-              <button className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-400 transition">
+            <div className="text-center mb-4 sm:mb-6">
+              <button className="bg-gray-300 text-gray-700 px-4 py-2 sm:px-8 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-gray-400 transition w-full sm:w-auto">
                 0 SPARKS
               </button>
             </div>
@@ -1060,11 +1060,11 @@ const MyProfile = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 h-screen sticky top-0 overflow-y-auto">
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 h-screen sticky top-0 overflow-y-auto">
           {/* My Contacts */}
           <div className="p-4 pt-6 border-b border-gray-200 bg-white mt-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">My Contacts</h3>
+              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">My Contacts</h3>
               {contacts.length > 0 && (
                 <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
                   {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
@@ -1635,10 +1635,10 @@ const MyProfile = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 mt-12">
-        <div className="container mx-auto px-4 text-center text-sm">
-          <p className="mb-2">Copyright Dating.com 2025. All rights reserved.</p>
-          <p className="text-gray-400">
+      <footer className="bg-gray-800 text-white py-4 sm:py-6 mt-6 sm:mt-12">
+        <div className="container mx-auto px-2 sm:px-4 text-center text-xs sm:text-sm">
+          <p className="mb-1 sm:mb-2">Copyright Dating.com 2025. All rights reserved.</p>
+          <p className="text-gray-400 text-[10px] sm:text-sm">
             This website is operated by VENTA SOLUTIONS PTE. LTD., located at 8 Eu Tong Sen Street #22-85, The Central, Singapore 059818 Registration No: 201900379G.
           </p>
         </div>

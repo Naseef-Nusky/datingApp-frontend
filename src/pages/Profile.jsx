@@ -865,12 +865,12 @@ const Profile = () => {
       {/* Ringtone Audio Element */}
       <audio ref={ringtoneRef} preload="auto" />
       
-      <div className="container mx-auto max-w-[1920px] px-4" style={{ paddingRight: (showChat || showEmailComposer) ? '320px' : '384px' }}>
-        <div className={`flex ${(showChat || showEmailComposer) ? 'gap-6' : ''}`}>
+      <div className={`container mx-auto max-w-[1920px] px-2 sm:px-4 ${(showChat || showEmailComposer) ? 'lg:pr-80' : 'lg:pr-96'}`}>
+        <div className={`flex flex-col lg:flex-row ${(showChat || showEmailComposer) ? 'lg:gap-6' : ''}`}>
           {/* Main Content - Left Column */}
-          <div className={`${(showChat || showEmailComposer) ? 'w-full' : 'flex-1'}`}>
+          <div className={`${(showChat || showEmailComposer) ? 'w-full' : 'flex-1'} ${(showChat || showEmailComposer) ? 'hidden lg:block' : ''}`}>
             {/* Cover Photo Banner */}
-            <div className="relative h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
+            <div className="relative h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
               {profile.coverPhoto ? (
                 <img
                   src={profile.coverPhoto}
@@ -887,73 +887,73 @@ const Profile = () => {
               {/* Banner Overlay Content */}
               <div className="absolute inset-0 overflow-visible">
                 {/* Top Left - Back Button */}
-                <div className="absolute top-4 left-6 z-10">
+                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 lg:top-4 lg:left-6 z-10">
                   <button
                     onClick={() => navigate(-1)}
-                    className="bg-gray-800 bg-opacity-90 text-white px-4 py-2 rounded hover:bg-opacity-100 transition"
+                    className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition"
                   >
                     BACK
                   </button>
                 </div>
 
                 {/* Top Right - Star icon for favorite */}
-                <div className="absolute top-4 right-6 z-10">
-                  <button className="bg-gray-800 bg-opacity-90 p-3 rounded-full hover:bg-opacity-100 transition">
-                    <FaStar className="text-yellow-400 text-xl" />
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 lg:top-4 lg:right-6 z-10">
+                  <button className="bg-gray-800 bg-opacity-90 p-2 sm:p-3 rounded-full hover:bg-opacity-100 transition">
+                    <FaStar className="text-yellow-400 text-sm sm:text-xl" />
                   </button>
                 </div>
 
                 {/* Profile Picture - Left Side, Overlapping Bottom */}
-                <div className="absolute bottom-0 left-6 transform translate-y-1/2 z-20">
+                <div className="absolute bottom-0 left-2 sm:left-4 lg:left-6 transform translate-y-1/2 z-20">
                   <div className="relative">
                     {mainPhoto ? (
                       <img
                         src={mainPhoto.url}
                         alt={profile.firstName}
-                        className="w-48 h-48 object-cover border-4 border-white shadow-xl rounded"
+                        className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 object-cover border-2 sm:border-4 border-white shadow-xl rounded"
                         onError={(e) => {
                           e.target.src = 'https://via.placeholder.com/192';
                         }}
                       />
                     ) : (
-                      <div className="w-48 h-48 bg-gray-300 border-4 border-white shadow-xl flex items-center justify-center rounded">
-                        <FaHeart className="text-6xl text-gray-500" />
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 bg-gray-300 border-2 sm:border-4 border-white shadow-xl flex items-center justify-center rounded">
+                        <FaHeart className="text-2xl sm:text-4xl lg:text-6xl text-gray-500" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Name, Age, and Status - Right of Profile Picture, Overlaid on Cover */}
-                <div className="absolute bottom-8 left-64 z-10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h1 className="text-3xl font-bold text-white">
+                <div className="absolute bottom-2 sm:bottom-4 lg:bottom-8 left-28 sm:left-36 md:left-40 lg:left-64 z-10 max-w-[calc(100%-120px)] sm:max-w-none">
+                  <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2 flex-wrap">
+                    <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white truncate">
                       {profile.firstName} {profile.lastName || ''}
                     </h1>
-                    <FaCheckCircle className="text-blue-400 text-xl" />
-                    <h1 className="text-3xl font-bold text-white">
+                    <FaCheckCircle className="text-blue-400 text-xs sm:text-base lg:text-xl flex-shrink-0" />
+                    <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>
                     {profile.isOnline && (
-                      <div className="flex items-center space-x-2 ml-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span className="text-white text-sm">Online</span>
+                      <div className="flex items-center space-x-1 sm:space-x-2 ml-1 sm:ml-2">
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-white text-xs sm:text-sm">Online</span>
                       </div>
                     )}
                   </div>
                   {profile.userId && (
-                    <p className="text-white text-sm">ID: {profile.userId.substring(0, 12)}</p>
+                    <p className="text-white text-xs sm:text-sm truncate">ID: {profile.userId.substring(0, 12)}</p>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Main Content Sections */}
-            <div className="mx-auto pl-8 py-8 mt-24">
+            <div className="mx-auto px-2 sm:px-4 lg:pl-8 py-4 sm:py-6 lg:py-8 mt-12 sm:mt-16 lg:mt-24">
             {/* About Section */}
             {profile.bio && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 className="text-xl font-semibold mb-3">About {profile.firstName}</h2>
-                <p className="text-gray-700">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">About {profile.firstName}</h2>
+                <p className="text-gray-700 text-sm sm:text-base">
                   {showFullBio ? profile.bio : `${profile.bio.substring(0, 150)}...`}
                   {profile.bio.length > 150 && (
                     <button
@@ -968,90 +968,90 @@ const Profile = () => {
             )}
 
             {/* Message Input and Action Buttons */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type your message here..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg mb-3 sm:mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
               
-              <div className="flex space-x-4 mb-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-3 sm:mb-4">
                 <button
                   onClick={handleChatNow}
-                  className="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg hover:bg-teal-700 transition font-semibold flex items-center justify-center space-x-2"
+                  className="flex-1 bg-teal-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-teal-700 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
                 >
-                  <FaHeart className="text-lg" />
+                  <FaHeart className="text-base sm:text-lg" />
                   <span>CHAT NOW</span>
                 </button>
                 <button
                   onClick={handleVideoCall}
-                  className="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg hover:bg-teal-700 transition font-semibold flex items-center justify-center space-x-2"
+                  className="flex-1 bg-teal-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-teal-700 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
                 >
-                  <FaVideo className="text-lg" />
+                  <FaVideo className="text-base sm:text-lg" />
                   <span>VIDEO CALL</span>
                 </button>
                 <button
                   onClick={handleAudioCall}
-                  className="flex-1 bg-teal-600 text-white py-3 px-6 rounded-lg hover:bg-teal-700 transition font-semibold flex items-center justify-center space-x-2"
+                  className="flex-1 bg-teal-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-teal-700 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
                 >
-                  <FaPhone className="text-lg" />
+                  <FaPhone className="text-base sm:text-lg" />
                   <span>AUDIO CALL</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <p className="text-gray-600 text-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 border-t border-gray-200 gap-3 sm:gap-0">
+                <p className="text-gray-600 text-xs sm:text-sm">
                   Send exciting Email to your favorite man and make him happy!
                 </p>
                 <button
                   onClick={handleSendEmail}
-                  className="bg-teal-600 text-white py-2 px-6 rounded-lg hover:bg-teal-700 transition font-semibold flex items-center space-x-2"
+                  className="w-full sm:w-auto bg-teal-600 text-white py-2 px-4 sm:px-6 rounded-lg hover:bg-teal-700 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
                 >
-                  <FaEnvelope className="text-sm" />
+                  <FaEnvelope className="text-xs sm:text-sm" />
                   <span>SEND EMAIL</span>
                 </button>
               </div>
             </div>
 
             {/* Videos and Photos */}
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
               {/* My Videos */}
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="relative h-64 bg-gray-200">
+                <div className="relative h-40 sm:h-56 md:h-64 bg-gray-200">
                   {videoCount > 0 ? (
                     <>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <FaPlay className="text-6xl text-white opacity-80" />
+                        <FaPlay className="text-4xl sm:text-5xl md:text-6xl text-white opacity-80" />
                       </div>
-                      <div className="absolute bottom-4 left-4 flex items-center space-x-2 text-white bg-black bg-opacity-50 px-3 py-2 rounded">
-                        <FaVideo className="text-sm" />
-                        <span className="text-sm font-semibold">{videoCount}</span>
+                      <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 flex items-center space-x-1 sm:space-x-2 text-white bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm">
+                        <FaVideo className="text-xs sm:text-sm" />
+                        <span className="text-xs sm:text-sm font-semibold">{videoCount}</span>
                       </div>
                     </>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
-                        <FaVideo className="text-4xl text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">No videos yet</p>
+                        <FaVideo className="text-2xl sm:text-3xl md:text-4xl text-gray-400 mx-auto mb-1 sm:mb-2" />
+                        <p className="text-gray-500 text-xs sm:text-sm">No videos yet</p>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold flex items-center space-x-2">
-                    <FaVideo className="text-teal-600" />
+                <div className="p-3 sm:p-4">
+                  <h3 className="font-semibold text-sm sm:text-base flex items-center space-x-2">
+                    <FaVideo className="text-teal-600 text-sm sm:text-base" />
                     <span>My Videos</span>
-                    {videoCount > 0 && <span className="text-gray-500">({videoCount})</span>}
+                    {videoCount > 0 && <span className="text-gray-500 text-xs sm:text-sm">({videoCount})</span>}
                   </h3>
                 </div>
               </div>
 
               {/* My Photos */}
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="relative h-64 bg-gray-200">
+                <div className="relative h-40 sm:h-56 md:h-64 bg-gray-200">
                   {photoCount > 0 ? (
                     <>
                       <img
@@ -1059,59 +1059,59 @@ const Profile = () => {
                         alt="Photos"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute bottom-4 left-4 flex items-center space-x-2 text-white bg-black bg-opacity-50 px-3 py-2 rounded">
-                        <FaCamera className="text-sm" />
-                        <span className="text-sm font-semibold">{photoCount}</span>
+                      <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 flex items-center space-x-1 sm:space-x-2 text-white bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm">
+                        <FaCamera className="text-xs sm:text-sm" />
+                        <span className="text-xs sm:text-sm font-semibold">{photoCount}</span>
                       </div>
                     </>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
-                        <FaCamera className="text-4xl text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">No photos yet</p>
+                        <FaCamera className="text-2xl sm:text-3xl md:text-4xl text-gray-400 mx-auto mb-1 sm:mb-2" />
+                        <p className="text-gray-500 text-xs sm:text-sm">No photos yet</p>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold flex items-center space-x-2">
-                    <FaCamera className="text-teal-600" />
+                <div className="p-3 sm:p-4">
+                  <h3 className="font-semibold text-sm sm:text-base flex items-center space-x-2">
+                    <FaCamera className="text-teal-600 text-sm sm:text-base" />
                     <span>My Photos</span>
-                    {photoCount > 0 && <span className="text-gray-500">({photoCount})</span>}
+                    {photoCount > 0 && <span className="text-gray-500 text-xs sm:text-sm">({photoCount})</span>}
                   </h3>
                 </div>
               </div>
             </div>
 
             {/* Three Column Layout */}
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
               {/* My Interests */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4">My Interests</h2>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">My Interests</h2>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {profile.interests && profile.interests.length > 0 ? (
                     profile.interests.slice(0, 4).map((interest, index) => {
                       const interestData = interestIcons[interest] || { icon: FaHeart, color: 'bg-teal-500' };
                       const Icon = interestData.icon;
                       return (
                         <div key={index} className="flex flex-col items-center">
-                          <div className={`w-16 h-16 ${interestData.color} rounded-full flex items-center justify-center text-white text-2xl mb-2`}>
+                          <div className={`w-12 h-12 sm:w-16 sm:h-16 ${interestData.color} rounded-full flex items-center justify-center text-white text-xl sm:text-2xl mb-1 sm:mb-2`}>
                             <Icon />
                           </div>
-                          <span className="text-sm text-gray-700 text-center">{interest}</span>
+                          <span className="text-xs sm:text-sm text-gray-700 text-center">{interest}</span>
                         </div>
                       );
                     })
                   ) : (
-                    <p className="text-gray-600 col-span-2">No interests added yet</p>
+                    <p className="text-gray-600 col-span-2 text-sm">No interests added yet</p>
                   )}
                 </div>
               </div>
 
               {/* About Me */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4">About Me</h2>
-                <div className="space-y-2 text-sm text-gray-700">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">About Me</h2>
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-700">
                   <p><span className="font-semibold">Zodiac sign:</span> {profile.lifestyle?.zodiac || 'No answer'}</p>
                   <p><span className="font-semibold">Live in:</span> {profile.location?.city || 'No answer'}, {profile.location?.country || ''}</p>
                   <p><span className="font-semibold">Work as:</span> {profile.lifestyle?.work || 'No answer'}</p>
@@ -1129,9 +1129,9 @@ const Profile = () => {
               </div>
 
               {/* I'm Looking for */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-4">I'm Looking for</h2>
-                <div className="text-gray-700 text-sm space-y-2">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">I'm Looking for</h2>
+                <div className="text-gray-700 text-xs sm:text-sm space-y-1.5 sm:space-y-2">
                   <p>
                     {profile.preferences?.lookingFor === 'male' && 'Man'}
                     {profile.preferences?.lookingFor === 'female' && 'Woman'}
@@ -1146,17 +1146,17 @@ const Profile = () => {
             </div>
 
             {/* Report Violation */}
-            <div className="text-center mb-6">
-              <button className="text-gray-500 text-sm hover:text-gray-700 underline">
+            <div className="text-center mb-4 sm:mb-6">
+              <button className="text-gray-500 text-xs sm:text-sm hover:text-gray-700 underline">
                 Report a Violation
               </button>
             </div>
 
             {/* See more people like Sam */}
             {similarProfiles.length > 0 && (
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-4">See more people like {profile.firstName}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">See more people like {profile.firstName}</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                   {similarProfiles.map((similar) => (
                     <div
                       key={similar.id || similar.userId}
@@ -1167,31 +1167,31 @@ const Profile = () => {
                         <img
                           src={similar.photos[0].url}
                           alt={similar.firstName}
-                          className="w-full h-48 object-cover"
+                          className="w-full h-32 sm:h-40 md:h-48 object-cover"
                         />
                       ) : (
-                        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                          <FaHeart className="text-4xl text-gray-400" />
+                        <div className="w-full h-32 sm:h-40 md:h-48 bg-gray-200 flex items-center justify-center">
+                          <FaHeart className="text-2xl sm:text-3xl md:text-4xl text-gray-400" />
                         </div>
                       )}
-                      <div className="p-3">
-                        <h3 className="font-semibold text-sm">
+                      <div className="p-2 sm:p-3">
+                        <h3 className="font-semibold text-xs sm:text-sm">
                           {similar.firstName}, {similar.age}
                         </h3>
                         {similar.bio && (
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          <p className="text-[10px] sm:text-xs text-gray-600 mt-1 line-clamp-2">
                             {similar.bio}
                           </p>
                         )}
-                        <div className="flex items-center space-x-2 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center space-x-1 sm:space-x-2 mt-1 sm:mt-2 text-[10px] sm:text-xs text-gray-500">
                           {similar.photos && (
                             <span className="flex items-center space-x-1">
-                              <FaCamera />
+                              <FaCamera className="text-xs" />
                               <span>{similar.photos.length}</span>
                             </span>
                           )}
                           {similar.isOnline && (
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full"></div>
                           )}
                         </div>
                       </div>
@@ -1202,10 +1202,10 @@ const Profile = () => {
             )}
 
             {/* Back to Search Results */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-4 sm:mb-6">
               <button
                 onClick={() => navigate('/search')}
-                className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-400 transition"
+                className="bg-gray-300 text-gray-700 px-4 sm:px-8 py-2 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-gray-400 transition w-full sm:w-auto"
               >
                 BACK TO SEARCH RESULTS
               </button>
@@ -1213,10 +1213,10 @@ const Profile = () => {
           </div>
 
             {/* Footer */}
-            <footer className="bg-gray-800 text-white py-6 mt-12">
-              <div className="container mx-auto px-4 text-center text-sm">
-                <p className="mb-2">Copyright Dating.com 2025. All rights reserved.</p>
-                <p className="text-gray-400">
+            <footer className="bg-gray-800 text-white py-4 sm:py-6 mt-6 sm:mt-12">
+              <div className="container mx-auto px-2 sm:px-4 text-center text-xs sm:text-sm">
+                <p className="mb-1 sm:mb-2">Copyright Dating.com 2025. All rights reserved.</p>
+                <p className="text-gray-400 text-[10px] sm:text-sm">
                   This website is operated by VENTA SOLUTIONS PTE. LTD., located at 8 Eu Tong Sen Street #22-85, The Central, Singapore 059818 Registration No: 201900379G.
                 </p>
               </div>
@@ -1225,7 +1225,7 @@ const Profile = () => {
 
           {/* Chat Window - Middle Panel (when chat is open) */}
           {showChat && user?.id && (
-            <div className="w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-4">
+            <div className="w-full lg:w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-2 sm:p-4">
               <div className="bg-white h-full rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <AgoraChat
                   userId={user.id}
@@ -1243,7 +1243,7 @@ const Profile = () => {
 
           {/* Email Composer - Middle Panel (when email composer is open) */}
           {showEmailComposer && profile && (
-            <div className="w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-4">
+            <div className="w-full lg:w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-2 sm:p-4">
               <ProfileEmailComposer
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}
@@ -1259,8 +1259,8 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Right Sidebar - Outside Container */}
-      <div className={`${(showChat || showEmailComposer) ? 'w-80' : 'w-96'} bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto z-40 pt-4`}>
+      {/* Right Sidebar - Outside Container - Hidden on mobile */}
+      <div className={`hidden lg:block ${(showChat || showEmailComposer) ? 'w-80' : 'w-96'} bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto z-40 pt-4`}>
         {/* My Contacts */}
         <div className="p-4 pt-8 border-b border-gray-200 bg-white mt-6">
           <div className="flex items-center justify-between mb-4">
