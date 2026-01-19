@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes } from 'react-icons/fa';
+import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import SearchFilterModal from '../components/SearchFilterModal';
 
@@ -748,83 +748,104 @@ const Dashboard = () => {
             {profiles.map((profile) => {
               const photoCount = profile.photos?.length || 0;
               const videoCount = Math.floor(Math.random() * 3); // Random video count for demo
+              const isOnline = profile.isOnline || false;
               
               return (
                 <div
                   key={profile.id || profile.userId}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition relative cursor-pointer"
+                  style={{
+                    minHeight: '400px',
+                    backgroundImage: profile.photos && profile.photos.length > 0 
+                      ? `url(${profile.photos[0].url})` 
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
                   onClick={() => navigate(`/profile/${profile.userId}`)}
                 >
-                  {/* Profile Photo */}
-                  <div className="relative">
-                    {profile.photos && profile.photos.length > 0 ? (
-                      <>
-                        <img
-                          src={profile.photos[0].url}
-                          alt={profile.firstName}
-                          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                        {/* Top-left flame icon */}
-                        <div className="absolute top-1 left-1 sm:top-3 sm:left-3">
-                          <div className="bg-orange-500 rounded-full p-1 sm:p-2">
-                            <FaFire className="text-white text-xs sm:text-sm" />
-                          </div>
-                        </div>
-                        
-                        {/* Top-right checkmark */}
-                        <div className="absolute top-1 right-1 sm:top-3 sm:right-3">
-                          <div className="bg-blue-500 rounded-full p-1 sm:p-2">
-                            <FaCheckCircle className="text-white text-xs sm:text-sm" />
-                          </div>
-                        </div>
-                        
-                        {/* Bottom-left photo/video count */}
-                        <div className="absolute bottom-1 left-1 sm:bottom-3 sm:left-3 flex items-center space-x-1 sm:space-x-3">
-                          {photoCount > 0 && (
-                            <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
-                              <FaCamera className="text-[10px] sm:text-xs" />
-                              <span className="font-semibold">{photoCount}</span>
-                            </span>
-                          )}
-                          {videoCount > 0 && (
-                            <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
-                              <FaPlay className="text-[10px] sm:text-xs" />
-                              <span className="font-semibold">{videoCount}</span>
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-48 sm:h-64 md:h-80 lg:h-96 bg-gray-200 flex items-center justify-center">
-                        <FaHeart className="text-3xl sm:text-4xl lg:text-6xl text-gray-400" />
-                      </div>
+                  {/* Fallback background if no image */}
+                  {(!profile.photos || profile.photos.length === 0) && (
+                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                      <FaHeart className="text-3xl sm:text-4xl lg:text-6xl text-gray-400" />
+                    </div>
+                  )}
+
+                  {/* Gradient overlay for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+
+                  {/* Top-left flame icon */}
+                  <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-10">
+                    <div className="bg-orange-500 rounded-full p-1 sm:p-2">
+                      <FaFire className="text-white text-xs sm:text-sm" />
+                    </div>
+                  </div>
+                  
+                  {/* Top-right checkmark */}
+                  <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-10">
+                    <div className="bg-blue-500 rounded-full p-1 sm:p-2">
+                      <FaCheckCircle className="text-white text-xs sm:text-sm" />
+                    </div>
+                  </div>
+                  
+                  {/* Bottom-left photo/video count */}
+                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-10">
+                    {photoCount > 0 && (
+                      <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
+                        <FaCamera className="text-[10px] sm:text-xs" />
+                        <span className="font-semibold">{photoCount}</span>
+                      </span>
+                    )}
+                    {videoCount > 0 && (
+                      <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
+                        <FaPlay className="text-[10px] sm:text-xs" />
+                        <span className="font-semibold">{videoCount}</span>
+                      </span>
                     )}
                   </div>
 
-                  {/* Profile Info */}
-                  <div className="p-2 sm:p-4">
-                    <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
-                      <h3 className="text-xs sm:text-sm lg:text-lg font-semibold text-gray-800 truncate">
+                  {/* Profile Info - Overlaid at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 z-10">
+                    <div className="flex items-center space-x-1 sm:space-x-2 mb-2">
+                      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate drop-shadow-lg">
                         {profile.firstName} {profile.lastName ? profile.lastName : ''}, {profile.age}
                       </h3>
-                      {profile.isOnline && (
-                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-500 rounded-full flex-shrink-0"></div>
-                      )}
+                      {/* Online/Offline Status Indicator */}
+                      <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                       {profile.user?.userType === 'streamer' && (
-                        <FaVideo className="text-gray-400 text-xs sm:text-sm flex-shrink-0" />
+                        <FaVideo className="text-white text-xs sm:text-sm flex-shrink-0 drop-shadow-lg" />
                       )}
                     </div>
-                    
-                    {/* Bio */}
-                    {profile.bio && (
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 hidden sm:block">
-                        {profile.bio}
-                      </p>
-                    )}
+
+                    {/* Action Button */}
+                    <div>
+                      {isOnline ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${profile.userId}`);
+                          }}
+                          className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg"
+                        >
+                          <FaComment className="text-xs" />
+                          <span>CHAT NOW</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${profile.userId}`, {
+                              state: { openEmailComposer: true },
+                            });
+                          }}
+                          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg"
+                        >
+                          <FaEnvelope className="text-xs" />
+                          <span>SEND EMAIL</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -17,6 +17,7 @@ import { createSafeChannelName } from '../utils/agoraUtils';
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,14 @@ const Profile = () => {
   const outgoingCallRef = useRef(null); // Ref to track outgoing call (for socket handlers)
   const socketRef = useRef(null);
   const ringtoneRef = useRef(null); // Ref for ringtone audio element
+
+  // Open email composer automatically when coming from dashboard with state
+  useEffect(() => {
+    if (location.state?.openEmailComposer) {
+      setShowEmailComposer(true);
+      setShowChat(false);
+    }
+  }, [location.state]);
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
