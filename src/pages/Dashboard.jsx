@@ -824,7 +824,9 @@ const Dashboard = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/profile/${profile.userId}`);
+                            navigate(`/profile/${profile.userId}`, {
+                              state: { openChat: true },
+                            });
                           }}
                           className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg"
                         >

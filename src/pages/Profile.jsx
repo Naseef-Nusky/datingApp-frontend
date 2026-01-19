@@ -40,11 +40,14 @@ const Profile = () => {
   const socketRef = useRef(null);
   const ringtoneRef = useRef(null); // Ref for ringtone audio element
 
-  // Open email composer automatically when coming from dashboard with state
+  // Open chat or email composer automatically when coming from dashboard with state
   useEffect(() => {
     if (location.state?.openEmailComposer) {
       setShowEmailComposer(true);
       setShowChat(false);
+    } else if (location.state?.openChat) {
+      setShowChat(true);
+      setShowEmailComposer(false);
     }
   }, [location.state]);
 
