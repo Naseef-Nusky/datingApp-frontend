@@ -12,6 +12,7 @@ import AgoraVideoCall from '../components/AgoraVideoCall';
 import AgoraVoiceCall from '../components/AgoraVoiceCall';
 import AgoraChat from '../components/AgoraChat';
 import ProfileEmailComposer from '../components/ProfileEmailComposer';
+import ProfilePhotoViewer from '../components/ProfilePhotoViewer';
 import { createSafeChannelName } from '../utils/agoraUtils';
 
 const Profile = () => {
@@ -32,6 +33,8 @@ const Profile = () => {
   const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callChannelName, setCallChannelName] = useState(null); // Store channel name for RTC
   const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
@@ -939,7 +942,13 @@ const Profile = () => {
                       <img
                         src={mainPhoto.url}
                         alt={profile.firstName}
-                        className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 object-cover border-2 sm:border-4 border-white shadow-xl rounded"
+                        className="w-24 h-24 sm:w-32 sm:h-32 lg:w-48 lg:h-48 object-cover border-2 sm:border-4 border-white shadow-xl rounded cursor-pointer hover:opacity-90 transition"
+                        onClick={() => {
+                          if (profile.photos && profile.photos.length > 0) {
+                            setSelectedPhotoIndex(0);
+                            setShowPhotoViewer(true);
+                          }
+                        }}
                         onError={(e) => {
                           e.target.src = 'https://via.placeholder.com/192';
                         }}
@@ -1086,7 +1095,13 @@ const Profile = () => {
                       <img
                         src={mainPhoto?.url}
                         alt="Photos"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition"
+                        onClick={() => {
+                          if (profile.photos && profile.photos.length > 0) {
+                            setSelectedPhotoIndex(0);
+                            setShowPhotoViewer(true);
+                          }
+                        }}
                       />
                       <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 flex items-center space-x-1 sm:space-x-2 text-white bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm">
                         <FaCamera className="text-xs sm:text-sm" />
@@ -1676,6 +1691,17 @@ const Profile = () => {
               });
             }
           }}
+        />
+      )}
+
+      {/* Photo Viewer Modal */}
+      {showPhotoViewer && profile?.photos && profile.photos.length > 0 && (
+        <ProfilePhotoViewer
+          isOpen={showPhotoViewer}
+          onClose={() => setShowPhotoViewer(false)}
+          photos={profile.photos}
+          initialIndex={selectedPhotoIndex}
+          profileName={profile.firstName}
         />
       )}
     </div>
