@@ -5,6 +5,9 @@ import io from 'socket.io-client';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import SearchFilterModal from '../components/SearchFilterModal';
+import MingleIntroModal from '../components/MingleIntroModal';
+import LetsMingleModal from '../components/LetsMingleModal';
+import MingleSuccessModal from '../components/MingleSuccessModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +33,12 @@ const Dashboard = () => {
     location: '',
     availableForVideoChat: false,
   });
+
+  // Mingle states
+  const [showMingleIntro, setShowMingleIntro] = useState(false);
+  const [showMingleModal, setShowMingleModal] = useState(false);
+  const [showMingleSuccess, setShowMingleSuccess] = useState(false);
+  const [mingleMatchedProfiles, setMingleMatchedProfiles] = useState([]);
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
@@ -243,6 +252,11 @@ const Dashboard = () => {
       // Clear the state to prevent reopening on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
+    if (location.state?.openMingleIntro) {
+      setShowMingleIntro(true);
+      // Clear the state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
   }, [location.state, navigate, location.pathname]);
 
   // Listen for custom event to open search modal (when already on dashboard)
@@ -255,6 +269,19 @@ const Dashboard = () => {
     
     return () => {
       window.removeEventListener('openSearchModal', handleOpenSearchModal);
+    };
+  }, []);
+
+  // Listen for custom event to open mingle intro modal
+  useEffect(() => {
+    const handleOpenMingleIntro = () => {
+      setShowMingleIntro(true);
+    };
+    
+    window.addEventListener('openMingleIntro', handleOpenMingleIntro);
+    
+    return () => {
+      window.removeEventListener('openMingleIntro', handleOpenMingleIntro);
     };
   }, []);
 
@@ -525,6 +552,26 @@ const Dashboard = () => {
 
   const displayedChatRequests = showLessChatRequests ? chatRequests.slice(0, 5) : chatRequests;
 
+  const acceptChatRequestAndOpenChat = async (request) => {
+    try {
+      // Accept the chat request so it becomes a real chat/conversation
+      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
+    } catch (error) {
+      console.error('Accept chat request error (dashboard):', error);
+      // If already accepted, backend may return an error – ignore for navigation
+    } finally {
+      // Ensure contacts/chat lists update
+      fetchChatRequests();
+      fetchContacts();
+
+      if (request.senderId) {
+        navigate(`/profile/${request.senderId}`, {
+          state: { openChat: true, from: 'chat-request', requestId: request.id },
+        });
+      }
+    }
+  };
+
   const getActionButton = (profile) => {
     // Determine action button based on profile status
     if (profile.isOnline && profile.user?.userType === 'streamer') {
@@ -738,6 +785,38 @@ const Dashboard = () => {
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         onApplyFilters={handleApplyFilters}
+      />
+
+      {/* Mingle Intro Modal - Step 1 */}
+      <MingleIntroModal
+        isOpen={showMingleIntro}
+        onClose={() => setShowMingleIntro(false)}
+        onGetStarted={() => {
+          setShowMingleIntro(false);
+          setShowMingleModal(true);
+        }}
+      />
+
+      {/* Let's Mingle Modal - Step 2 */}
+      <LetsMingleModal
+        isOpen={showMingleModal}
+        onClose={() => setShowMingleModal(false)}
+        onSuccess={(matchedProfiles) => {
+          setMingleMatchedProfiles(matchedProfiles);
+          setShowMingleModal(false);
+          setShowMingleSuccess(true);
+        }}
+      />
+
+      {/* Mingle Success Modal - Step 3 */}
+      <MingleSuccessModal
+        isOpen={showMingleSuccess}
+        onClose={() => setShowMingleSuccess(false)}
+        matchedProfiles={mingleMatchedProfiles}
+        onMingleAgain={() => {
+          setShowMingleSuccess(false);
+          setShowMingleIntro(true);
+        }}
       />
 
       <div className="flex flex-col lg:flex-row">
@@ -973,62 +1052,70 @@ const Dashboard = () => {
                 displayedChatRequests
                   .filter((request) => request.status === 'pending')
                   .map((request) => {
-                    // Determine button text and action
-                    const isVideoOrAudio = request.isVideoChat || request.isAudioChat;
-                    const buttonText = isVideoOrAudio ? 'Start' : 'Reply';
-                    const buttonColor = isVideoOrAudio ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
-                    
+                    const showVideoIcon = request.isVideoChat;
+                    const showAudioIcon = request.isAudioChat;
+                    const showEmailIcon = request.hasEmail;
+
+                    const openProfileWithChat = () => {
+                      acceptChatRequestAndOpenChat(request);
+                    };
+
                     return (
                       <div
                         key={request.id}
-                        className="border-b border-gray-200 pb-3 last:border-b-0"
+                        className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
+                        onClick={openProfileWithChat}
                       >
-                        {/* Name and Action Button Row */}
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2 flex-1 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {request.avatar ? (
-                                <img 
-                                  src={request.avatar} 
-                                  alt={request.name || 'User'} 
-                                  className="w-full h-full rounded-full object-cover"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                <span className="text-white text-sm font-semibold">{request.name?.[0]?.toUpperCase() || '?'}</span>
-                              )}
-                            </div>
-                            <h4 className="font-semibold text-gray-900 text-sm truncate">{request.name || 'Unknown'}</h4>
+                        {/* Avatar */}
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                            {request.avatar ? (
+                              <img
+                                src={request.avatar}
+                                alt={request.name || 'User'}
+                                className="w-full h-full rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="text-white text-sm font-semibold">
+                                {request.name?.[0]?.toUpperCase() || '?'}
+                              </span>
+                            )}
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (request.senderId) {
-                                navigate(`/profile/${request.senderId}`);
-                              }
-                            }}
-                            className={`${buttonColor} text-white text-xs font-semibold px-3 py-1.5 rounded transition flex-shrink-0`}
-                          >
-                            {buttonText}
-                          </button>
                         </div>
-                        
-                        {/* Message Preview */}
-                        <div className="flex items-center space-x-1 ml-12">
-                          {request.isVideoChat && (
-                            <FaVideo className="text-green-500 text-xs flex-shrink-0" />
-                          )}
-                          {request.isAudioChat && (
-                            <FaVolumeUp className="text-blue-500 text-xs flex-shrink-0" />
-                          )}
-                          {request.hasEmail && (
-                            <FaEnvelope className="text-red-500 text-xs flex-shrink-0" />
-                          )}
-                          <p className="text-xs text-gray-600 truncate flex-1">
-                            {request.message || 'New chat request'}
-                          </p>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-semibold text-gray-900 text-sm truncate">
+                              {request.name || 'Unknown'}
+                            </h4>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProfileWithChat();
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
+                            >
+                              REPLY
+                            </button>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            {showVideoIcon && <FaVideo className="text-green-500 text-xs flex-shrink-0" />}
+                            {showAudioIcon && <FaVolumeUp className="text-blue-500 text-xs flex-shrink-0" />}
+                            {showEmailIcon && <FaEnvelope className="text-red-500 text-xs flex-shrink-0" />}
+                            <p
+                              className="text-xs text-gray-600 truncate flex-1 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProfileWithChat();
+                              }}
+                            >
+                              {request.message || 'New chat request'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     );

@@ -364,56 +364,92 @@ const RegistrationWizard = () => {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-700 mb-2">I am a:</label>
-                <div className="flex space-x-4">
+                <div className="flex space-x-6">
                   <button
                     type="button"
                     onClick={() => handleChange('gender', 'male')}
-                    className={`w-16 h-16 rounded-full border-2 flex items-center justify-center transition ${
+                    className={`flex flex-col items-center justify-center transition ${
                       formData.gender === 'male'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300 bg-white'
+                        ? 'text-red-600'
+                        : 'text-gray-700'
                     }`}
                   >
-                    <span className="text-2xl">♂</span>
+                    <div
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                        formData.gender === 'male'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span className="text-2xl">♂</span>
+                    </div>
+                    <span className="text-sm font-medium">Man</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleChange('gender', 'female')}
-                    className={`w-16 h-16 rounded-full border-2 flex items-center justify-center transition ${
+                    className={`flex flex-col items-center justify-center transition ${
                       formData.gender === 'female'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300 bg-white'
+                        ? 'text-red-600'
+                        : 'text-gray-700'
                     }`}
                   >
-                    <span className="text-2xl">♀</span>
+                    <div
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                        formData.gender === 'female'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span className="text-2xl">♀</span>
+                    </div>
+                    <span className="text-sm font-medium">Woman</span>
                   </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-gray-700 mb-2">Seeking a:</label>
-                <div className="flex space-x-4">
+                <div className="flex space-x-6">
                   <button
                     type="button"
                     onClick={() => handleChange('seeking', 'male')}
-                    className={`w-16 h-16 rounded-full border-2 flex items-center justify-center transition ${
+                    className={`flex flex-col items-center justify-center transition ${
                       formData.seeking === 'male'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300 bg-white'
+                        ? 'text-red-600'
+                        : 'text-gray-700'
                     }`}
                   >
-                    <span className="text-2xl">♂</span>
+                    <div
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                        formData.seeking === 'male'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span className="text-2xl">♂</span>
+                    </div>
+                    <span className="text-sm font-medium">Man</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleChange('seeking', 'female')}
-                    className={`w-16 h-16 rounded-full border-2 flex items-center justify-center transition ${
+                    className={`flex flex-col items-center justify-center transition ${
                       formData.seeking === 'female'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-300 bg-white'
+                        ? 'text-red-600'
+                        : 'text-gray-700'
                     }`}
                   >
-                    <span className="text-2xl">♀</span>
+                    <div
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                        formData.seeking === 'female'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <span className="text-2xl">♀</span>
+                    </div>
+                    <span className="text-sm font-medium">Woman</span>
                   </button>
                 </div>
               </div>

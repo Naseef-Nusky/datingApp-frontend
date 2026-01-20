@@ -294,6 +294,23 @@ const Inbox = () => {
     }
   };
 
+  const acceptChatRequestAndOpenChat = async (request) => {
+    try {
+      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
+    } catch (error) {
+      console.error('Accept chat request error (inbox):', error);
+    } finally {
+      fetchChatRequests();
+      fetchContacts();
+
+      if (request.senderId) {
+        navigate(`/profile/${request.senderId}`, {
+          state: { openChat: true, from: 'chat-request', requestId: request.id },
+        });
+      }
+    }
+  };
+
   const handleEmailClick = async (email) => {
     try {
       const response = await axios.get(`/api/messages/emails/${email.id}`);
@@ -629,41 +646,60 @@ const Inbox = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {displayedChatRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                        onClick={() => {
-                          if (request.senderId) {
-                            navigate(`/profile/${request.senderId}`);
-                          }
-                        }}
-                      >
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                            {request.avatar ? (
-                              <img
-                                src={request.avatar}
-                                alt={request.name}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-white font-semibold">
-                                {request.name?.charAt(0)?.toUpperCase() || '?'}
-                              </span>
-                            )}
+                    {displayedChatRequests.map((request) => {
+                      const openProfileWithChat = () => {
+                        acceptChatRequestAndOpenChat(request);
+                      };
+
+                      return (
+                        <div
+                          key={request.id}
+                          className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
+                          onClick={openProfileWithChat}
+                        >
+                          <div className="flex-shrink-0 mr-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                              {request.avatar ? (
+                                <img
+                                  src={request.avatar}
+                                  alt={request.name}
+                                  className="w-full h-full rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white font-semibold">
+                                  {request.name?.charAt(0)?.toUpperCase() || '?'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-semibold text-gray-800 text-sm truncate">
+                                {request.name}
+                              </p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openProfileWithChat();
+                                }}
+                                className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
+                              >
+                                REPLY
+                              </button>
+                            </div>
+                            <p
+                              className="text-xs text-gray-600 truncate cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProfileWithChat();
+                              }}
+                            >
+                              {request.message}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 text-sm mb-1">
-                            {request.name}
-                          </p>
-                          <p className="text-xs text-gray-600 truncate">
-                            {request.message}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -773,41 +809,122 @@ const Inbox = () => {
                 No chat requests
               </div>
             ) : (
-              displayedChatRequests.map((request) => (
-              <div
-                key={request.id}
-                className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                onClick={() => {
-                  if (request.senderId) {
-                    navigate(`/profile/${request.senderId}`);
-                  }
-                }}
-              >
-                <div className="flex-shrink-0 mr-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                    {request.avatar ? (
-                      <img
-                        src={request.avatar}
-                        alt={request.name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-semibold">
-                        {request.name?.charAt(0)?.toUpperCase() || '?'}
-                      </span>
-                    )}
+              displayedChatRequests.map((request) => {
+                const openProfileWithChat = () => {
+                  acceptChatRequestAndOpenChat(request);
+                };
+                
+                return (
+                  <div
+                    key={request.id}
+                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
+                    onClick={openProfileWithChat}
+                  >
+                    <div className="flex-shrink-0 mr-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                        {request.avatar ? (
+                          <img
+                            src={request.avatar}
+                            alt={request.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-semibold">
+                            {request.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-semibold text-gray-800 text-sm truncate">
+                          {request.name}
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openProfileWithChat();
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
+                        >
+                          REPLY
+                        </button>
+                      </div>
+                      <p
+                        className="text-xs text-gray-600 truncate cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openProfileWithChat();
+                        }}
+                      >
+                        {request.message}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-800 text-sm mb-1">
-                    {request.name}
-                  </p>
-                  <p className="text-xs text-gray-600 truncate">
-                    {request.message}
-                  </p>
-                </div>
+                );
+              })
+            )}
+          </div>
+          <div className="space-y-3">
+            {displayedChatRequests.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                No chat requests
               </div>
-              ))
+            ) : (
+              displayedChatRequests.map((request) => {
+                const openProfileWithChat = () => {
+                  acceptChatRequestAndOpenChat(request);
+                };
+
+                return (
+                  <div
+                    key={request.id}
+                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
+                    onClick={openProfileWithChat}
+                  >
+                    <div className="flex-shrink-0 mr-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                        {request.avatar ? (
+                          <img
+                            src={request.avatar}
+                            alt={request.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-semibold">
+                            {request.name?.charAt(0)?.toUpperCase() || '?'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-semibold text-gray-800 text-sm truncate">
+                          {request.name}
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openProfileWithChat();
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
+                        >
+                          REPLY
+                        </button>
+                      </div>
+                      <p
+                        className="text-xs text-gray-600 truncate cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openProfileWithChat();
+                        }}
+                      >
+                        {request.message}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

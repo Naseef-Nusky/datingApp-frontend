@@ -59,8 +59,9 @@ const ProfileDropdown = () => {
       id: 'mingle', 
       label: "Let's mingle", 
       icon: FaHeart, 
-      path: '/dashboard',
-      color: 'text-gray-800'
+      path: null, // No navigation, will open modal
+      color: 'text-gray-800',
+      action: 'openMingleModal'
     },
     { 
       id: 'network', 
@@ -169,6 +170,42 @@ const ProfileDropdown = () => {
               const Icon = item.icon;
               const isActive = item.active;
               
+              // Handle mingle modal action
+              if (item.action === 'openMingleModal') {
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (item.disabled) {
+                        return;
+                      }
+                      setIsOpen(false);
+                      // Navigate to dashboard if not already there, then open intro modal
+                      if (window.location.pathname !== '/dashboard') {
+                        navigate('/dashboard', { state: { openMingleIntro: true } });
+                      } else {
+                        // Dispatch event to open mingle intro modal
+                        window.dispatchEvent(new CustomEvent('openMingleIntro'));
+                      }
+                    }}
+                    className={`w-full flex items-center px-6 py-3 transition ${
+                      item.disabled
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'hover:bg-gray-50 cursor-pointer'
+                    } ${isActive ? 'bg-red-50' : ''}`}
+                  >
+                    <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
+                    <span
+                      className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
+                        item.underline ? 'underline' : ''
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.id}

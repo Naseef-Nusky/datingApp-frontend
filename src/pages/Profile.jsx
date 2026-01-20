@@ -627,6 +627,23 @@ const Profile = () => {
     }
   };
 
+  const acceptChatRequestAndOpenChat = async (request) => {
+    try {
+      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
+    } catch (error) {
+      console.error('Accept chat request error (profile):', error);
+    } finally {
+      fetchChatRequests();
+      fetchContacts();
+
+      if (request.senderId) {
+        navigate(`/profile/${request.senderId}`, {
+          state: { openChat: true, from: 'chat-request', requestId: request.id },
+        });
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
@@ -1389,121 +1406,100 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Chat Requests & Call Requests */}
+        {/* Chat Requests (Profile Sidebar) */}
         <div className="p-4 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Chat & Call Requests</h3>
-            <button
-              onClick={() => setShowLessChatRequests(!showLessChatRequests)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
-            </button>
+            <div className="flex items-center space-x-2">
+              <h3 className="font-semibold text-gray-800">Chat Requests</h3>
+              {displayedChatRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
+                  {displayedChatRequests.filter(r => r.status === 'pending').length}
+                </span>
+              )}
+            </div>
+            {displayedChatRequests.length > 5 && (
+              <button
+                onClick={() => setShowLessChatRequests(!showLessChatRequests)}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium transition"
+              >
+                {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
+              </button>
+            )}
           </div>
 
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {/* Call Requests (Missed Calls) */}
-            {callRequests.filter(r => r.status === 'missed').length > 0 && (
-              <div className="mb-4 pb-4 border-b border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Missed Calls</h4>
-                {callRequests
-                  .filter((request) => request.status === 'missed')
-                  .map((request) => {
-                    return (
-                      <div
-                        key={`call-${request.id}`}
-                        className="border-b border-gray-200 pb-3 mb-3 last:border-b-0"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3 flex-1">
-                            {request.avatar ? (
-                              <img
-                                src={request.avatar}
-                                alt={request.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-                                <span className="text-white font-semibold text-sm">
-                                  {request.name?.[0]?.toUpperCase() || '?'}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-semibold text-gray-900 text-sm truncate">
-                                  {request.name}
-                                </span>
-                                {request.callType === 'video' ? (
-                                  <FaVideo className="text-teal-600 text-xs" />
-                                ) : (
-                                  <FaPhone className="text-teal-600 text-xs" />
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                Missed {request.callType} call
-                              </p>
-                              {(request.createdAt || request.created_at) && (
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {new Date(request.createdAt || request.created_at).toLocaleString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => navigate(`/profile/${request.callerId}`)}
-                            className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded transition"
-                          >
-                            Call Back
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            {/* Chat Requests */}
-            {displayedChatRequests.length === 0 && callRequests.filter(r => r.status === 'missed').length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No requests</p>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {displayedChatRequests.filter(r => r.status === 'pending').length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">No chat requests</p>
             ) : (
               displayedChatRequests
                 .filter((request) => request.status === 'pending')
                 .map((request) => {
+                  const openProfileWithChat = () => {
+                    acceptChatRequestAndOpenChat(request);
+                  };
+
                   return (
                     <div
                       key={request.id}
-                      className="border-b border-gray-200 pb-4 last:border-b-0"
+                      className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
+                      onClick={openProfileWithChat}
                     >
-                      {/* Name and Action Buttons Row */}
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 text-base">{request.name}</h4>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAcceptChatRequest(request.id, request.senderId);
-                            }}
-                            className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-1.5 rounded transition"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRejectChatRequest(request.id);
-                            }}
-                            className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-1.5 rounded transition"
-                          >
-                            Reject
-                          </button>
+                      {/* Avatar */}
+                      <div className="flex-shrink-0 mr-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
+                          {request.avatar ? (
+                            <img
+                              src={request.avatar}
+                              alt={request.name || 'User'}
+                              className="w-full h-full rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span className="text-white text-sm font-semibold">
+                              {request.name?.[0]?.toUpperCase() || '?'}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Message Preview */}
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {request.message || 'New chat request'}
-                      </p>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-gray-900 text-sm truncate">
+                            {request.name || 'Unknown'}
+                          </h4>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openProfileWithChat();
+                            }}
+                            className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
+                          >
+                            REPLY
+                          </button>
+                        </div>
+                        <p
+                          className="text-xs text-gray-600 leading-relaxed line-clamp-2 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openProfileWithChat();
+                          }}
+                        >
+                          {request.message || 'New chat request'}
+                        </p>
+                        {request.createdAt && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(request.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })
