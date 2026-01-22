@@ -27,6 +27,7 @@ const Profile = () => {
   const [chatRequests, setChatRequests] = useState([]);
   const [callRequests, setCallRequests] = useState([]); // Missed calls
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
+  const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
   const [message, setMessage] = useState('');
   const [showFullBio, setShowFullBio] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
@@ -266,6 +267,34 @@ const Profile = () => {
         console.log('💬 New message received:', data);
         // Refresh contacts to update last message
         fetchContacts();
+      });
+
+      // Listen for typing events
+      socket.on('user-typing', (data) => {
+        console.log('⌨️ User typing:', data);
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => new Set([...prev, data.userId]));
+          // Clear typing status after 3 seconds
+          setTimeout(() => {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(data.userId);
+              return newSet;
+            });
+          }, 3000);
+        }
+      });
+
+      // Listen for stopped typing events
+      socket.on('user-stopped-typing', (data) => {
+        console.log('⌨️ User stopped typing:', data);
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(data.userId);
+            return newSet;
+          });
+        }
       });
 
       socketRef.current = socket;
@@ -1400,7 +1429,11 @@ const Profile = () => {
                         )}
                       </div>
                       <p className={`text-sm truncate ${isCallMessage ? 'text-gray-500 italic' : 'text-gray-600'}`}>
-                        {contact.message || 'No messages yet'}
+                        {typingUsers.has(String(contact.id)) ? (
+                          <span className="text-gray-500 italic">Typing...</span>
+                        ) : (
+                          contact.message || 'No messages yet'
+                        )}
                       </p>
                     </div>
                   </div>

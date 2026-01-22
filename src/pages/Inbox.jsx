@@ -22,6 +22,7 @@ const Inbox = () => {
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
+  const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
   const socketRef = useRef(null);
 
   // Socket.IO setup for real-time email updates
@@ -126,6 +127,30 @@ const Inbox = () => {
       socket.on('contact-update', (data) => {
         console.log('👥 [INBOX] Contact update received:', data);
         fetchContacts();
+      });
+
+      // Listen for typing events
+      socket.on('user-typing', (data) => {
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => new Set([...prev, data.userId]));
+          setTimeout(() => {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(data.userId);
+              return newSet;
+            });
+          }, 3000);
+        }
+      });
+
+      socket.on('user-stopped-typing', (data) => {
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(data.userId);
+            return newSet;
+          });
+        }
       });
 
       socketRef.current = socket;
@@ -630,7 +655,13 @@ const Inbox = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 truncate">{contact.message}</p>
+                          <p className="text-sm text-gray-600 truncate">
+                            {typingUsers.has(String(contact.id)) ? (
+                              <span className="text-gray-500 italic">Typing...</span>
+                            ) : (
+                              contact.message
+                            )}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -771,7 +802,11 @@ const Inbox = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 truncate">
-                      {contact.message}
+                      {typingUsers.has(String(contact.id)) ? (
+                        <span className="text-gray-500 italic">Typing...</span>
+                      ) : (
+                        contact.message
+                      )}
                     </p>
                   </div>
                 </div>

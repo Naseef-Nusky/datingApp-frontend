@@ -8,6 +8,7 @@ import SearchFilterModal from '../components/SearchFilterModal';
 import MingleIntroModal from '../components/MingleIntroModal';
 import LetsMingleModal from '../components/LetsMingleModal';
 import MingleSuccessModal from '../components/MingleSuccessModal';
+import StoriesCarousel from '../components/StoriesCarousel';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
+  const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [incomingCall, setIncomingCall] = useState(null);
   const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
@@ -205,6 +207,30 @@ const Dashboard = () => {
         console.log('💬 New message received:', data);
         // Refresh contacts to update last message
         fetchContacts();
+      });
+
+      // Listen for typing events
+      socket.on('user-typing', (data) => {
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => new Set([...prev, data.userId]));
+          setTimeout(() => {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(data.userId);
+              return newSet;
+            });
+          }, 3000);
+        }
+      });
+
+      socket.on('user-stopped-typing', (data) => {
+        if (data.userId && data.userId !== String(user.id)) {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(data.userId);
+            return newSet;
+          });
+        }
       });
 
       // Listen for chat request accepted
@@ -739,46 +765,8 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      {/* Top Row of Online Users */}
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-10">
-        <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-4">
-          <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto scrollbar-hide pb-2">
-            {onlineUsers.map((user) => (
-              <Link
-                key={user.id || user.userId}
-                to={`/profile/${user.userId}`}
-                className="flex flex-col items-center flex-shrink-0 cursor-pointer hover:opacity-80 transition"
-              >
-                <div className="relative">
-                  {user.photos && user.photos.length > 0 ? (
-                    <img
-                      src={user.photos[0].url}
-                      alt={user.firstName}
-                      className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full object-cover border-2 border-gray-300"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center border-2 border-gray-300">
-                      <span className="text-white font-semibold text-sm sm:text-base lg:text-lg">{user.firstName?.[0] || 'U'}</span>
-                    </div>
-                  )}
-                  {user.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                  )}
-                </div>
-                <span className="text-[10px] sm:text-xs text-gray-700 mt-1 text-center max-w-[50px] sm:max-w-[60px] truncate">
-                  {user.firstName}
-                </span>
-              </Link>
-            ))}
-            {onlineUsers.length === 0 && (
-              <div className="text-gray-500 text-sm">No online users</div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Stories Carousel */}
+      <StoriesCarousel />
 
       {/* Search Filter Modal */}
       <SearchFilterModal
@@ -832,7 +820,7 @@ const Dashboard = () => {
               return (
                 <div
                   key={profile.id || profile.userId}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition relative cursor-pointer"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition relative cursor-pointer isolate"
                   style={{
                     minHeight: '400px',
                     backgroundImage: profile.photos && profile.photos.length > 0 
@@ -846,30 +834,30 @@ const Dashboard = () => {
                 >
                   {/* Fallback background if no image */}
                   {(!profile.photos || profile.photos.length === 0) && (
-                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center z-0">
                       <FaHeart className="text-3xl sm:text-4xl lg:text-6xl text-gray-400" />
                     </div>
                   )}
 
                   {/* Gradient overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent z-[5]"></div>
 
                   {/* Top-left flame icon */}
-                  <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-10">
+                  <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-[20] pointer-events-none">
                     <div className="bg-orange-500 rounded-full p-1 sm:p-2">
                       <FaFire className="text-white text-xs sm:text-sm" />
                     </div>
                   </div>
                   
                   {/* Top-right checkmark */}
-                  <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-10">
+                  <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-[20] pointer-events-none">
                     <div className="bg-blue-500 rounded-full p-1 sm:p-2">
                       <FaCheckCircle className="text-white text-xs sm:text-sm" />
                     </div>
                   </div>
                   
                   {/* Bottom-left photo/video count */}
-                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-10">
+                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-[20] pointer-events-none">
                     {photoCount > 0 && (
                       <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
                         <FaCamera className="text-[10px] sm:text-xs" />
@@ -885,8 +873,8 @@ const Dashboard = () => {
                   </div>
 
                   {/* Profile Info - Overlaid at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 z-10">
-                    <div className="flex items-center space-x-1 sm:space-x-2 mb-2">
+                  <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 z-[30] bg-gradient-to-t from-black/70 via-black/50 to-transparent">
+                    <div className="flex items-center space-x-1 sm:space-x-2 mb-2 relative z-[35]">
                       <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate drop-shadow-lg">
                         {profile.firstName} {profile.lastName ? profile.lastName : ''}, {profile.age}
                       </h3>
@@ -898,7 +886,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Action Button */}
-                    <div>
+                    <div className="relative z-[40]">
                       {isOnline ? (
                         <button
                           onClick={(e) => {
@@ -907,7 +895,7 @@ const Dashboard = () => {
                               state: { openChat: true },
                             });
                           }}
-                          className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg"
+                          className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg relative z-[40]"
                         >
                           <FaComment className="text-xs" />
                           <span>CHAT NOW</span>
@@ -920,7 +908,7 @@ const Dashboard = () => {
                               state: { openEmailComposer: true },
                             });
                           }}
-                          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg"
+                          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg relative z-[40]"
                         >
                           <FaEnvelope className="text-xs" />
                           <span>SEND EMAIL</span>
@@ -998,7 +986,13 @@ const Dashboard = () => {
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{contact.message || 'No messages yet'}</p>
+                      <p className="text-sm text-gray-600 truncate">
+                        {typingUsers.has(String(contact.id)) ? (
+                          <span className="text-gray-500 italic">Typing...</span>
+                        ) : (
+                          contact.message || 'No messages yet'
+                        )}
+                      </p>
                       {contact.lastMessageAt && (
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(contact.lastMessageAt).toLocaleDateString('en-US', { 

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import AgoraChat from 'agora-chat';
 import axios from 'axios';
+import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
+import TypingIndicator from './TypingIndicator';
 
 const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
   const [messages, setMessages] = useState([]);
@@ -13,6 +15,9 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
   const [remoteUserProfile, setRemoteUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRemoteTyping, setIsRemoteTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const socketRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -1478,6 +1483,16 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
               )}
             </div>
           )}
+          
+          {/* Typing Indicator */}
+          {isRemoteTyping && (
+            <div className="flex justify-start mb-3">
+              <div className="max-w-[70%] rounded-2xl px-4 py-2.5 bg-white">
+                <TypingIndicator />
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
 
@@ -1637,7 +1652,31 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
               <input
                 type="text"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  // Emit typing event
+                  if (socketRef.current && socketRef.current.connected && remoteUserId) {
+                    socketRef.current.emit('typing', {
+                      userId: String(userId),
+                      remoteUserId: String(remoteUserId),
+                    });
+                    
+                    // Clear existing timeout
+                    if (typingTimeoutRef.current) {
+                      clearTimeout(typingTimeoutRef.current);
+                    }
+                    
+                    // Emit stopped typing after 2 seconds of inactivity
+                    typingTimeoutRef.current = setTimeout(() => {
+                      if (socketRef.current && socketRef.current.connected) {
+                        socketRef.current.emit('stopped-typing', {
+                          userId: String(userId),
+                          remoteUserId: String(remoteUserId),
+                        });
+                      }
+                    }, 2000);
+                  }
+                }}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
