@@ -5,6 +5,8 @@ import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes } f
 import axios from 'axios';
 import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
+import TodayIAmModal from './TodayIAmModal';
+import SearchFilterModal from './SearchFilterModal';
 
 const Header = () => {
   const { user } = useAuth();
@@ -13,6 +15,8 @@ const Header = () => {
   const [todayStatus, setTodayStatus] = useState(null);
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [showChatRequestsModal, setShowChatRequestsModal] = useState(false);
+  const [showTodayIAmModal, setShowTodayIAmModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
 
@@ -156,33 +160,45 @@ const Header = () => {
             <nav className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
               {/* Desktop Navigation */}
               <div className="hidden lg:flex items-center space-x-6">
-                <Link
-                  to="/today-i-am"
-                  state={{ from: location.pathname }}
-                  className="flex items-center space-x-1 text-white hover:text-nex-orange transition"
-                >
-                  <span>{getStatusLabel(todayStatus)}</span>
-                  <span className="text-xs">?</span>
-                </Link>
-                {location.pathname === '/dashboard' ? (
+                <div className="relative">
                   <button
-                    onClick={() => {
-                      // Dispatch custom event to open modal
-                      window.dispatchEvent(new CustomEvent('openSearchModal'));
+                    onClick={() => setShowTodayIAmModal(!showTodayIAmModal)}
+                    className="flex items-center space-x-1 text-white hover:text-nex-orange transition"
+                  >
+                    <span>{getStatusLabel(todayStatus)}</span>
+                    <span className="text-xs">?</span>
+                  </button>
+                  
+                  {/* Today I Am Dropdown */}
+                  <TodayIAmModal
+                    isOpen={showTodayIAmModal}
+                    onClose={() => setShowTodayIAmModal(false)}
+                    onStatusUpdate={(status) => {
+                      setTodayStatus(status);
+                      fetchTodayStatus();
+                      setShowTodayIAmModal(false);
                     }}
+                  />
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSearchModal(!showSearchModal)}
                     className="text-white hover:text-nex-orange transition"
                   >
                     SEARCH
                   </button>
-                ) : (
-                  <Link
-                    to="/dashboard"
-                    state={{ openSearchModal: true }}
-                    className="text-white hover:text-nex-orange transition"
-                  >
-                    SEARCH
-                  </Link>
-                )}
+                  
+                  {/* Search Dropdown */}
+                  <SearchFilterModal
+                    isOpen={showSearchModal}
+                    onClose={() => setShowSearchModal(false)}
+                    onApplyFilters={(filters) => {
+                      // Dispatch event to Dashboard to apply filters
+                      window.dispatchEvent(new CustomEvent('applySearchFilters', { detail: filters }));
+                      setShowSearchModal(false);
+                    }}
+                  />
+                </div>
                 <Link
                   to="/inbox"
                   className="relative text-white hover:text-nex-orange transition"
@@ -198,24 +214,25 @@ const Header = () => {
               {/* Mobile Navigation - Icons only */}
               <div className="flex lg:hidden items-center space-x-2 sm:space-x-3">
                 {/* 1. Search Icon */}
-                {location.pathname === '/dashboard' ? (
+                <div className="relative">
                   <button
-                    onClick={() => {
-                      window.dispatchEvent(new CustomEvent('openSearchModal'));
-                    }}
+                    onClick={() => setShowSearchModal(!showSearchModal)}
                     className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
                   >
                     <FaSearch className="text-lg sm:text-xl" />
                   </button>
-                ) : (
-                  <Link
-                    to="/dashboard"
-                    state={{ openSearchModal: true }}
-                    className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
-                  >
-                    <FaSearch className="text-lg sm:text-xl" />
-                  </Link>
-                )}
+                  
+                  {/* Search Dropdown */}
+                  <SearchFilterModal
+                    isOpen={showSearchModal}
+                    onClose={() => setShowSearchModal(false)}
+                    onApplyFilters={(filters) => {
+                      // Dispatch event to Dashboard to apply filters
+                      window.dispatchEvent(new CustomEvent('applySearchFilters', { detail: filters }));
+                      setShowSearchModal(false);
+                    }}
+                  />
+                </div>
 
                 {/* 2. Chat/Messages Icon - Opens My Contacts Modal */}
                 <button

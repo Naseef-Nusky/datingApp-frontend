@@ -4,7 +4,6 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import SearchFilterModal from '../components/SearchFilterModal';
 import MingleIntroModal from '../components/MingleIntroModal';
 import LetsMingleModal from '../components/LetsMingleModal';
 import MingleSuccessModal from '../components/MingleSuccessModal';
@@ -26,7 +25,6 @@ const Dashboard = () => {
   const ringtoneRef = useRef(null); // Ref for ringtone audio element
   
   // Filter states
-  const [showSearchModal, setShowSearchModal] = useState(false);
   const [filters, setFilters] = useState({
     gender: '',
     lookingFor: '',
@@ -285,16 +283,17 @@ const Dashboard = () => {
     }
   }, [location.state, navigate, location.pathname]);
 
-  // Listen for custom event to open search modal (when already on dashboard)
+  // Listen for custom event to apply search filters from Header
   useEffect(() => {
-    const handleOpenSearchModal = () => {
-      setShowSearchModal(true);
+    const handleApplySearchFilters = (event) => {
+      const filters = event.detail;
+      handleApplyFilters(filters);
     };
     
-    window.addEventListener('openSearchModal', handleOpenSearchModal);
+    window.addEventListener('applySearchFilters', handleApplySearchFilters);
     
     return () => {
-      window.removeEventListener('openSearchModal', handleOpenSearchModal);
+      window.removeEventListener('applySearchFilters', handleApplySearchFilters);
     };
   }, []);
 
@@ -330,7 +329,6 @@ const Dashboard = () => {
       location: appliedFilters.location || '',
       availableForVideoChat: appliedFilters.availableForVideoChat || false,
     });
-    setShowSearchModal(false);
   };
 
   const fetchOnlineUsers = async () => {
@@ -768,12 +766,6 @@ const Dashboard = () => {
       {/* Stories Carousel */}
       <StoriesCarousel />
 
-      {/* Search Filter Modal */}
-      <SearchFilterModal
-        isOpen={showSearchModal}
-        onClose={() => setShowSearchModal(false)}
-        onApplyFilters={handleApplyFilters}
-      />
 
       {/* Mingle Intro Modal - Step 1 */}
       <MingleIntroModal
@@ -813,8 +805,30 @@ const Dashboard = () => {
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 lg:py-6">
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
             {profiles.map((profile) => {
-              const photoCount = profile.photos?.length || 0;
-              const videoCount = Math.floor(Math.random() * 3); // Random video count for demo
+              // Count photos and videos from the photos array
+              const allMedia = profile.photos || [];
+              const photoCount = allMedia.filter(photo => {
+                // Check if it's a photo (not a video)
+                // Videos typically have .mp4, .mov, .webm extensions or video/ mimetype
+                if (typeof photo === 'string') return true; // Assume string URLs are photos
+                const url = photo?.url || photo;
+                if (!url) return false;
+                const lowerUrl = url.toLowerCase();
+                return !lowerUrl.includes('.mp4') && !lowerUrl.includes('.mov') && !lowerUrl.includes('.webm') && !lowerUrl.includes('video/');
+              }).length;
+              
+              const videoCount = allMedia.filter(photo => {
+                // Check if it's a video
+                if (typeof photo === 'string') {
+                  const lowerUrl = photo.toLowerCase();
+                  return lowerUrl.includes('.mp4') || lowerUrl.includes('.mov') || lowerUrl.includes('.webm');
+                }
+                const url = photo?.url || photo;
+                if (!url) return false;
+                const lowerUrl = url.toLowerCase();
+                return lowerUrl.includes('.mp4') || lowerUrl.includes('.mov') || lowerUrl.includes('.webm') || lowerUrl.includes('video/') || photo?.type === 'video' || photo?.mediaType === 'video';
+              }).length;
+              
               const isOnline = profile.isOnline || false;
               
               return (
@@ -824,7 +838,7 @@ const Dashboard = () => {
                   style={{
                     minHeight: '400px',
                     backgroundImage: profile.photos && profile.photos.length > 0 
-                      ? `url(${profile.photos[0].url})` 
+                      ? `url(${typeof profile.photos[0] === 'string' ? profile.photos[0] : profile.photos[0]?.url || ''})` 
                       : 'none',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
@@ -857,16 +871,30 @@ const Dashboard = () => {
                   </div>
                   
                   {/* Bottom-left photo/video count */}
-                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-[20] pointer-events-none">
+                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-[20]">
                     {photoCount > 0 && (
-                      <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
+                      <span 
+                        className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${profile.userId}`, { state: { showPhotos: true } });
+                        }}
+                        title={`${photoCount} photo${photoCount !== 1 ? 's' : ''}`}
+                      >
                         <FaCamera className="text-[10px] sm:text-xs" />
                         <span className="font-semibold">{photoCount}</span>
                       </span>
                     )}
                     {videoCount > 0 && (
-                      <span className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1">
-                        <FaPlay className="text-[10px] sm:text-xs" />
+                      <span 
+                        className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${profile.userId}`, { state: { showVideos: true } });
+                        }}
+                        title={`${videoCount} video${videoCount !== 1 ? 's' : ''}`}
+                      >
+                        <FaVideo className="text-[10px] sm:text-xs" />
                         <span className="font-semibold">{videoCount}</span>
                       </span>
                     )}

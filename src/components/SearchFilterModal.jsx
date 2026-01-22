@@ -157,80 +157,93 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 z-[90]" 
+        onClick={onClose}
+      ></div>
+      
+      {/* Dropdown - Positioned below button */}
+      <div className="fixed sm:absolute top-16 sm:top-full right-2 sm:right-0 left-2 sm:left-auto mt-0 sm:mt-2 bg-white rounded-lg shadow-2xl w-[calc(100%-1rem)] sm:w-[500px] lg:w-[600px] z-[100] overflow-hidden border border-gray-200" style={{ maxHeight: 'calc(100vh - 5rem)' }}>
         {/* Header */}
-        <div className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between rounded-t-lg">
-          <h2 className="text-xl font-semibold">Search for Your Matches</h2>
-          <div className="flex items-center space-x-4">
+        <div className="bg-white px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-gray-200">
+          <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800">Search for Your Matches</h2>
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={setToDefault}
-              className="text-sm text-blue-300 hover:text-blue-200"
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 transition underline"
             >
               Set to default
             </button>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-300"
+              className="text-gray-400 hover:text-gray-600 transition"
             >
-              <FaTimes />
+              <FaTimes size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Gender Preference */}
-          <div>
-            <label className="block text-gray-700 mb-2 font-medium">
-              {filters.gender === 'woman' ? 'Woman' : filters.gender === 'man' ? 'Man' : 'Person'} Looking for a ...
-            </label>
-            <select
-              value={filters.lookingFor}
-              onChange={(e) => handleChange('lookingFor', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            >
-              <option value="man">Man</option>
-              <option value="woman">Woman</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
+        {/* Content - Scrollable */}
+        <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+          {/* Gender Preference and Age Range - One Line on desktop, stacked on mobile */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end space-y-4 sm:space-y-0 sm:space-x-4">
+            {/* Gender Preference */}
+            <div className="flex-1">
+              <label className="block text-gray-700 mb-2 font-medium text-sm">
+                Looking for
+              </label>
+              <select
+                value={filters.lookingFor}
+                onChange={(e) => handleChange('lookingFor', e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="man">Man Looking for a Woman</option>
+                <option value="woman">Woman Looking for a Man</option>
+                <option value="man-man">Man Looking for a Man</option>
+                <option value="woman-woman">Woman Looking for a Woman</option>
+                <option value="man-both">Man Looking for a Man or Woman</option>
+                <option value="woman-both">Woman Looking for a Man or Woman</option>
+              </select>
+            </div>
 
-          {/* Age Range */}
-          <div>
-            <label className="block text-gray-700 mb-2 font-medium">Ages</label>
-            <div className="flex items-center space-x-2">
-              <select
-                value={filters.ageMin}
-                onChange={(e) => handleChange('ageMin', parseInt(e.target.value))}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                {Array.from({ length: 50 }, (_, i) => i + 18).map(age => (
-                  <option key={age} value={age}>{age}</option>
-                ))}
-              </select>
-              <span className="text-gray-500">-</span>
-              <select
-                value={filters.ageMax}
-                onChange={(e) => handleChange('ageMax', parseInt(e.target.value))}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                {Array.from({ length: 50 }, (_, i) => i + 18).map(age => (
-                  <option key={age} value={age}>{age}</option>
-                ))}
-              </select>
+            {/* Age Range */}
+            <div className="flex-1">
+              <label className="block text-gray-700 mb-2 font-medium text-sm">Ages</label>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={filters.ageMin}
+                  onChange={(e) => handleChange('ageMin', parseInt(e.target.value))}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {Array.from({ length: 50 }, (_, i) => i + 18).map(age => (
+                    <option key={age} value={age}>{age}</option>
+                  ))}
+                </select>
+                <span className="text-gray-500 font-medium">-</span>
+                <select
+                  value={filters.ageMax}
+                  onChange={(e) => handleChange('ageMax', parseInt(e.target.value))}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {Array.from({ length: 50 }, (_, i) => i + 18).map(age => (
+                    <option key={age} value={age}>{age}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-gray-700 mb-2 font-medium">Enter city or country</label>
+            <label className="block text-gray-700 mb-2 font-medium text-sm">Enter city or country</label>
             <input
               type="text"
               value={filters.location}
               onChange={(e) => handleChange('location', e.target.value)}
               placeholder="Enter city or country"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
 
@@ -241,9 +254,9 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
                 type="checkbox"
                 checked={filters.availableForVideoChat}
                 onChange={(e) => handleChange('availableForVideoChat', e.target.checked)}
-                className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-gray-700">Available for Video Chat</span>
+              <span className="text-gray-700 text-sm">Available for Video Chat</span>
             </label>
 
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -251,38 +264,38 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
                 type="checkbox"
                 checked={filters.compatibleZodiacOnly}
                 onChange={(e) => handleChange('compatibleZodiacOnly', e.target.checked)}
-                className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-gray-700">Show only the Zodiac Signs that are compatible with me</span>
+              <span className="text-gray-700 text-sm">Show only the Zodiac Signs that are compatible with me</span>
             </label>
           </div>
 
           {/* Zodiac Signs */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Zodiac Signs</h3>
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800">Zodiac Signs</h3>
               <button
                 onClick={selectAllZodiac}
-                className="text-blue-600 hover:text-blue-800 text-sm"
+                className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium"
               >
                 Select all
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {zodiacSigns.map((sign) => (
                 <label
                   key={sign.id}
-                  className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded"
+                  className="flex items-center space-x-1.5 sm:space-x-2 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-50 rounded transition"
                 >
                   <input
                     type="checkbox"
                     checked={filters.zodiacSigns.includes(sign.id)}
                     onChange={() => toggleZodiacSign(sign.id)}
-                    className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xl">{sign.symbol}</span>
-                    <span className="text-sm text-gray-700">{sign.name}</span>
+                  <div className="flex items-center space-x-1 sm:space-x-1.5">
+                    <span className="text-base sm:text-lg">{sign.symbol}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-700">{sign.name}</span>
                   </div>
                 </label>
               ))}
@@ -290,18 +303,18 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
           </div>
 
           {/* Add more options */}
-          <div className="text-center border-t pt-4">
+          <div className="text-center border-t border-gray-200 pt-3 sm:pt-4">
             <button
               onClick={() => setShowMoreOptions(!showMoreOptions)}
-              className="text-blue-600 hover:text-blue-800 text-sm underline decoration-dotted"
+              className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm underline decoration-dotted font-medium"
             >
               Add more options
             </button>
             {showMoreOptions && (
-              <div className="mt-4 border border-gray-200 rounded-lg p-4">
-                <div className="flex gap-4">
+              <div className="mt-3 sm:mt-4 border border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   {/* Left Column - Categories */}
-                  <div className="w-1/3 border-r border-gray-200 pr-4">
+                  <div className="w-full sm:w-1/3 border-r-0 sm:border-r border-gray-200 pr-0 sm:pr-4 border-b sm:border-b-0 pb-3 sm:pb-0">
                     <div className="space-y-2">
                       <button
                         onClick={() => setSelectedCategory('interests')}
@@ -623,16 +636,16 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-100 px-6 py-4 rounded-b-lg">
+        <div className="bg-gray-50 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-t border-gray-200">
           <button
             onClick={handleShowMatches}
-            className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition"
+            className="w-full bg-red-500 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-red-600 transition text-sm sm:text-base shadow-md"
           >
             SHOW MATCHES
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

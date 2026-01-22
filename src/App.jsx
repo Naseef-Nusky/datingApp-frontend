@@ -5,7 +5,6 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import TodayIAm from './pages/TodayIAm';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
 import Inbox from './pages/Inbox';
@@ -46,14 +45,6 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/today-i-am"
-              element={
-                <ProtectedRoute>
-                  <TodayIAm />
                 </ProtectedRoute>
               }
             />
