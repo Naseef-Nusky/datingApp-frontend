@@ -50,6 +50,11 @@ const MyProfile = () => {
     hair: '',
   });
   const [savingAboutMe, setSavingAboutMe] = useState(false);
+  const [showWishlistEdit, setShowWishlistEdit] = useState(false);
+  const [wishlistCatalog, setWishlistCatalog] = useState({ categories: [], products: [] });
+  const [draftWishlist, setDraftWishlist] = useState([]);
+  const [savingWishlist, setSavingWishlist] = useState(false);
+  const [wishlistActiveTab, setWishlistActiveTab] = useState('wishlist');
 
   useEffect(() => {
     fetchProfile();
@@ -502,6 +507,52 @@ const MyProfile = () => {
     }
   };
 
+  const handleOpenWishlistEdit = async () => {
+    setShowWishlistEdit(true);
+    setWishlistActiveTab('wishlist');
+    const current = Array.isArray(profile?.wishlist) ? profile.wishlist : [];
+    setDraftWishlist(current.map((item) => ({
+      productId: item.productId || item.id || '',
+      name: item.name || item.item || '',
+      imageUrl: item.imageUrl || '',
+    })));
+    try {
+      const { data } = await axios.get('/api/wishlist/catalog');
+      setWishlistCatalog({ categories: data.categories || [], products: data.products || [] });
+    } catch (err) {
+      console.error('Wishlist catalog error:', err);
+      setWishlistCatalog({ categories: [], products: [] });
+    }
+  };
+
+  const handleCloseWishlistEdit = () => {
+    setShowWishlistEdit(false);
+    setDraftWishlist([]);
+  };
+
+  const handleRemoveFromWishlist = (index) => {
+    setDraftWishlist((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddToWishlist = (product) => {
+    const entry = { productId: product.id, name: product.name, imageUrl: product.imageUrl || '' };
+    setDraftWishlist((prev) => (prev.some((w) => w.productId === product.id) ? prev : [...prev, entry]));
+  };
+
+  const handleSaveWishlist = async () => {
+    setSavingWishlist(true);
+    try {
+      await axios.put('/api/profiles/me', { wishlist: draftWishlist });
+      setProfile((prev) => ({ ...prev, wishlist: draftWishlist }));
+      setShowWishlistEdit(false);
+    } catch (err) {
+      console.error('Save wishlist error:', err);
+      alert(err.response?.data?.message || 'Failed to save wishlist');
+    } finally {
+      setSavingWishlist(false);
+    }
+  };
+
   const fetchContacts = async () => {
     try {
       // Fetch conversations/chats from API
@@ -868,15 +919,19 @@ const MyProfile = () => {
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <h2 className="text-lg sm:text-xl font-semibold">Your Wishlist</h2>
-                <button className="bg-gray-300 text-gray-700 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-gray-400 transition">
+                <button
+                  onClick={handleOpenWishlistEdit}
+                  className="bg-gray-300 text-gray-700 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-gray-400 transition cursor-pointer"
+                >
                   EDIT WISHLIST
                 </button>
               </div>
+
               {profile.wishlist && profile.wishlist.length > 0 ? (
                 <ul className="space-y-2">
                   {profile.wishlist.map((item, index) => (
                     <li key={index} className="text-gray-700">
-                      • {item.item} - {item.description}
+                      • {item.name || item.item || ''} {item.description ? `- ${item.description}` : ''}
                     </li>
                   ))}
                 </ul>
@@ -886,6 +941,171 @@ const MyProfile = () => {
                 </p>
               )}
             </div>
+
+            {/* Wishlist popup modal */}
+            {showWishlistEdit && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+                onClick={(e) => e.target === e.currentTarget && handleCloseWishlistEdit()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="wishlist-modal-title"
+              >
+                <div
+                  className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal header with X */}
+                  <div className="flex items-center justify-between shrink-0 px-4 py-3 border-b border-gray-200">
+                    <h2 id="wishlist-modal-title" className="text-lg font-semibold text-gray-800">
+                      Edit Wishlist
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={handleCloseWishlistEdit}
+                      className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
+                      aria-label="Close"
+                    >
+                      <FaTimes className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Category tabs */}
+                  <div className="shrink-0 flex flex-wrap gap-2 px-4 pt-3 pb-2 border-b border-gray-200 bg-gray-50/50">
+                    <button
+                      type="button"
+                      onClick={() => setWishlistActiveTab('wishlist')}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-t text-sm font-medium transition ${
+                        wishlistActiveTab === 'wishlist'
+                          ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                          : 'text-gray-600 hover:bg-white/80'
+                      }`}
+                    >
+                      <FaGift className="text-sm" /> Wishlist
+                    </button>
+                    {wishlistCatalog.categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setWishlistActiveTab(cat.id)}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-t text-sm font-medium transition ${
+                          wishlistActiveTab === cat.id
+                            ? 'text-blue-600 border-b-2 border-blue-600 bg-white shadow-sm'
+                            : 'text-gray-600 hover:bg-white/80'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Scrollable content */}
+                  <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                    {wishlistActiveTab === 'wishlist' && (
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-800 mb-4">Wishlist</h3>
+                        {draftWishlist.length === 0 ? (
+                          <p className="text-gray-500 py-4">No items in your wishlist. Add from the categories above.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {draftWishlist.map((item, index) => (
+                              <div key={`${item.productId}-${index}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                <div className="aspect-square bg-gray-100 relative">
+                                  {item.imageUrl ? (
+                                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                      <FaGift className="w-12 h-12" />
+                                    </div>
+                                  )}
+                                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded">
+                                    <FaGift className="w-3 h-3" /> Wishlist
+                                  </span>
+                                </div>
+                                <p className="p-3 font-medium text-gray-800 truncate">{item.name}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFromWishlist(index)}
+                                  className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium transition"
+                                >
+                                  REMOVE FROM WISHLIST
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {wishlistActiveTab !== 'wishlist' && (
+                      <div>
+                        {(() => {
+                          const cat = wishlistCatalog.categories.find((c) => c.id === wishlistActiveTab);
+                          const prods = wishlistCatalog.products.filter((p) => p.categoryId === wishlistActiveTab || (p.category && p.category.id === wishlistActiveTab));
+                          return (
+                            <>
+                              <h3 className="text-base font-semibold text-gray-800 mb-4">{cat?.name || 'Products'}</h3>
+                              {prods.length === 0 ? (
+                                <p className="text-gray-500 py-4">No products in this category.</p>
+                              ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {prods.map((p) => {
+                                    const inWishlist = draftWishlist.some((w) => w.productId === p.id);
+                                    return (
+                                      <div key={p.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                        <div className="aspect-square bg-gray-100 relative">
+                                          {p.imageUrl ? (
+                                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                              <FaGift className="w-12 h-12" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <p className="p-3 font-medium text-gray-800 truncate">{p.name}</p>
+                                        <button
+                                          type="button"
+                                          onClick={() => !inWishlist && handleAddToWishlist(p)}
+                                          disabled={inWishlist}
+                                          className={`w-full py-2.5 text-sm font-medium transition ${
+                                            inWishlist ? 'bg-gray-300 text-gray-500 cursor-default' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                                          }`}
+                                        >
+                                          {inWishlist ? 'In Wishlist' : 'ADD TO WISHLIST'}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer: Cancel + SAVE CHANGES */}
+                  <div className="shrink-0 flex justify-end items-center gap-3 px-4 py-4 border-t border-gray-200 bg-gray-50/50">
+                    <button
+                      type="button"
+                      onClick={handleCloseWishlistEdit}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveWishlist}
+                      disabled={savingWishlist}
+                      className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg shadow disabled:opacity-50"
+                    >
+                      {savingWishlist ? 'Saving...' : 'SAVE CHANGES'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Photos Section */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
