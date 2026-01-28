@@ -15,6 +15,9 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
   const [remoteUserProfile, setRemoteUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [catalogGifts, setCatalogGifts] = useState([]);
+  const [loadingGifts, setLoadingGifts] = useState(false);
+  const [sendingGiftId, setSendingGiftId] = useState(null);
   const [isRemoteTyping, setIsRemoteTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
   const socketRef = useRef(null);
@@ -52,6 +55,25 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
       }
     };
     fetchRemoteProfile();
+  }, [remoteUserId]);
+
+  // Fetch gift catalog when chat is open (for Gift tab)
+  useEffect(() => {
+    if (!remoteUserId) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingGifts(true);
+      try {
+        const { data } = await axios.get('/api/gifts/catalog');
+        if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!cancelled) setCatalogGifts([]);
+      } finally {
+        if (!cancelled) setLoadingGifts(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, [remoteUserId]);
 
   useEffect(() => {
@@ -887,6 +909,21 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     setShowEmojiPicker(false);
   };
 
+  const sendGift = async (giftId) => {
+    if (!remoteUserId || !giftId) return;
+    setSendingGiftId(giftId);
+    try {
+      await axios.post('/api/gifts/send', { receiverId: remoteUserId.toString(), giftId });
+      setTimeout(() => reloadMessages(), 500);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to send gift';
+      const balance = err.response?.data?.balance;
+      alert(balance != null ? `${msg} (Your balance: ${balance} credits)` : msg);
+    } finally {
+      setSendingGiftId(null);
+    }
+  };
+
   // File upload handler
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -1400,6 +1437,19 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                               <p className="text-sm mt-2 leading-relaxed">{msg.text}</p>
                             )}
                           </div>
+                        ) : msg.messageType === 'gift' && (msg.mediaUrl || msg.media_url) ? (
+                          <div>
+                            <div className="relative group">
+                              <img 
+                                src={msg.mediaUrl || msg.media_url} 
+                                alt="" 
+                                className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+                                style={{ maxHeight: '120px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                                onClick={() => window.open(msg.mediaUrl || msg.media_url, '_blank')}
+                                loading="lazy"
+                              />
+                            </div>
+                          </div>
                         ) : msg.messageType === 'video' && (msg.mediaUrl || msg.media_url) ? (
                           <div style={{ padding: 0, margin: 0 }}>
                             <video 
@@ -1562,9 +1612,70 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 <FaSmile className="text-sm" />
                 <span className="font-medium">Smiles</span>
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab('gift');
+                  setShowEmojiPicker(false);
+                }}
+                className={`py-3 flex items-center space-x-2 ${
+                  activeTab === 'gift'
+                    ? 'text-green-600 border-b-2 border-green-600'
+                    : 'text-gray-600'
+                }`}
+              >
+                <FaGift className="text-sm" />
+                <span className="font-medium">Gift</span>
+              </button>
             </div>
           </div>
 
+
+          {/* Tab Content - Send a heartfelt gift */}
+          {activeTab === 'gift' && (
+            <div className="px-4 py-3 border-t border-gray-200 bg-white">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
+                Send {remoteUserName} a heartfelt gift ❤️
+              </h3>
+              {loadingGifts ? (
+                <div className="text-sm text-gray-500 py-4">Loading gifts...</div>
+              ) : catalogGifts.length === 0 ? (
+                <div className="text-sm text-gray-500 py-4">No gifts available.</div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                  {catalogGifts.map((g) => {
+                    const cost = g.creditCost ?? 0;
+                    const isFree = cost === 0;
+                    const sending = sendingGiftId === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => sendGift(g.id)}
+                        disabled={sending}
+                        className="flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative disabled:opacity-60"
+                        title={g.name}
+                      >
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex items-center justify-center mb-1">
+                          {g.imageUrl ? (
+                            <img src={g.imageUrl} alt={g.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <span className="text-2xl">🎁</span>
+                          )}
+                        </div>
+                        {isFree && (
+                          <span className="absolute top-0.5 right-0.5 bg-green-600 text-white text-[10px] px-1 rounded font-medium">FREE</span>
+                        )}
+                        <span className="text-xs font-semibold text-gray-600">
+                          {isFree ? '0 Credits' : `${cost} Credits`}
+                        </span>
+                        {sending && <span className="text-[10px] text-gray-500">Sending...</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Tab Content - Photo/Video/Audio */}
           {activeTab === 'media' && (
@@ -1857,6 +1968,19 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                         {msg.text && msg.text !== '[Image]' && msg.text !== '[image]' && msg.text.trim() && (
                           <p className="text-sm mt-2">{msg.text}</p>
                         )}
+                      </div>
+                    ) : msg.messageType === 'gift' && (msg.mediaUrl || msg.media_url) ? (
+                      <div className="mt-1">
+                        <div className="relative group">
+                          <img 
+                            src={msg.mediaUrl || msg.media_url} 
+                            alt="" 
+                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+                            style={{ maxHeight: '120px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                            onClick={() => window.open(msg.mediaUrl || msg.media_url, '_blank')}
+                            loading="lazy"
+                          />
+                        </div>
                       </div>
                     ) : msg.messageType === 'video' && (msg.mediaUrl || msg.media_url) ? (
                       <div style={{ padding: 0, margin: 0 }}>

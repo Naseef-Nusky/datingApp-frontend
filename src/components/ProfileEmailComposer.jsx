@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments } from 'react-icons/fa';
+import { useState, useRef, useEffect } from 'react';
+import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments, FaHeart } from 'react-icons/fa';
 import axios from 'axios';
 
 const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
@@ -9,6 +9,9 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
+  const [catalogGifts, setCatalogGifts] = useState([]);
+  const [loadingGifts, setLoadingGifts] = useState(false);
+  const [sendingGiftId, setSendingGiftId] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleSend = async () => {
@@ -74,17 +77,49 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
     }
   };
 
-  const stickers = [
-    { emoji: '🍹', label: 'FREE' },
-    { emoji: '🎂', label: 'Happy Birthday' },
-    { emoji: '🌴', label: 'Palm Tree' },
-    { emoji: '🌸', label: 'Flowers' },
-    { emoji: '🎃', label: 'Halloween' },
-    { emoji: '❄️', label: 'Winter' },
-  ];
+  // Fetch gift catalog when composer is open – virtual gifts show in place of stickers
+  useEffect(() => {
+    if (!profile) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingGifts(true);
+      try {
+        const { data } = await axios.get('/api/gifts/catalog');
+        if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!cancelled) setCatalogGifts([]);
+      } finally {
+        if (!cancelled) setLoadingGifts(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [profile]);
 
-  const insertSticker = (emoji) => {
-    setMessage(prev => prev + emoji + ' ');
+  const sendGift = async (giftId) => {
+    const receiverId = profile?.userId;
+    if (!receiverId || !giftId) return;
+    const gift = catalogGifts.find((g) => g.id === giftId);
+    setSendingGiftId(giftId);
+    try {
+      await axios.post('/api/gifts/send', { receiverId, giftId });
+      // Send gift as attachment inside email (like a sticker)
+      const emailForm = new FormData();
+      emailForm.append('receiverId', receiverId);
+      emailForm.append('subject', '');
+      emailForm.append('content', '');
+      if (gift?.imageUrl) emailForm.append('mediaUrl', gift.imageUrl);
+      await axios.post('/api/messages/send-email', emailForm, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (onSent) onSent();
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to send gift';
+      const balance = err.response?.data?.balance;
+      alert(balance != null ? `${msg} (Your balance: ${balance} credits)` : msg);
+    } finally {
+      setSendingGiftId(null);
+    }
   };
 
   const handlePhotoVideoClick = () => {
@@ -272,28 +307,49 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
             </div>
           )}
 
-          {/* Stickers/Emojis */}
+          {/* Send a heartfelt gift – virtual gifts from catalog (replaces stickers) */}
           <div className="mb-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {stickers.map((sticker, index) => (
-                <button
-                  key={index}
-                  onClick={() => insertSticker(sticker.emoji)}
-                  className="flex-shrink-0 w-14 h-14 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-lg flex flex-col items-center justify-center text-2xl transition-all group relative"
-                  title={sticker.label}
-                >
-                  <span>{sticker.emoji}</span>
-                  {sticker.label === 'FREE' && (
-                    <span className="absolute -top-1 -right-1 text-[8px] bg-red-500 text-white px-1 rounded font-bold">
-                      FREE
-                    </span>
-                  )}
-                </button>
-              ))}
-              <button className="flex-shrink-0 w-14 h-14 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 border border-gray-200">
-                <span className="text-xl font-bold">↑</span>
-              </button>
-            </div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
+              Send {profile?.firstName || 'them'} a heartfelt gift <FaHeart className="text-red-500 text-xs" />
+            </h3>
+            {loadingGifts ? (
+              <div className="text-sm text-gray-500 py-2">Loading gifts...</div>
+            ) : catalogGifts.length === 0 ? (
+              <div className="text-sm text-gray-500 py-2">No gifts available. Add virtual gifts in Admin.</div>
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                {catalogGifts.map((g) => {
+                  const cost = g.creditCost ?? 0;
+                  const isFree = cost === 0;
+                  const sending = sendingGiftId === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => sendGift(g.id)}
+                      disabled={sending}
+                      className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow-md rounded-lg transition-all relative min-w-[70px] disabled:opacity-60"
+                      title={g.name}
+                    >
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center mb-1">
+                        {g.imageUrl ? (
+                          <img src={g.imageUrl} alt={g.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : (
+                          <span className="text-2xl">🎁</span>
+                        )}
+                      </div>
+                      {isFree && (
+                        <span className="absolute top-0.5 right-0.5 bg-green-600 text-white text-[10px] px-1 rounded font-medium">FREE</span>
+                      )}
+                      <span className="text-xs font-semibold text-gray-600">
+                        {isFree ? '0 Credits' : `${cost} Credits`}
+                      </span>
+                      {sending && <span className="text-[10px] text-gray-500">Sending...</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Send Button */}

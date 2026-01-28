@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllipsisV } from 'react-icons/fa';
+import { useState, useRef, useEffect } from 'react';
+import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllipsisV, FaHeart } from 'react-icons/fa';
 import axios from 'axios';
 
 const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
@@ -11,6 +11,9 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
+  const [catalogGifts, setCatalogGifts] = useState([]);
+  const [loadingGifts, setLoadingGifts] = useState(false);
+  const [sendingGiftId, setSendingGiftId] = useState(null);
   const fileInputRef = useRef(null);
 
   if (!email) return null;
@@ -94,13 +97,50 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
     }
   };
 
-  const stickers = [
-    { emoji: '🍹', label: 'FREE', price: '0' },
-    { emoji: '🏝️', label: 'Island', price: '820' },
-    { emoji: '🌹', label: 'Roses', price: '498' },
-    { emoji: '🎃', label: 'Pumpkin', price: '440' },
-    { emoji: '❄️', label: 'Snowflake', price: '750' },
-  ];
+  // Fetch gift catalog when composer is open
+  useEffect(() => {
+    if (!email) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingGifts(true);
+      try {
+        const { data } = await axios.get('/api/gifts/catalog');
+        if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!cancelled) setCatalogGifts([]);
+      } finally {
+        if (!cancelled) setLoadingGifts(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [email]);
+
+  const sendGift = async (giftId) => {
+    const receiverId = getReceiverId();
+    if (!receiverId || !giftId) return;
+    const gift = catalogGifts.find((g) => g.id === giftId);
+    setSendingGiftId(giftId);
+    try {
+      await axios.post('/api/gifts/send', { receiverId, giftId });
+      // Send gift as attachment inside email (like a sticker)
+      const emailForm = new FormData();
+      emailForm.append('receiverId', receiverId);
+      emailForm.append('subject', '');
+      emailForm.append('content', '');
+      if (gift?.imageUrl) emailForm.append('mediaUrl', gift.imageUrl);
+      await axios.post('/api/messages/send-email', emailForm, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (onSent) onSent();
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to send gift';
+      const balance = err.response?.data?.balance;
+      alert(balance != null ? `${msg} (Your balance: ${balance} credits)` : msg);
+    } finally {
+      setSendingGiftId(null);
+    }
+  };
 
   const backgrounds = [
     { name: 'Vintage', thumbnail: '📮' },
@@ -110,10 +150,6 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
     { name: 'Polka', thumbnail: '⚪' },
     { name: 'Beach', thumbnail: '🏖️' },
   ];
-
-  const insertSticker = (emoji) => {
-    setMessage(prev => prev + emoji + ' ');
-  };
 
   const handlePhotoVideoClick = () => {
     fileInputRef.current?.click();
@@ -315,26 +351,49 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               </div>
             )}
 
-            {/* Stickers/Gifts Bar */}
+            {/* Send a heartfelt gift */}
             <div className="mb-4">
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {stickers.map((sticker, index) => (
-                  <button
-                    key={index}
-                    onClick={() => insertSticker(sticker.emoji)}
-                    className="flex-shrink-0 flex flex-col items-center justify-center p-3 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-lg transition-all group relative min-w-[80px]"
-                    title={sticker.label}
-                  >
-                    <span className="text-3xl mb-1">{sticker.emoji}</span>
-                    <span className="text-xs font-semibold text-gray-600">
-                      {sticker.price === '0' ? 'FREE 0' : sticker.price}
-                    </span>
-                  </button>
-                ))}
-                <button className="flex-shrink-0 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 border border-gray-200">
-                  <span className="text-lg font-bold">↑</span>
-                </button>
-              </div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
+                Send {senderName} a heartfelt gift <FaHeart className="text-red-500 text-xs" />
+              </h3>
+              {loadingGifts ? (
+                <div className="text-sm text-gray-500 py-2">Loading gifts...</div>
+              ) : catalogGifts.length === 0 ? (
+                <div className="text-sm text-gray-500 py-2">No gifts available.</div>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                  {catalogGifts.map((g) => {
+                    const cost = g.creditCost ?? 0;
+                    const isFree = cost === 0;
+                    const sending = sendingGiftId === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => sendGift(g.id)}
+                        disabled={sending}
+                        className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow-md rounded-lg transition-all relative min-w-[70px] disabled:opacity-60"
+                        title={g.name}
+                      >
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center mb-1">
+                          {g.imageUrl ? (
+                            <img src={g.imageUrl} alt={g.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <span className="text-2xl">🎁</span>
+                          )}
+                        </div>
+                        {isFree && (
+                          <span className="absolute top-0.5 right-0.5 bg-green-600 text-white text-[10px] px-1 rounded font-medium">FREE</span>
+                        )}
+                        <span className="text-xs font-semibold text-gray-600">
+                          {isFree ? '0 Credits' : `${cost} Credits`}
+                        </span>
+                        {sending && <span className="text-[10px] text-gray-500">Sending...</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Send Button */}
