@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments, FaHeart } from 'react-icons/fa';
+import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 
 const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
@@ -11,12 +11,12 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const [mediaPreview, setMediaPreview] = useState(null);
   const [catalogGifts, setCatalogGifts] = useState([]);
   const [loadingGifts, setLoadingGifts] = useState(false);
-  const [sendingGiftId, setSendingGiftId] = useState(null);
+  const [selectedGift, setSelectedGift] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleSend = async () => {
-    if (!message.trim() && !selectedMedia) {
-      alert('Please enter a message or attach a photo/video');
+    if (!message.trim() && !selectedMedia && !selectedGift) {
+      alert('Please enter a message, add a photo/video, or add a gift');
       return;
     }
 
@@ -25,47 +25,45 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
       return;
     }
 
+    const receiverId = profile.userId;
+    if (!receiverId) {
+      alert('Error: Could not find receiver ID. Please refresh the page and try again.');
+      return;
+    }
+
     try {
       setSending(true);
-      console.log('📧 Sending email to profile:', profile);
-      
-      // The profile object from the API has userId field
-      const receiverId = profile.userId;
-      
-      if (!receiverId) {
-        console.error('❌ Profile userId missing:', profile);
-        alert('Error: Could not find receiver ID. Please refresh the page and try again.');
-        setSending(false);
-        return;
+
+      if (selectedGift) {
+        await axios.post('/api/gifts/send', { receiverId, giftId: selectedGift.id });
       }
-      
+
       const formData = new FormData();
       formData.append('receiverId', receiverId);
       formData.append('content', message.trim());
-      
-      // Only include subject if it's not empty
+
       if (subject && subject.trim()) {
         formData.append('subject', subject.trim());
       }
-      
+
       if (selectedMedia) {
         formData.append('media', selectedMedia);
       }
-      
-      console.log('📧 Sending email payload:', { receiverId, hasSubject: !!subject, contentLength: message.length, hasMedia: !!selectedMedia });
-      
-      const response = await axios.post('/api/messages/send-email', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+
+      if (selectedGift?.imageUrl) {
+        formData.append('mediaUrl', selectedGift.imageUrl);
+      }
+
+      await axios.post('/api/messages/send-email', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      console.log('✅ Email sent successfully:', response.data);
-      
+
       alert('Email sent successfully!');
       setSubject('');
       setMessage('');
       setSelectedMedia(null);
       setMediaPreview(null);
+      setSelectedGift(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onSent) onSent();
       if (onClose) onClose();
@@ -96,30 +94,8 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
     return () => { cancelled = true; };
   }, [profile]);
 
-  const sendGift = async (giftId) => {
-    const receiverId = profile?.userId;
-    if (!receiverId || !giftId) return;
-    const gift = catalogGifts.find((g) => g.id === giftId);
-    setSendingGiftId(giftId);
-    try {
-      await axios.post('/api/gifts/send', { receiverId, giftId });
-      // Send gift as attachment inside email (like a sticker)
-      const emailForm = new FormData();
-      emailForm.append('receiverId', receiverId);
-      emailForm.append('subject', '');
-      emailForm.append('content', '');
-      if (gift?.imageUrl) emailForm.append('mediaUrl', gift.imageUrl);
-      await axios.post('/api/messages/send-email', emailForm, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (onSent) onSent();
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to send gift';
-      const balance = err.response?.data?.balance;
-      alert(balance != null ? `${msg} (Your balance: ${balance} credits)` : msg);
-    } finally {
-      setSendingGiftId(null);
-    }
+  const addGiftToEmail = (g) => {
+    setSelectedGift({ id: g.id, imageUrl: g.imageUrl, name: g.name });
   };
 
   const handlePhotoVideoClick = () => {
@@ -259,6 +235,31 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
 
+          {/* Selected gift preview – large, with X to remove */}
+          {selectedGift && (
+            <div className="mb-4 relative inline-block">
+              <div className="max-w-[200px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                {selectedGift.imageUrl ? (
+                  <img
+                    src={selectedGift.imageUrl}
+                    alt=""
+                    className="w-full h-auto object-contain max-h-48"
+                  />
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center text-6xl">🎁</div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedGift(null)}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition shadow"
+                aria-label="Remove gift"
+              >
+                <FaTimes className="text-sm" />
+              </button>
+            </div>
+          )}
+
           {/* Message Field */}
           <textarea
             value={message}
@@ -307,47 +308,45 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
             </div>
           )}
 
-          {/* Send a heartfelt gift – virtual gifts from catalog (replaces stickers) */}
+          {/* Virtual gifts – horizontal row like stickers */}
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
-              Send {profile?.firstName || 'them'} a heartfelt gift <FaHeart className="text-red-500 text-xs" />
-            </h3>
             {loadingGifts ? (
               <div className="text-sm text-gray-500 py-2">Loading gifts...</div>
             ) : catalogGifts.length === 0 ? (
-              <div className="text-sm text-gray-500 py-2">No gifts available. Add virtual gifts in Admin.</div>
+              <div className="text-sm text-gray-500 py-2">No gifts available.</div>
             ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {catalogGifts.map((g) => {
                   const cost = g.creditCost ?? 0;
                   const isFree = cost === 0;
-                  const sending = sendingGiftId === g.id;
+                  const isSelected = selectedGift?.id === g.id;
                   return (
                     <button
                       key={g.id}
                       type="button"
-                      onClick={() => sendGift(g.id)}
-                      disabled={sending}
-                      className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow-md rounded-lg transition-all relative min-w-[70px] disabled:opacity-60"
+                      onClick={() => addGiftToEmail(g)}
+                      className={`flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-lg transition-all relative min-w-[72px] border-2 ${
+                        isSelected ? 'border-pink-500 bg-pink-50 shadow-md' : 'bg-white border-gray-200 hover:border-pink-300 hover:shadow-md'
+                      }`}
                       title={g.name}
                     >
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center mb-1">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center mb-1 relative">
                         {g.imageUrl ? (
-                          <img src={g.imageUrl} alt={g.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                          <img src={g.imageUrl} alt="" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                         ) : (
                           <span className="text-2xl">🎁</span>
                         )}
+                        {isFree && (
+                          <span className="absolute bottom-0 left-0 bg-red-500 text-white text-[9px] font-bold px-1 rounded-tr">FREE</span>
+                        )}
                       </div>
-                      {isFree && (
-                        <span className="absolute top-0.5 right-0.5 bg-green-600 text-white text-[10px] px-1 rounded font-medium">FREE</span>
-                      )}
-                      <span className="text-xs font-semibold text-gray-600">
-                        {isFree ? '0 Credits' : `${cost} Credits`}
-                      </span>
-                      {sending && <span className="text-[10px] text-gray-500">Sending...</span>}
+                      <span className="text-xs font-semibold text-gray-700">{cost}</span>
                     </button>
                   );
                 })}
+                <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
+                  <span className="text-lg font-bold">↑</span>
+                </div>
               </div>
             )}
           </div>
@@ -355,7 +354,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
           {/* Send Button */}
           <button
             onClick={handleSend}
-            disabled={sending || (!message.trim() && !selectedMedia)}
+            disabled={sending || (!message.trim() && !selectedMedia && !selectedGift)}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <FaEnvelope />

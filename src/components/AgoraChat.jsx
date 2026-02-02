@@ -1630,18 +1630,15 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           </div>
 
 
-          {/* Tab Content - Send a heartfelt gift */}
+          {/* Tab Content - Virtual gifts horizontal row like stickers */}
           {activeTab === 'gift' && (
             <div className="px-4 py-3 border-t border-gray-200 bg-white">
-              <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
-                Send {remoteUserName} a heartfelt gift ❤️
-              </h3>
               {loadingGifts ? (
                 <div className="text-sm text-gray-500 py-4">Loading gifts...</div>
               ) : catalogGifts.length === 0 ? (
                 <div className="text-sm text-gray-500 py-4">No gifts available.</div>
               ) : (
-                <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
                   {catalogGifts.map((g) => {
                     const cost = g.creditCost ?? 0;
                     const isFree = cost === 0;
@@ -1652,26 +1649,27 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                         type="button"
                         onClick={() => sendGift(g.id)}
                         disabled={sending}
-                        className="flex flex-col items-center justify-center p-2 bg-gray-50 border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative disabled:opacity-60"
+                        className="flex-shrink-0 flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative min-w-[72px] disabled:opacity-60"
                         title={g.name}
                       >
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex items-center justify-center mb-1">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-1 relative">
                           {g.imageUrl ? (
-                            <img src={g.imageUrl} alt={g.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                            <img src={g.imageUrl} alt="" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                           ) : (
                             <span className="text-2xl">🎁</span>
                           )}
+                          {isFree && (
+                            <span className="absolute bottom-0 left-0 bg-red-500 text-white text-[9px] font-bold px-1 rounded-tr">FREE</span>
+                          )}
                         </div>
-                        {isFree && (
-                          <span className="absolute top-0.5 right-0.5 bg-green-600 text-white text-[10px] px-1 rounded font-medium">FREE</span>
-                        )}
-                        <span className="text-xs font-semibold text-gray-600">
-                          {isFree ? '0 Credits' : `${cost} Credits`}
-                        </span>
-                        {sending && <span className="text-[10px] text-gray-500">Sending...</span>}
+                        <span className="text-xs font-semibold text-gray-700">{cost}</span>
+                        {sending && <span className="text-[9px] text-gray-500">...</span>}
                       </button>
                     );
                   })}
+                  <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
+                    <span className="text-lg font-bold">↑</span>
+                  </div>
                 </div>
               )}
             </div>
