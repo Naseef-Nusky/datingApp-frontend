@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { 
-  FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, 
+  FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, FaGift,
   FaCheckCircle, FaLeaf, FaMedal, FaMapMarkerAlt, FaPlay,
   FaSearch, FaVolumeUp, FaChevronDown, FaTimes
 } from 'react-icons/fa';
@@ -13,6 +13,7 @@ import AgoraVoiceCall from '../components/AgoraVoiceCall';
 import AgoraChat from '../components/AgoraChat';
 import ProfileEmailComposer from '../components/ProfileEmailComposer';
 import ProfilePhotoViewer from '../components/ProfilePhotoViewer';
+import ContactsSidebar from '../components/ContactsSidebar';
 import { createSafeChannelName } from '../utils/agoraUtils';
 
 const Profile = () => {
@@ -480,6 +481,10 @@ const Profile = () => {
             }
           }
           
+          const lastMsg = conv.lastMessage;
+          const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
+          const giftFromThem = !recentCall && lastMsg?.messageType === 'gift' && lastMsgSender === userId;
+          
           // Determine if contact has call history (for icon overlay)
           // Check if there's any call between current user and this contact
           const hasCallHistory = callRequestsData.some(call => {
@@ -500,7 +505,7 @@ const Profile = () => {
           return {
             id: userId,
             name: contactName,
-            type: contactName === 'Concierge' || contactName.includes('Concierge') ? 'Concierge' : null,
+            type: null,
             message: lastMessage,
             unreadCount: conv.unreadCount || 0,
             avatar: avatar,
@@ -509,33 +514,12 @@ const Profile = () => {
             recentCallType: recentCall?.callType || null,
             isBirthday: isBirthday,
             isCallMessage: recentCall ? true : false,
+            giftFromThem: !!giftFromThem,
           };
         });
         
-        // Add system contact (Concierge/Julia) at the beginning if not already present
-        const hasConcierge = contactsList.some(c => c.id === 'system-concierge' || c.name?.includes('Concierge'));
-        if (!hasConcierge) {
-          contactsList.unshift({
-            id: 'system-concierge',
-            name: 'Julia',
-            type: 'Concierge',
-            message: 'Hello! Today your p...',
-            unreadCount: 1,
-            avatar: null,
-            lastMessageAt: new Date(),
-            hasCallHistory: false,
-            isBirthday: false,
-            isCallMessage: false,
-          });
-        }
-        
-        // Sort contacts: Concierge first, then by lastMessageAt (most recent first)
+        // Sort contacts by lastMessageAt (most recent first)
         contactsList.sort((a, b) => {
-          // Concierge always first
-          if (a.id === 'system-concierge') return -1;
-          if (b.id === 'system-concierge') return 1;
-          
-          // Then sort by last message time (most recent first)
           const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
           const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
           return dateB - dateA;
@@ -544,20 +528,9 @@ const Profile = () => {
         setContacts(contactsList);
         console.log('✅ Loaded', contactsList.length, 'contacts');
       } else {
-        // No conversations found - still show Concierge
-        console.log('⚠️ No conversations found, showing Concierge only');
-        setContacts([{
-          id: 'system-concierge',
-          name: 'Julia',
-          type: 'Concierge',
-          message: 'Hello! Today your p...',
-          unreadCount: 1,
-          avatar: null,
-          lastMessageAt: new Date(),
-          hasCallHistory: false,
-          isBirthday: false,
-          isCallMessage: false,
-        }]);
+        // No conversations found
+        console.log('⚠️ No conversations found, contacts list will be empty');
+        setContacts([]);
       }
     } catch (error) {
       console.error('❌ Fetch contacts error:', error);
@@ -926,8 +899,8 @@ const Profile = () => {
       {/* Ringtone Audio Element */}
       <audio ref={ringtoneRef} preload="auto" />
       
-      <div className={`container mx-auto max-w-[1920px] px-2 sm:px-4 ${(showChat || showEmailComposer) ? 'lg:pr-80' : 'lg:pr-96'}`}>
-        <div className={`flex flex-col lg:flex-row ${(showChat || showEmailComposer) ? 'lg:gap-6' : ''}`}>
+      <div className={`container mx-auto max-w-[1920px] px-4 sm:px-6 lg:pr-80`}>
+        <div className={`flex flex-col lg:flex-row ${(showChat || showEmailComposer) ? 'lg:gap-2' : ''}`}>
           {/* Main Content - Left Column */}
           <div className={`${(showChat || showEmailComposer) ? 'w-full' : 'flex-1'} ${(showChat || showEmailComposer) ? 'hidden lg:block' : ''}`}>
             {/* Cover Photo Banner */}
@@ -1298,7 +1271,7 @@ const Profile = () => {
 
           {/* Chat Window - Middle Panel (when chat is open) */}
           {showChat && user?.id && (
-            <div className="w-full lg:w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-2 sm:p-4">
+            <div className="w-full min-w-0 lg:w-[56%] h-[92vh] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
               <div className="bg-white h-full rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <AgoraChat
                   userId={user.id}
@@ -1316,7 +1289,7 @@ const Profile = () => {
 
           {/* Email Composer - Middle Panel (when email composer is open) */}
           {showEmailComposer && profile && (
-            <div className="w-full lg:w-[50%] h-[92vh] sticky top-16 overflow-hidden flex flex-col p-2 sm:p-4">
+            <div className="w-full min-w-0 lg:w-[56%] h-[92vh] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
               <ProfileEmailComposer
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}
@@ -1332,228 +1305,24 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Right Sidebar - Outside Container - Hidden on mobile */}
-      <div className={`hidden lg:block ${(showChat || showEmailComposer) ? 'w-80' : 'w-96'} bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto z-40 pt-4`}>
-        {/* My Contacts */}
-        <div className="p-4 pt-8 border-b border-gray-200 bg-white mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800 text-base">My Contacts</h3>
-            {contacts.length > 0 && (
-              <span className="bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-semibold">
-                {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
-              </span>
-            )}
-          </div>
-
-          {contacts.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FaEnvelope className="text-gray-400 text-2xl" />
-              </div>
-              <p className="text-sm text-gray-500">No contacts yet</p>
-              <p className="text-xs text-gray-400 mt-1">Start chatting to see your contacts here</p>
-            </div>
-          ) : (
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {contacts.map((contact) => {
-                // Check if message is about a missed/ended call
-                const isCallMessage = contact.isCallMessage || contact.message?.includes('missed') || contact.message?.includes('ended');
-                const isBirthday = contact.isBirthday;
-                
-                return (
-                  <div 
-                    key={contact.id || `contact-${Math.random()}`} 
-                    className={`relative flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group ${
-                      isBirthday ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => {
-                      if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                        navigate(`/profile/${contact.id}`);
-                      }
-                    }}
-                  >
-                    {/* Birthday background decoration */}
-                    {isBirthday && (
-                      <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
-                        <div className="absolute top-0 left-0 w-full h-full opacity-20">
-                          <div className="absolute top-2 left-4 w-3 h-3 bg-pink-300 rounded-full"></div>
-                          <div className="absolute top-4 right-8 w-2 h-2 bg-yellow-300 rounded-full"></div>
-                          <div className="absolute bottom-2 left-8 w-2.5 h-2.5 bg-green-300 rounded-full"></div>
-                          <div className="absolute bottom-4 right-4 w-2 h-2 bg-purple-300 rounded-full"></div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="relative flex-shrink-0 z-10">
-                      {/* Use square avatar for Concierge, circular for others */}
-                      <div className={`w-14 h-14 ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-teal-300 transition`}>
-                        {contact.avatar ? (
-                          <img 
-                            src={contact.avatar} 
-                            alt={contact.name || 'Contact'} 
-                            className={`w-full h-full ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} object-cover`}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <span className="text-white font-semibold text-lg">
-                            {(contact.name && contact.name[0]?.toUpperCase()) || '?'}
-                          </span>
-                        )}
-                      </div>
-                      {/* Video/Call icon overlay - only show for non-Concierge contacts with call history */}
-                      {contact.hasCallHistory && contact.id !== 'system-concierge' && (
-                        <div className="absolute bottom-0 right-0 w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center border-2 border-white z-10">
-                          <FaVideo className="text-gray-600 text-xs" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 ml-3 z-10">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2 flex-1 min-w-0">
-                          <span className="font-semibold text-gray-800 text-sm truncate">
-                            {contact.name || 'Unknown'}
-                          </span>
-                          {contact.type && (
-                            <span className="text-red-500 text-xs font-medium whitespace-nowrap bg-red-50 px-2 py-0.5 rounded">
-                              {contact.type}
-                            </span>
-                          )}
-                        </div>
-                        {/* Unread badge on the right */}
-                        {contact.unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
-                            {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-sm truncate ${isCallMessage ? 'text-gray-500 italic' : 'text-gray-600'}`}>
-                        {typingUsers.has(String(contact.id)) ? (
-                          <span className="text-gray-500 italic">Typing...</span>
-                        ) : (
-                          contact.message || 'No messages yet'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Search Contact */}
-          <div className="relative mt-4">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search contact"
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-            <FaVolumeUp className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer" />
-          </div>
-        </div>
-
-        {/* Chat Requests (Profile Sidebar) */}
-        <div className="p-4 pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <h3 className="font-semibold text-gray-800">Chat Requests</h3>
-              {displayedChatRequests.filter(r => r.status === 'pending').length > 0 && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
-                  {displayedChatRequests.filter(r => r.status === 'pending').length}
-                </span>
-              )}
-            </div>
-            {displayedChatRequests.length > 5 && (
-              <button
-                onClick={() => setShowLessChatRequests(!showLessChatRequests)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium transition"
-              >
-                {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {displayedChatRequests.filter(r => r.status === 'pending').length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No chat requests</p>
-            ) : (
-              displayedChatRequests
-                .filter((request) => request.status === 'pending')
-                .map((request) => {
-                  const openProfileWithChat = () => {
-                    acceptChatRequestAndOpenChat(request);
-                  };
-
-                  return (
-                    <div
-                      key={request.id}
-                      className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                      onClick={openProfileWithChat}
-                    >
-                      {/* Avatar */}
-                      <div className="flex-shrink-0 mr-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                          {request.avatar ? (
-                            <img
-                              src={request.avatar}
-                              alt={request.name || 'User'}
-                              className="w-full h-full rounded-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <span className="text-white text-sm font-semibold">
-                              {request.name?.[0]?.toUpperCase() || '?'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-gray-900 text-sm truncate">
-                            {request.name || 'Unknown'}
-                          </h4>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openProfileWithChat();
-                            }}
-                            className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                          >
-                            REPLY
-                          </button>
-                        </div>
-                        <p
-                          className="text-xs text-gray-600 leading-relaxed line-clamp-2 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openProfileWithChat();
-                          }}
-                        >
-                          {request.message || 'New chat request'}
-                        </p>
-                        {request.createdAt && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {new Date(request.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-            )}
-          </div>
-        </div>
+      {/* Right Sidebar - Same layout as Dashboard/Inbox */}
+      <div className="hidden lg:flex flex-col w-80 bg-white border-l border-gray-200 h-screen fixed right-0 top-16 overflow-y-auto z-40">
+        <ContactsSidebar
+          contacts={contacts}
+          chatRequests={chatRequests}
+          typingUsers={typingUsers}
+          onContactClick={(contact) => {
+            if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
+              navigate(`/profile/${contact.id}`);
+            }
+          }}
+          onAcceptChatRequest={acceptChatRequestAndOpenChat}
+          showLessChatRequests={showLessChatRequests}
+          onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+          contactsMaxHeight="max-h-96"
+          chatRequestsMaxHeight="max-h-96"
+          chatRequestLimit={5}
+        />
       </div>
 
       {/* Incoming Call Notification */}

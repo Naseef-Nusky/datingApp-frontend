@@ -1,8 +1,10 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift } from 'react-icons/fa';
+import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
+import io from 'socket.io-client';
 import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
 import TodayIAmModal from './TodayIAmModal';
@@ -15,10 +17,12 @@ const Header = () => {
   const [todayStatus, setTodayStatus] = useState(null);
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [showChatRequestsModal, setShowChatRequestsModal] = useState(false);
+  const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [showTodayIAmModal, setShowTodayIAmModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (user) {
@@ -28,6 +32,29 @@ const Header = () => {
     }
   }, [user]);
 
+  // Socket: real-time updates for My Contacts sidebar (new message, gift, contact list change)
+  useEffect(() => {
+    if (!user?.id) return;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
+    socketRef.current = socket;
+    socket.emit('join-room', String(user.id));
+    socket.on('new-message', () => {
+      fetchContacts();
+    });
+    socket.on('contact-update', () => {
+      fetchContacts();
+      fetchChatRequests();
+    });
+    socket.on('new-chat-request', () => {
+      fetchChatRequests();
+    });
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user?.id]);
+
   const fetchContacts = async () => {
     try {
       const response = await axios.get('/api/messages/conversations');
@@ -35,15 +62,28 @@ const Header = () => {
         const contactsList = response.data.map((conv) => {
           const otherUser = conv.user;
           const profile = otherUser?.profile;
+          const lastMsg = conv.lastMessage;
+          const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
+          const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === conv.userId;
           return {
             id: conv.userId,
             name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',
             message: conv.lastMessage?.content || 'No messages yet',
             unreadCount: conv.unreadCount || 0,
             avatar: profile?.photos?.[0]?.url || null,
+            giftFromThem: !!giftFromThem,
+            lastMessageAt: conv.lastMessage?.createdAt,
           };
         });
-        setContacts(contactsList);
+        const filtered = contactsList.filter(
+          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+        );
+        filtered.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
+        });
+        setContacts(filtered);
       }
     } catch (error) {
       console.error('Error fetching contacts:', error);
@@ -305,151 +345,56 @@ const Header = () => {
         </div>
       </div>
 
-      {/* My Contacts Modal */}
-      {showContactsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowContactsModal(false)}>
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-800">My Contacts</h2>
+      {/* Contacts sidebar modal - My Contacts + Chat Requests (same as page sidebars) */}
+      {(showContactsModal || showChatRequestsModal) && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowContactsModal(false);
+            setShowChatRequestsModal(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-semibold text-gray-800">Contacts</h2>
               <button
-                onClick={() => setShowContactsModal(false)}
+                type="button"
+                onClick={() => {
+                  setShowContactsModal(false);
+                  setShowChatRequestsModal(false);
+                }}
                 className="text-gray-600 hover:text-gray-800"
               >
                 <FaTimes />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {contacts.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">No contacts yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {contacts.map((contact) => (
-                    <div
-                      key={contact.id || `contact-${Math.random()}`}
-                      className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                      onClick={() => {
-                        if (contact.id) {
-                          navigate(`/profile/${contact.id}`);
-                          setShowContactsModal(false);
-                        }
-                      }}
-                    >
-                      <div className="flex-shrink-0 mr-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                          {contact.avatar ? (
-                            <img
-                              src={contact.avatar}
-                              alt={contact.name}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-white font-semibold">
-                              {contact.name?.charAt(0)?.toUpperCase() || '?'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-gray-800 text-sm truncate">
-                            {contact.name}
-                          </span>
-                          {contact.unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
-                              {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 truncate">{contact.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chat Requests Modal */}
-      {showChatRequestsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowChatRequestsModal(false)}>
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-800">Chat Requests</h2>
-              <button
-                onClick={() => setShowChatRequestsModal(false)}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                <FaTimes />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-                  {chatRequests.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  No chat requests
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {chatRequests.map((request) => {
-                    const openProfileWithChat = () => {
-                      setShowChatRequestsModal(false);
-                      acceptChatRequestAndOpenChat(request);
-                    };
-
-                    return (
-                      <div
-                        key={request.id}
-                        className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                        onClick={openProfileWithChat}
-                      >
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                            {request.avatar ? (
-                              <img
-                                src={request.avatar}
-                                alt={request.name}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-white font-semibold">
-                                {request.name?.charAt(0)?.toUpperCase() || '?'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold text-gray-800 text-sm truncate">
-                              {request.name}
-                            </p>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProfileWithChat();
-                              }}
-                              className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                            >
-                              REPLY
-                            </button>
-                          </div>
-                          <p
-                            className="text-xs text-gray-600 truncate cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openProfileWithChat();
-                            }}
-                          >
-                            {request.message}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <ContactsSidebar
+                contacts={contacts}
+                chatRequests={chatRequests}
+                typingUsers={new Set()}
+                onContactClick={(contact) => {
+                  if (contact.id) {
+                    navigate(`/profile/${contact.id}`);
+                    setShowContactsModal(false);
+                    setShowChatRequestsModal(false);
+                  }
+                }}
+                onAcceptChatRequest={(request) => {
+                  setShowContactsModal(false);
+                  setShowChatRequestsModal(false);
+                  acceptChatRequestAndOpenChat(request);
+                }}
+                showLessChatRequests={showLessChatRequests}
+                onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+                contactsMaxHeight="max-h-64"
+                chatRequestsMaxHeight="max-h-80"
+                chatRequestLimit={5}
+                compact
+              />
             </div>
           </div>
         </div>

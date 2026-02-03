@@ -1355,7 +1355,8 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         )}
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
+        <div className={`flex-1 overflow-y-auto py-4 space-y-4 relative z-10 ${embedded ? 'px-4 sm:px-5 lg:px-6' : 'px-4 sm:px-6 lg:px-8'}`}>
+          <div className={`w-full mx-auto ${embedded ? 'max-w-full' : 'max-w-3xl'}`}>
           {/* View Older Messages Link */}
           {messages.length > 10 && (
             <div className="text-center">
@@ -1543,12 +1544,65 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
             </div>
           )}
           
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* Bottom Section - Tabs, Input */}
         <div className="border-t border-gray-200 bg-white z-10">
-          {/* Tabs */}
+          {/* Always-visible virtual gifts row (no separate Gift tab) */}
+          <div className="px-4 pt-3 border-t border-gray-200 bg-white">
+            {loadingGifts ? (
+              <div className="text-sm text-gray-500 py-3">Loading gifts...</div>
+            ) : catalogGifts.length === 0 ? (
+              <div className="text-sm text-gray-500 py-3">No gifts available.</div>
+            ) : (
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {catalogGifts.map((g) => {
+                  const cost = g.creditCost ?? 0;
+                  const isFree = cost === 0;
+                  const sending = sendingGiftId === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => sendGift(g.id)}
+                      disabled={sending}
+                      className="flex-shrink-0 flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative min-w-[72px] disabled:opacity-60"
+                      title={g.name}
+                    >
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-1 relative">
+                        {g.imageUrl ? (
+                          <img
+                            src={g.imageUrl}
+                            alt={g.name || ''}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-2xl">🎁</span>
+                        )}
+                        {isFree && (
+                          <span className="absolute bottom-0 left-0 bg-red-500 text-white text-[9px] font-bold px-1 rounded-tr">
+                            FREE
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700">{cost}</span>
+                      {sending && <span className="text-[9px] text-gray-500">...</span>}
+                    </button>
+                  );
+                })}
+                <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
+                  <span className="text-lg font-bold">↑</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tabs (Chat / Email / Media / Smiles) */}
           <div className="px-4 border-t border-gray-200">
             <div className="flex items-center space-x-6">
               <button
@@ -1612,68 +1666,8 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 <FaSmile className="text-sm" />
                 <span className="font-medium">Smiles</span>
               </button>
-              <button
-                onClick={() => {
-                  setActiveTab('gift');
-                  setShowEmojiPicker(false);
-                }}
-                className={`py-3 flex items-center space-x-2 ${
-                  activeTab === 'gift'
-                    ? 'text-green-600 border-b-2 border-green-600'
-                    : 'text-gray-600'
-                }`}
-              >
-                <FaGift className="text-sm" />
-                <span className="font-medium">Gift</span>
-              </button>
             </div>
           </div>
-
-
-          {/* Tab Content - Virtual gifts horizontal row like stickers */}
-          {activeTab === 'gift' && (
-            <div className="px-4 py-3 border-t border-gray-200 bg-white">
-              {loadingGifts ? (
-                <div className="text-sm text-gray-500 py-4">Loading gifts...</div>
-              ) : catalogGifts.length === 0 ? (
-                <div className="text-sm text-gray-500 py-4">No gifts available.</div>
-              ) : (
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {catalogGifts.map((g) => {
-                    const cost = g.creditCost ?? 0;
-                    const isFree = cost === 0;
-                    const sending = sendingGiftId === g.id;
-                    return (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => sendGift(g.id)}
-                        disabled={sending}
-                        className="flex-shrink-0 flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative min-w-[72px] disabled:opacity-60"
-                        title={g.name}
-                      >
-                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-1 relative">
-                          {g.imageUrl ? (
-                            <img src={g.imageUrl} alt="" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
-                          ) : (
-                            <span className="text-2xl">🎁</span>
-                          )}
-                          {isFree && (
-                            <span className="absolute bottom-0 left-0 bg-red-500 text-white text-[9px] font-bold px-1 rounded-tr">FREE</span>
-                          )}
-                        </div>
-                        <span className="text-xs font-semibold text-gray-700">{cost}</span>
-                        {sending && <span className="text-[9px] text-gray-500">...</span>}
-                      </button>
-                    );
-                  })}
-                  <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
-                    <span className="text-lg font-bold">↑</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Tab Content - Photo/Video/Audio */}
           {activeTab === 'media' && (
@@ -1752,12 +1746,6 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           {/* Input Field */}
           <div className="px-4 py-4 relative">
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="text-gray-600 hover:text-gray-800 p-2"
-              >
-                <FaSmile className="text-xl" />
-              </button>
               <input
                 type="text"
                 value={message}

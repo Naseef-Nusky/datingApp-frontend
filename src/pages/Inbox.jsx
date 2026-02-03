@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaReply, FaCamera, FaVideo, FaSpinner, FaSearch, FaVolumeUp, FaEllipsisV, FaPhone } from 'react-icons/fa';
+import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaReply, FaCamera, FaVideo, FaSpinner, FaSearch, FaVolumeUp, FaEllipsisV, FaPhone, FaGift } from 'react-icons/fa';
 import EmailDetailModal from '../components/EmailDetailModal';
 import InboxEmailComposer from '../components/InboxEmailComposer';
+import ContactsSidebar from '../components/ContactsSidebar';
 
 const Inbox = () => {
   const navigate = useNavigate();
@@ -123,9 +124,12 @@ const Inbox = () => {
         );
       });
 
-      // Listen for contact updates
+      // Listen for contact updates and new chat messages (real-time My Contacts sidebar)
       socket.on('contact-update', (data) => {
         console.log('👥 [INBOX] Contact update received:', data);
+        fetchContacts();
+      });
+      socket.on('new-message', () => {
         fetchContacts();
       });
 
@@ -238,6 +242,10 @@ const Inbox = () => {
             }
           }
           
+          const lastMsg = conv.lastMessage;
+          const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
+          const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
+          
           return {
             id: conv.userId || otherUser?.id,
             name: contactName,
@@ -246,20 +254,21 @@ const Inbox = () => {
             unreadCount: conv.unreadCount || 0,
             avatar: avatar,
             lastMessageAt: conv.lastMessage?.createdAt || conv.lastMessage?.created_at,
+            giftFromThem: !!giftFromThem,
           };
         });
         
-        // Add system contact (Concierge)
-        contactsList.unshift({
-          id: 'system-concierge',
-          name: 'Julia',
-          type: 'Concierge',
-          message: 'Hello! Today your p...',
-          unreadCount: 1,
-          avatar: null,
+        const filtered = contactsList.filter(
+          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+        );
+        
+        filtered.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
         });
         
-        setContacts(contactsList);
+        setContacts(filtered);
       }
     } catch (error) {
       console.error('Error fetching contacts:', error);
@@ -596,373 +605,65 @@ const Inbox = () => {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay - same ContactsSidebar as desktop */}
       {showMobileSidebar && (
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50" onClick={() => setShowMobileSidebar(false)}>
-          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-800">
-                {mobileSection === 'contacts' ? 'My Contacts' : 'Chat Requests'}
-              </h2>
+          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-semibold text-gray-800">Contacts</h2>
               <button
+                type="button"
                 onClick={() => setShowMobileSidebar(false)}
                 className="text-gray-600 hover:text-gray-800"
               >
                 ✕
               </button>
             </div>
-            {mobileSection === 'contacts' && (
-              <div className="p-4">
-                {contacts.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-gray-500">No contacts yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {contacts.map((contact) => (
-                      <div
-                        key={contact.id || `contact-${Math.random()}`}
-                        className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                        onClick={() => {
-                          if (contact.id && contact.id !== 'system-concierge') {
-                            navigate(`/profile/${contact.id}`);
-                          }
-                        }}
-                      >
-                        <div className="flex-shrink-0 mr-3">
-                          <div className={`w-14 h-14 ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden`}>
-                            {contact.avatar ? (
-                              <img
-                                src={contact.avatar}
-                                alt={contact.name}
-                                className={`w-full h-full ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} object-cover`}
-                              />
-                            ) : (
-                              <span className="text-white font-semibold text-lg">
-                                {contact.name?.charAt(0)?.toUpperCase() || '?'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-gray-800 text-sm truncate">
-                              {contact.name}
-                            </span>
-                            {contact.unreadCount > 0 && (
-                              <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
-                                {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 truncate">
-                            {typingUsers.has(String(contact.id)) ? (
-                              <span className="text-gray-500 italic">Typing...</span>
-                            ) : (
-                              contact.message
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {mobileSection === 'chat-requests' && (
-              <div className="p-4">
-                {displayedChatRequests.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    No chat requests
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {displayedChatRequests.map((request) => {
-                      const openProfileWithChat = () => {
-                        acceptChatRequestAndOpenChat(request);
-                      };
-
-                      return (
-                        <div
-                          key={request.id}
-                          className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                          onClick={openProfileWithChat}
-                        >
-                          <div className="flex-shrink-0 mr-3">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                              {request.avatar ? (
-                                <img
-                                  src={request.avatar}
-                                  alt={request.name}
-                                  className="w-full h-full rounded-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-white font-semibold">
-                                  {request.name?.charAt(0)?.toUpperCase() || '?'}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-semibold text-gray-800 text-sm truncate">
-                                {request.name}
-                              </p>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openProfileWithChat();
-                                }}
-                                className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                              >
-                                REPLY
-                              </button>
-                            </div>
-                            <p
-                              className="text-xs text-gray-600 truncate cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProfileWithChat();
-                              }}
-                            >
-                              {request.message}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <ContactsSidebar
+                contacts={contacts}
+                chatRequests={chatRequests}
+                typingUsers={typingUsers}
+                onContactClick={(contact) => {
+                  if (contact.id && contact.id !== 'system-concierge') {
+                    navigate(`/profile/${contact.id}`);
+                    setShowMobileSidebar(false);
+                  }
+                }}
+                onAcceptChatRequest={(request) => {
+                  setShowMobileSidebar(false);
+                  acceptChatRequestAndOpenChat(request);
+                }}
+                showLessChatRequests={showLessChatRequests}
+                onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+                contactsMaxHeight="max-h-64"
+                chatRequestsMaxHeight="max-h-80"
+                chatRequestLimit={5}
+                compact
+              />
+            </div>
           </div>
         </div>
       )}
 
       {/* Right Sidebar - Contacts and Chat Requests - Hidden on mobile */}
-      <div className="hidden lg:flex flex-col w-96 bg-white border-l border-gray-200 h-screen fixed right-0 top-16 overflow-y-auto z-40">
-        {/* My Contacts */}
-        <div id="contacts" className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">My Contacts</h3>
-            {totalUnreadContacts > 0 && (
-              <span className="bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-semibold">
-                {totalUnreadContacts > 9 ? '9+' : totalUnreadContacts}
-              </span>
-            )}
-          </div>
-
-          {contacts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-500">No contacts yet</p>
-            </div>
-          ) : (
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {contacts.map((contact) => (
-                <div
-                  key={contact.id || `contact-${Math.random()}`}
-                  className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                  onClick={() => {
-                    if (contact.id && contact.id !== 'system-concierge') {
-                      navigate(`/profile/${contact.id}`);
-                    }
-                  }}
-                >
-                  <div className="flex-shrink-0 mr-3">
-                    <div className={`w-14 h-14 ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden`}>
-                      {contact.avatar ? (
-                        <img
-                          src={contact.avatar}
-                          alt={contact.name}
-                          className={`w-full h-full ${contact.id === 'system-concierge' ? 'rounded-lg' : 'rounded-full'} object-cover`}
-                        />
-                      ) : (
-                        <span className="text-white font-semibold text-lg">
-                          {contact.name?.charAt(0)?.toUpperCase() || '?'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-2 flex-1 min-w-0">
-                        <span className="font-semibold text-gray-800 text-sm truncate">
-                          {contact.name}
-                        </span>
-                        {contact.type && (
-                          <span className="text-red-500 text-xs font-medium bg-red-50 px-2 py-0.5 rounded">
-                            {contact.type}
-                          </span>
-                        )}
-                      </div>
-                      {contact.unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 ml-2">
-                          {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 truncate">
-                      {typingUsers.has(String(contact.id)) ? (
-                        <span className="text-gray-500 italic">Typing...</span>
-                      ) : (
-                        contact.message
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Search Contact */}
-          <div className="relative mt-4">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs" />
-            <input
-              type="text"
-              placeholder="Search contact"
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nex-orange focus:border-transparent text-sm"
-            />
-            <FaVolumeUp className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer text-xs" />
-          </div>
-        </div>
-
-        {/* Chat Requests */}
-        <div id="chat-requests" className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Chat Requests</h3>
-            <button
-              onClick={() => setShowLessChatRequests(!showLessChatRequests)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {displayedChatRequests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 text-sm">
-                No chat requests
-              </div>
-            ) : (
-              displayedChatRequests.map((request) => {
-                const openProfileWithChat = () => {
-                  acceptChatRequestAndOpenChat(request);
-                };
-                
-                return (
-                  <div
-                    key={request.id}
-                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                    onClick={openProfileWithChat}
-                  >
-                    <div className="flex-shrink-0 mr-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                        {request.avatar ? (
-                          <img
-                            src={request.avatar}
-                            alt={request.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white font-semibold">
-                            {request.name?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-800 text-sm truncate">
-                          {request.name}
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openProfileWithChat();
-                          }}
-                          className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                        >
-                          REPLY
-                        </button>
-                      </div>
-                      <p
-                        className="text-xs text-gray-600 truncate cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openProfileWithChat();
-                        }}
-                      >
-                        {request.message}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          <div className="space-y-3">
-            {displayedChatRequests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 text-sm">
-                No chat requests
-              </div>
-            ) : (
-              displayedChatRequests.map((request) => {
-                const openProfileWithChat = () => {
-                  acceptChatRequestAndOpenChat(request);
-                };
-
-                return (
-                  <div
-                    key={request.id}
-                    className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                    onClick={openProfileWithChat}
-                  >
-                    <div className="flex-shrink-0 mr-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                        {request.avatar ? (
-                          <img
-                            src={request.avatar}
-                            alt={request.name}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white font-semibold">
-                            {request.name?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-800 text-sm truncate">
-                          {request.name}
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openProfileWithChat();
-                          }}
-                          className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                        >
-                          REPLY
-                        </button>
-                      </div>
-                      <p
-                        className="text-xs text-gray-600 truncate cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openProfileWithChat();
-                        }}
-                      >
-                        {request.message}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+      <div id="contacts-sidebar" className="hidden lg:flex flex-col w-80 bg-white border-l border-gray-200 h-screen fixed right-0 top-16 overflow-y-auto z-40">
+        <ContactsSidebar
+          contacts={contacts}
+          chatRequests={chatRequests}
+          typingUsers={typingUsers}
+          onContactClick={(contact) => {
+            if (contact.id && contact.id !== 'system-concierge') {
+              navigate(`/profile/${contact.id}`);
+            }
+          }}
+          onAcceptChatRequest={acceptChatRequestAndOpenChat}
+          showLessChatRequests={showLessChatRequests}
+          onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+          contactsMaxHeight="max-h-96"
+          chatRequestsMaxHeight="max-h-96"
+          chatRequestLimit={5}
+        />
       </div>
 
       {/* Email Detail Modal */}

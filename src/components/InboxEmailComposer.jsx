@@ -7,7 +7,6 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState('snow');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
@@ -15,6 +14,25 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [loadingGifts, setLoadingGifts] = useState(false);
   const [selectedGift, setSelectedGift] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Fetch gift catalog when composer is open (must be before any early return to satisfy hooks rules)
+  useEffect(() => {
+    if (!email) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingGifts(true);
+      try {
+        const { data } = await axios.get('/api/gifts/catalog');
+        if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!cancelled) setCatalogGifts([]);
+      } finally {
+        if (!cancelled) setLoadingGifts(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [email]);
 
   if (!email) return null;
 
@@ -106,37 +124,9 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
     }
   };
 
-  // Fetch gift catalog when composer is open
-  useEffect(() => {
-    if (!email) return;
-    let cancelled = false;
-    const load = async () => {
-      setLoadingGifts(true);
-      try {
-        const { data } = await axios.get('/api/gifts/catalog');
-        if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (!cancelled) setCatalogGifts([]);
-      } finally {
-        if (!cancelled) setLoadingGifts(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [email]);
-
   const addGiftToEmail = (g) => {
     setSelectedGift({ id: g.id, imageUrl: g.imageUrl, name: g.name });
   };
-
-  const backgrounds = [
-    { name: 'Vintage', thumbnail: '📮' },
-    { name: 'Rural', thumbnail: '🌾' },
-    { name: 'Town', thumbnail: '🏘️' },
-    { name: 'Sunset', thumbnail: '🌅' },
-    { name: 'Polka', thumbnail: '⚪' },
-    { name: 'Beach', thumbnail: '🏖️' },
-  ];
 
   const handlePhotoVideoClick = () => {
     fileInputRef.current?.click();
@@ -191,96 +181,87 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
         className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: selectedBackground === 'snow' 
-            ? 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fafafa 100%)'
-            : 'white',
+          background: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fafafa 100%)',
         }}
       >
-        {/* Header with recipient profile */}
-        <div className="relative p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {senderImage ? (
-                <img
-                  src={senderImage}
-                  alt={senderName}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center border-2 border-white shadow-md">
-                  <span className="text-white font-semibold text-2xl">
-                    {senderName.charAt(0).toUpperCase()}
-                  </span>
+        {/* Header with recipient profile - centered like reference */}
+        <div className="relative p-6 pt-8 pb-8 border-b border-gray-200 flex flex-col items-center justify-center text-center">
+          {/* Options and Close - top right */}
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowOptions(!showOptions)}
+                className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-white/50 transition"
+              >
+                <FaEllipsisV />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-10">
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                    Block User
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                    Report a Violation
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+                    Disable Sound
+                  </button>
                 </div>
               )}
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  My Email to {senderName}
-                </h2>
-              </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                {/* Options Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowOptions(!showOptions)}
-                    className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition"
-                  >
-                    <FaEllipsisV />
-                  </button>
-                  {showOptions && (
-                    <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-10">
-                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                        Block User
-                      </button>
-                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                        Report a Violation
-                      </button>
-                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                        Disable Sound
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={onClose}
-                  className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              {/* Small Photo/Video & Smiles links in header right corner */}
-              <div className="flex items-center gap-4 text-xs text-gray-600">
-                <button 
-                  onClick={handlePhotoVideoClick}
-                  className="flex items-center gap-1 hover:text-gray-900 transition-colors"
-                >
-                  <FaCamera className="text-sm" />
-                  <span>Photo/Video</span>
-                </button>
-                <button 
-                  onClick={handleSmilesClick}
-                  className="flex items-center gap-1 hover:text-gray-900 transition-colors"
-                >
-                  <FaSmile className="text-sm" />
-                  <span>Smiles</span>
-                </button>
-              </div>
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-white/50 transition"
+            >
+              <FaTimes />
+            </button>
           </div>
+          {/* Centered profile picture */}
+          {senderImage ? (
+            <img
+              src={senderImage}
+              alt={senderName}
+              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg mb-3"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center border-4 border-white shadow-lg mb-3">
+              <span className="text-white font-semibold text-2xl">
+                {senderName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          {/* Centered "My Email to ..." */}
+          <h2 className="text-xl font-bold text-gray-900">
+            My Email to {senderName}
+          </h2>
         </div>
 
         {/* Email Composition Area */}
         <div className="p-6">
+            {/* Photo/Video & Smiles - top right of white area */}
+            <div className="flex items-center justify-end gap-4 text-xs text-gray-600 mb-4">
+              <button 
+                onClick={handlePhotoVideoClick}
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+              >
+                <FaCamera className="text-sm" />
+                <span>Photo/Video</span>
+              </button>
+              <button 
+                onClick={handleSmilesClick}
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+              >
+                <FaSmile className="text-sm" />
+                <span>Smiles</span>
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
             {/* Subject Field */}
             <input
               type="text"
@@ -415,27 +396,6 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               <FaEnvelope className="text-xl" />
               <span>{sending ? 'SENDING...' : 'SEND EMAIL'}</span>
             </button>
-
-            {/* Background Themes */}
-            <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-              {backgrounds.map((bg, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedBackground(bg.name.toLowerCase())}
-                  className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 flex items-center justify-center text-2xl transition-all ${
-                    selectedBackground === bg.name.toLowerCase()
-                      ? 'border-blue-600 ring-2 ring-blue-200'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  title={bg.name}
-                >
-                  {bg.thumbnail}
-                  {selectedBackground === bg.name.toLowerCase() && (
-                    <span className="absolute text-green-500 text-sm">✓</span>
-                  )}
-                </button>
-              ))}
-            </div>
           </div>
       </div>
     </div>

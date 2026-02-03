@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import io from 'socket.io-client';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
+import ContactsSidebar from '../components/ContactsSidebar';
 
 const MyProfile = () => {
   const { user } = useAuth();
@@ -55,6 +57,7 @@ const MyProfile = () => {
   const [draftWishlist, setDraftWishlist] = useState([]);
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [wishlistActiveTab, setWishlistActiveTab] = useState('wishlist');
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchProfile();
@@ -62,36 +65,36 @@ const MyProfile = () => {
     fetchChatRequests();
   }, []);
 
-  // Periodic refresh for contacts and chat requests
+  // Real-time: My Contacts sidebar updates on new message, gift, or contact change
   useEffect(() => {
-    const contactsInterval = setInterval(() => {
+    if (!user?.id) return;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
+    socketRef.current = socket;
+    socket.emit('join-room', String(user.id));
+    socket.on('new-message', () => {
       fetchContacts();
-    }, 10000); // Refresh every 10 seconds
-
-    const chatRequestsInterval = setInterval(() => {
+    });
+    socket.on('contact-update', () => {
+      fetchContacts();
       fetchChatRequests();
-    }, 10000); // Refresh every 10 seconds
-
+    });
+    socket.on('new-chat-request', () => {
+      fetchChatRequests();
+    });
     return () => {
-      clearInterval(contactsInterval);
-      clearInterval(chatRequestsInterval);
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
+  }, [user?.id]);
 
-  // Periodic refresh for contacts and chat requests
+  // Fallback periodic refresh for contacts and chat requests (every 30s if socket missed an event)
   useEffect(() => {
-    const contactsInterval = setInterval(() => {
+    const interval = setInterval(() => {
       fetchContacts();
-    }, 10000); // Refresh every 10 seconds
-
-    const chatRequestsInterval = setInterval(() => {
       fetchChatRequests();
-    }, 10000); // Refresh every 10 seconds
-
-    return () => {
-      clearInterval(contactsInterval);
-      clearInterval(chatRequestsInterval);
-    };
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchProfile = async () => {
@@ -590,6 +593,10 @@ const MyProfile = () => {
             }
           }
           
+          const lastMsg = conv.lastMessage;
+          const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
+          const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
+          
           return {
             id: conv.userId || otherUser?.id,
             name: contactName,
@@ -598,49 +605,32 @@ const MyProfile = () => {
             unreadCount: conv.unreadCount || 0,
             avatar: avatar,
             lastMessageAt: conv.lastMessage?.createdAt || conv.lastMessage?.created_at,
+            giftFromThem: !!giftFromThem,
           };
         });
         
-        // Add system contact (Concierge) at the beginning
-        contactsList.unshift({
-          id: 'system-concierge',
-          name: 'Julia Concierge',
-          type: 'Concierge',
-          message: 'Welcome to Dating...',
-          unreadCount: 1,
-          avatar: null,
+        const filtered = contactsList.filter(
+          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+        );
+        
+        filtered.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
         });
         
-        setContacts(contactsList);
+        setContacts(filtered);
         console.log('✅ Loaded', contactsList.length, 'contacts');
       } else {
-        // Fallback to default contact
-        console.log('⚠️ No conversations found, using default contact');
-        setContacts([
-          {
-            id: 'system-concierge',
-            name: 'Julia Concierge',
-            type: 'Concierge',
-            message: 'Welcome to Dating...',
-            unreadCount: 1,
-            avatar: null,
-          },
-        ]);
+        // No conversations found
+        console.log('⚠️ No conversations found, contacts list will be empty');
+        setContacts([]);
       }
     } catch (error) {
       console.error('❌ Fetch contacts error:', error);
       console.error('Error details:', error.response?.data || error.message);
-      // Fallback to default contact on error
-      setContacts([
-        {
-          id: 'system-concierge',
-          name: 'Julia Concierge',
-          type: 'Concierge',
-          message: 'Welcome to Dating...',
-          unreadCount: 1,
-          avatar: null,
-        },
-      ]);
+      // On error, clear contacts
+      setContacts([]);
     }
   };
 
@@ -782,24 +772,25 @@ const MyProfile = () => {
       <div className="flex flex-col lg:flex-row">
         {/* Main Content */}
         <div className="flex-1 overflow-visible lg:mr-80">
-          {/* Cover Photo Banner */}
-          <div className="relative h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-visible">
-            {profile.coverPhoto ? (
-              <img
-                src={profile.coverPhoto}
-                alt="Cover"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400"></div>
-            )}
+          <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
+            {/* Cover Photo Banner inside container */}
+            <div className="relative h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-hidden rounded-b-2xl">
+              {profile.coverPhoto ? (
+                <img
+                  src={profile.coverPhoto}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400"></div>
+              )}
 
-            {/* Banner Overlay Content with Container */}
-            <div className="absolute inset-0 overflow-visible">
-              <div className="container mx-auto px-2 sm:px-4 lg:px-6 h-full relative max-w-6xl overflow-visible">
+              {/* Banner Overlay Content within same container */}
+              <div className="absolute inset-0 overflow-visible">
+                <div className="h-full relative overflow-visible">
                 {/* Top Left */}
                 <div className="absolute top-2 left-2 sm:top-4 sm:left-4 lg:top-4 lg:left-6 space-y-1 sm:space-y-2 z-10">
                   <button
@@ -895,6 +886,7 @@ const MyProfile = () => {
                 </div>
               </div>
             </div>
+          </div>
           </div>
 
           {/* Main Content Sections - Container */}
@@ -1280,147 +1272,24 @@ const MyProfile = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 h-screen sticky top-0 overflow-y-auto">
-          {/* My Contacts */}
-          <div className="p-4 pt-6 border-b border-gray-200 bg-white mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">My Contacts</h3>
-              {contacts.length > 0 && (
-                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                  {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
-                </span>
-              )}
-            </div>
-
-            {contacts.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500">No contacts yet</p>
-              </div>
-            ) : (
-              contacts.map((contact) => (
-                <div 
-                  key={contact.id || `contact-${Math.random()}`} 
-                  className="flex items-center space-x-3 mb-4 p-2 hover:bg-gray-50 rounded cursor-pointer transition"
-                  onClick={() => {
-                    if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                      navigate(`/profile/${contact.id}`);
-                    }
-                  }}
-                >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {contact.avatar ? (
-                      <img 
-                        src={contact.avatar} 
-                        alt={contact.name || 'Contact'} 
-                        className="w-full h-full rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-white font-semibold text-lg">
-                        {(contact.name && contact.name[0]) || '?'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 flex-wrap">
-                      <span className="font-medium text-gray-800 text-sm truncate">
-                        {contact.name || 'Unknown'}
-                      </span>
-                      {contact.type && (
-                        <span className="text-red-500 text-xs whitespace-nowrap">{contact.type}</span>
-                      )}
-                      {contact.unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                          {contact.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 truncate mt-1">
-                      {contact.message || 'No messages yet'}
-                    </p>
-                    {contact.lastMessageAt && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(contact.lastMessageAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-
-            {/* Search Contact */}
-            <div className="relative mt-4">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search contact"
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              />
-              <FaVolumeUp className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer" />
-            </div>
-          </div>
-
-          {/* Chat Requests */}
-          <div className="p-4 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800">Chat Requests</h3>
-              <button
-                onClick={() => setShowLessChatRequests(!showLessChatRequests)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
-              </button>
-            </div>
-
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {displayedChatRequests.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No chat requests</p>
-              ) : (
-                displayedChatRequests
-                  .filter((request) => request.status === 'pending')
-                  .map((request) => {
-                    return (
-                      <div
-                        key={request.id}
-                        className="border-b border-gray-200 pb-4 last:border-b-0"
-                      >
-                        {/* Name and Action Buttons Row */}
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900 text-base">{request.name}</h4>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAcceptChatRequest(request.id, request.senderId);
-                              }}
-                              className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-1.5 rounded transition"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRejectChatRequest(request.id);
-                              }}
-                              className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-1.5 rounded transition"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* Message Preview */}
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {request.message || 'New chat request'}
-                        </p>
-                      </div>
-                    );
-                  })
-              )}
-            </div>
-          </div>
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 h-screen sticky top-0 overflow-y-auto flex flex-col">
+          <ContactsSidebar
+            contacts={contacts}
+            chatRequests={chatRequests}
+            typingUsers={new Set()}
+            onContactClick={(contact) => {
+              if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
+                navigate(`/profile/${contact.id}`);
+              }
+            }}
+            onAcceptChatRequest={(request) => handleAcceptChatRequest(request.id, request.senderId)}
+            onRejectChatRequest={(request) => handleRejectChatRequest(request.id)}
+            showLessChatRequests={showLessChatRequests}
+            onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+            contactsMaxHeight="max-h-96"
+            chatRequestsMaxHeight="max-h-96"
+            chatRequestLimit={5}
+          />
         </div>
       </div>
 

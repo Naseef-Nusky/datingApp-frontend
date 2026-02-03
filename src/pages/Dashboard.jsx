@@ -8,6 +8,7 @@ import MingleIntroModal from '../components/MingleIntroModal';
 import LetsMingleModal from '../components/LetsMingleModal';
 import MingleSuccessModal from '../components/MingleSuccessModal';
 import StoriesCarousel from '../components/StoriesCarousel';
+import ContactsSidebar from '../components/ContactsSidebar';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -450,6 +451,9 @@ const Dashboard = () => {
           const otherUser = conv.user;
           const profile = otherUser?.profile; // Access profile data
           
+          const lastMsg = conv.lastMessage;
+          const senderId = lastMsg?.sender ?? lastMsg?.sender_id;
+          const giftFromThem = lastMsg?.messageType === 'gift' && senderId === conv.userId;
           return {
             id: conv.userId,
             name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',
@@ -458,46 +462,28 @@ const Dashboard = () => {
             unreadCount: conv.unreadCount || 0,
             avatar: profile?.photos?.[0]?.url || null,
             lastMessageAt: conv.lastMessage?.createdAt,
+            giftFromThem: !!giftFromThem,
           };
         });
-        
-        // Add system contact (Concierge) if needed
-        contactsList.unshift({
-          id: 'system-concierge',
-          name: 'Julia Concierge',
-          type: 'Concierge',
-          message: 'Welcome to Dating...',
-          unreadCount: 1,
-          avatar: null,
+        // Remove contacts with no activity (\"No messages yet\" and no timestamp)
+        const filtered = contactsList.filter(
+          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+        );
+        // Sort by latest activity (newest first)
+        filtered.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
         });
-        
-        setContacts(contactsList);
+        setContacts(filtered);
       } else {
-        // Fallback to default contact
-        setContacts([
-          {
-            id: 1,
-            name: 'Julia Concierge',
-            type: 'Concierge',
-            message: 'Welcome to Dating...',
-            unreadCount: 1,
-            avatar: null,
-          },
-        ]);
+        // No conversations found – no contacts
+        setContacts([]);
       }
     } catch (error) {
       console.error('Fetch contacts error:', error);
-      // Fallback to default contact on error
-      setContacts([
-        {
-          id: 1,
-          name: 'Julia Concierge',
-          type: 'Concierge',
-          message: 'Welcome to Dating...',
-          unreadCount: 1,
-          avatar: null,
-        },
-      ]);
+      // On error, clear contacts (no fake Concierge)
+      setContacts([]);
     }
   };
 
@@ -960,195 +946,23 @@ const Dashboard = () => {
         </div>
 
         {/* Right Sidebar - Fixed - Hidden on mobile */}
-        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-20 shadow-lg">
-          {/* My Contacts - Fixed Section */}
-          <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-800 text-base">My Contacts</h3>
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                {contacts.filter(c => c.unreadCount > 0).reduce((sum, c) => sum + c.unreadCount, 0)}
-              </span>
-            </div>
-
-            {contacts.length > 0 ? (
-              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-                {contacts.map((contact) => (
-                  <div 
-                    key={contact.id || `contact-${Math.random()}`} 
-                    className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition group"
-                    onClick={() => {
-                      if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                        navigate(`/profile/${contact.id}`);
-                      }
-                    }}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden ring-2 ring-transparent group-hover:ring-teal-300 transition">
-                        {contact.avatar ? (
-                          <img 
-                            src={contact.avatar} 
-                            alt={contact.name || 'Contact'} 
-                            className="w-full h-full rounded-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <span className="text-white font-semibold text-lg">{contact.name?.[0]?.toUpperCase() || '?'}</span>
-                        )}
-                      </div>
-                      {contact.unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                          {contact.unreadCount > 9 ? '9+' : contact.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2 flex-1 min-w-0">
-                          <span className="font-semibold text-gray-800 text-sm truncate">{contact.name || 'Unknown'}</span>
-                          {contact.type && (
-                            <span className="text-red-500 text-xs font-medium whitespace-nowrap bg-red-50 px-2 py-0.5 rounded">
-                              {contact.type}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">
-                        {typingUsers.has(String(contact.id)) ? (
-                          <span className="text-gray-500 italic">Typing...</span>
-                        ) : (
-                          contact.message || 'No messages yet'
-                        )}
-                      </p>
-                      {contact.lastMessageAt && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(contact.lastMessageAt).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 mb-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <FaEnvelope className="text-gray-400 text-2xl" />
-                </div>
-                <p className="text-sm text-gray-500">No contacts yet</p>
-                <p className="text-xs text-gray-400 mt-1">Start chatting to see your contacts here</p>
-              </div>
-            )}
-
-            {/* Search Contact */}
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search contact"
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white"
-              />
-              <FaVolumeUp className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-600 transition" />
-            </div>
-          </div>
-
-          {/* Chat Requests - Scrollable Section */}
-          <div className="p-4 bg-white flex-1 min-h-0 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <h3 className="font-semibold text-gray-800 text-base">Chat Requests</h3>
-              <button
-                onClick={() => setShowLessChatRequests(!showLessChatRequests)}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium transition"
-              >
-                {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
-              </button>
-            </div>
-
-            <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
-              {displayedChatRequests.length > 0 ? (
-                displayedChatRequests
-                  .filter((request) => request.status === 'pending')
-                  .map((request) => {
-                    const showVideoIcon = request.isVideoChat;
-                    const showAudioIcon = request.isAudioChat;
-                    const showEmailIcon = request.hasEmail;
-
-                    const openProfileWithChat = () => {
-                      acceptChatRequestAndOpenChat(request);
-                    };
-
-                    return (
-                      <div
-                        key={request.id}
-                        className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition border border-gray-100"
-                        onClick={openProfileWithChat}
-                      >
-                        {/* Avatar */}
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center overflow-hidden">
-                            {request.avatar ? (
-                              <img
-                                src={request.avatar}
-                                alt={request.name || 'User'}
-                                className="w-full h-full rounded-full object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <span className="text-white text-sm font-semibold">
-                                {request.name?.[0]?.toUpperCase() || '?'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-semibold text-gray-900 text-sm truncate">
-                              {request.name || 'Unknown'}
-                            </h4>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProfileWithChat();
-                              }}
-                              className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
-                            >
-                              REPLY
-                            </button>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            {showVideoIcon && <FaVideo className="text-green-500 text-xs flex-shrink-0" />}
-                            {showAudioIcon && <FaVolumeUp className="text-blue-500 text-xs flex-shrink-0" />}
-                            {showEmailIcon && <FaEnvelope className="text-red-500 text-xs flex-shrink-0" />}
-                            <p
-                              className="text-xs text-gray-600 truncate flex-1 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProfileWithChat();
-                              }}
-                            >
-                              {request.message || 'New chat request'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-              ) : (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  No chat requests
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-20 shadow-lg overflow-hidden">
+          <ContactsSidebar
+            contacts={contacts}
+            chatRequests={chatRequests}
+            typingUsers={typingUsers}
+            onContactClick={(contact) => {
+              if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
+                navigate(`/profile/${contact.id}`);
+              }
+            }}
+            onAcceptChatRequest={acceptChatRequestAndOpenChat}
+            showLessChatRequests={showLessChatRequests}
+            onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
+            contactsMaxHeight="max-h-64"
+            chatRequestsMaxHeight="flex-1 min-h-0"
+            chatRequestLimit={5}
+          />
         </div>
     </div>
   );
