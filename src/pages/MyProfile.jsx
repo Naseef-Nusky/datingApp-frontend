@@ -931,13 +931,30 @@ const MyProfile = () => {
               </div>
 
               {profile.wishlist && profile.wishlist.length > 0 ? (
-                <ul className="space-y-2">
-                  {profile.wishlist.map((item, index) => (
-                    <li key={index} className="text-gray-700">
-                      • {item.name || item.item || ''} {item.description ? `- ${item.description}` : ''}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex flex-wrap gap-3">
+                  {profile.wishlist.map((item, index) => {
+                    const label = item.name || item.item || 'Wishlist item';
+                    const imageUrl = item.imageUrl || '';
+                    return (
+                      <div key={index} className="w-[72px]">
+                        <div className="w-[72px] h-[72px] rounded-lg overflow-hidden">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={label}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500 px-1 text-center">
+                              {label}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <p className="text-gray-600">
                   Looks like the Wishlist hasn't been completed yet
