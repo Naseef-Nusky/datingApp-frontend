@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { RefillModalProvider } from './context/RefillModalContext';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -28,15 +29,16 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          <Routes>
+      <RefillModalProvider>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -80,9 +82,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
-          </Routes>
-        </div>
-      </Router>
+            </Routes>
+          </div>
+        </Router>
+      </RefillModalProvider>
     </AuthProvider>
   );
 }

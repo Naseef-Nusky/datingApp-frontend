@@ -5,9 +5,11 @@ import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 import TypingIndicator from './TypingIndicator';
 import { useAuth } from '../context/AuthContext';
+import { useRefillModal } from '../context/RefillModalContext';
 
 const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
   const { fetchUser } = useAuth();
+  const { openRefillModal } = useRefillModal();
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -922,9 +924,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
       const data = err.response?.data;
       const msg = data?.message || 'Failed to send gift';
       if (err.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
-        const required = data?.required ?? 0;
-        const balance = data?.balance ?? 0;
-        alert(`Insufficient credits. This gift costs ${required} credits. Your balance: ${balance} credits. Please refill your account.`);
+        openRefillModal();
       } else {
         alert(msg);
       }
@@ -1448,12 +1448,12 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                             )}
                           </div>
                         ) : msg.messageType === 'gift' && (msg.mediaUrl || msg.media_url) ? (
-                          <div>
-                            <div className="relative group">
+                          <div className="cursor-pointer">
+                            <div className="relative inline-block rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-lg active:scale-95">
                               <img 
                                 src={msg.mediaUrl || msg.media_url} 
-                                alt="" 
-                                className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+                                alt="Gift" 
+                                className="max-w-full rounded-lg cursor-pointer"
                                 style={{ maxHeight: '120px', width: 'auto', objectFit: 'contain', display: 'block' }}
                                 onClick={() => window.open(msg.mediaUrl || msg.media_url, '_blank')}
                                 loading="lazy"
@@ -1566,7 +1566,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
             ) : catalogGifts.length === 0 ? (
               <div className="text-sm text-gray-500 py-3">No gifts available.</div>
             ) : (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex items-center gap-3 overflow-x-auto overflow-y-hidden pb-2">
                 {catalogGifts.map((g) => {
                   const cost = g.creditCost ?? 0;
                   const isFree = cost === 0;
@@ -1577,10 +1577,10 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                       type="button"
                       onClick={() => sendGift(g.id)}
                       disabled={sending}
-                      className="flex-shrink-0 flex flex-col items-center justify-center p-2 bg-white border border-gray-200 hover:border-pink-300 hover:shadow rounded-lg transition relative min-w-[72px] disabled:opacity-60"
+                      className="group/gift flex-shrink-0 flex flex-col items-center justify-center p-2 bg-transparent border-0 rounded-lg transition-all duration-200 relative min-w-[72px] disabled:opacity-60 hover:-translate-y-1 hover:scale-110"
                       title={g.name}
                     >
-                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-1 relative">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50/50 flex items-center justify-center mb-1 relative">
                         {g.imageUrl ? (
                           <img
                             src={g.imageUrl}
@@ -1599,14 +1599,13 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-semibold text-gray-700">{cost}</span>
-                      {sending && <span className="text-[9px] text-gray-500">...</span>}
+                      <span className="text-xs font-semibold text-gray-600 opacity-0 group-hover/gift:opacity-100 transition-opacity min-h-[1rem]">
+                        {isFree ? 'FREE' : `${cost} Credits`}
+                      </span>
+                      {sending && <span className="absolute inset-0 flex items-center justify-center text-[9px] text-gray-500 bg-white/80">...</span>}
                     </button>
                   );
                 })}
-                <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
-                  <span className="text-lg font-bold">↑</span>
-                </div>
               </div>
             )}
           </div>
@@ -1965,12 +1964,12 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                         )}
                       </div>
                     ) : msg.messageType === 'gift' && (msg.mediaUrl || msg.media_url) ? (
-                      <div className="mt-1">
-                        <div className="relative group">
+                      <div className="mt-1 cursor-pointer">
+                        <div className="relative inline-block rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-lg active:scale-95">
                           <img 
                             src={msg.mediaUrl || msg.media_url} 
-                            alt="" 
-                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+                            alt="Gift" 
+                            className="max-w-full rounded-lg cursor-pointer"
                             style={{ maxHeight: '120px', width: 'auto', objectFit: 'contain', display: 'block' }}
                             onClick={() => window.open(msg.mediaUrl || msg.media_url, '_blank')}
                             loading="lazy"

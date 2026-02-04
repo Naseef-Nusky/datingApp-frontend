@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useRefillModal } from '../context/RefillModalContext';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
-import CreditPackModal from '../components/CreditPackModal';
 
 const MyProfile = () => {
   const { user, fetchUser } = useAuth();
+  const { openRefillModal } = useRefillModal();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,6 @@ const MyProfile = () => {
   const [draftWishlist, setDraftWishlist] = useState([]);
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [wishlistActiveTab, setWishlistActiveTab] = useState('wishlist');
-  const [showCreditPackModal, setShowCreditPackModal] = useState(false);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -599,7 +599,7 @@ const MyProfile = () => {
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
           if (lastMsg?.messageType === 'gift') {
-            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+            lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           
           return {
@@ -829,7 +829,7 @@ const MyProfile = () => {
                 {/* Bottom Right - Credits */}
                 <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 lg:bottom-4 lg:right-6 z-10">
                   <button
-                    onClick={() => setShowCreditPackModal(true)}
+                    onClick={openRefillModal}
                     className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold"
                   >
                     {user?.credits ?? 0} CREDITS - REFILL
@@ -1285,7 +1285,7 @@ const MyProfile = () => {
             typingUsers={new Set()}
             onContactClick={(contact) => {
               if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                navigate(`/profile/${contact.id}`);
+                navigate(`/profile/${contact.id}`, { state: { openChat: true } });
               }
             }}
             onAcceptChatRequest={(request) => handleAcceptChatRequest(request.id, request.senderId)}
@@ -1784,12 +1784,6 @@ const MyProfile = () => {
         />
       )}
 
-      {/* Credit Pack / Refill Account Modal */}
-      <CreditPackModal
-        isOpen={showCreditPackModal}
-        onClose={() => setShowCreditPackModal(false)}
-        onCreditsAdded={fetchUser}
-      />
     </div>
   );
 };

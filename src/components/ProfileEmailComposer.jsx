@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useRefillModal } from '../context/RefillModalContext';
 
 const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const { fetchUser } = useAuth();
+  const { openRefillModal } = useRefillModal();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -44,9 +46,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
           const data = giftErr.response?.data;
           const msg = data?.message || 'Failed to send gift';
           if (giftErr.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
-            const required = data?.required ?? 0;
-            const balance = data?.balance ?? 0;
-            alert(`Insufficient credits. This gift costs ${required} credits. Your balance: ${balance} credits. Please refill your account.`);
+            openRefillModal();
           } else {
             alert(msg);
           }

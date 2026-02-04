@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRefillModal } from '../context/RefillModalContext';
 import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins } from 'react-icons/fa';
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
@@ -9,10 +10,10 @@ import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
 import TodayIAmModal from './TodayIAmModal';
 import SearchFilterModal from './SearchFilterModal';
-import CreditPackModal from './CreditPackModal';
 
 const Header = () => {
   const { user, fetchUser } = useAuth();
+  const { openRefillModal } = useRefillModal();
   const location = useLocation();
   const navigate = useNavigate();
   const [todayStatus, setTodayStatus] = useState(null);
@@ -21,7 +22,6 @@ const Header = () => {
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [showTodayIAmModal, setShowTodayIAmModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [showCreditPackModal, setShowCreditPackModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -69,7 +69,7 @@ const Header = () => {
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === conv.userId;
           let message = conv.lastMessage?.content || 'No messages yet';
           if (lastMsg?.messageType === 'gift') {
-            message = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+            message = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           return {
             id: conv.userId,
@@ -253,7 +253,7 @@ const Header = () => {
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
                 <button
-                  onClick={() => setShowCreditPackModal(true)}
+                  onClick={openRefillModal}
                   className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                 >
                   REFILL ACCOUNT
@@ -326,7 +326,7 @@ const Header = () => {
 
                 {/* 5. Refill Account Icon - opens Credit Pack modal */}
                 <button
-                  onClick={() => setShowCreditPackModal(true)}
+                  onClick={openRefillModal}
                   className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
                   title="Refill Account"
                 >
@@ -396,7 +396,7 @@ const Header = () => {
                 typingUsers={new Set()}
                 onContactClick={(contact) => {
                   if (contact.id) {
-                    navigate(`/profile/${contact.id}`);
+                    navigate(`/profile/${contact.id}`, { state: { openChat: true } });
                     setShowContactsModal(false);
                     setShowChatRequestsModal(false);
                   }
@@ -418,12 +418,6 @@ const Header = () => {
         </div>
       )}
 
-      {/* Credit Pack / Refill Account Modal - same as My Profile refill */}
-      <CreditPackModal
-        isOpen={showCreditPackModal}
-        onClose={() => setShowCreditPackModal(false)}
-        onCreditsAdded={fetchUser}
-      />
     </header>
   );
 };

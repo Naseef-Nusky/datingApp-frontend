@@ -485,7 +485,7 @@ const Profile = () => {
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = !recentCall && lastMsg?.messageType === 'gift' && lastMsgSender === userId;
           if (lastMsg?.messageType === 'gift') {
-            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+            lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           
           // Determine if contact has call history (for icon overlay)
@@ -1316,7 +1316,7 @@ const Profile = () => {
           typingUsers={typingUsers}
           onContactClick={(contact) => {
             if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-              navigate(`/profile/${contact.id}`);
+              navigate(`/profile/${contact.id}`, { state: { openChat: true } });
             }
           }}
           onAcceptChatRequest={acceptChatRequestAndOpenChat}

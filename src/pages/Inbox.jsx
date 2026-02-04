@@ -246,7 +246,7 @@ const Inbox = () => {
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
           if (lastMsg?.messageType === 'gift') {
-            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+            lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           
           return {
@@ -629,7 +629,7 @@ const Inbox = () => {
                 typingUsers={typingUsers}
                 onContactClick={(contact) => {
                   if (contact.id && contact.id !== 'system-concierge') {
-                    navigate(`/profile/${contact.id}`);
+                    navigate(`/profile/${contact.id}`, { state: { openChat: true } });
                     setShowMobileSidebar(false);
                   }
                 }}
@@ -657,7 +657,7 @@ const Inbox = () => {
           typingUsers={typingUsers}
           onContactClick={(contact) => {
             if (contact.id && contact.id !== 'system-concierge') {
-              navigate(`/profile/${contact.id}`);
+              navigate(`/profile/${contact.id}`, { state: { openChat: true } });
             }
           }}
           onAcceptChatRequest={acceptChatRequestAndOpenChat}

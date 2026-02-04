@@ -456,7 +456,7 @@ const Dashboard = () => {
           const giftFromThem = lastMsg?.messageType === 'gift' && senderId === conv.userId;
           let message = conv.lastMessage?.content || 'No messages yet';
           if (lastMsg?.messageType === 'gift') {
-            message = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+            message = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           return {
             id: conv.userId,
@@ -957,7 +957,7 @@ const Dashboard = () => {
             typingUsers={typingUsers}
             onContactClick={(contact) => {
               if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
-                navigate(`/profile/${contact.id}`);
+                navigate(`/profile/${contact.id}`, { state: { openChat: true } });
               }
             }}
             onAcceptChatRequest={acceptChatRequestAndOpenChat}
