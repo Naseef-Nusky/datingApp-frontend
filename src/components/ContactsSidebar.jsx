@@ -143,7 +143,7 @@ const ContactsSidebar = ({
                       ) : contact.giftFromThem ? (
                         <span className="inline-flex items-center gap-1.5 text-gray-500">
                           <FaGift className="text-gray-400 flex-shrink-0" />
-                          {contact.name} sent a gift.
+                          Received a gift
                         </span>
                       ) : (
                         contact.message || 'No messages yet'

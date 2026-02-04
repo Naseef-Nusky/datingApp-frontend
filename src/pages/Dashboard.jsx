@@ -454,11 +454,15 @@ const Dashboard = () => {
           const lastMsg = conv.lastMessage;
           const senderId = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && senderId === conv.userId;
+          let message = conv.lastMessage?.content || 'No messages yet';
+          if (lastMsg?.messageType === 'gift') {
+            message = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+          }
           return {
             id: conv.userId,
             name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',
             type: null,
-            message: conv.lastMessage?.content || 'No messages yet',
+            message,
             unreadCount: conv.unreadCount || 0,
             avatar: profile?.photos?.[0]?.url || null,
             lastMessageAt: conv.lastMessage?.createdAt,

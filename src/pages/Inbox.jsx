@@ -245,6 +245,9 @@ const Inbox = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
+          if (lastMsg?.messageType === 'gift') {
+            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+          }
           
           return {
             id: conv.userId || otherUser?.id,

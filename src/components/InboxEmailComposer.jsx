@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
+  const { fetchUser } = useAuth();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -82,7 +84,22 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
       const receiverId = getReceiverId();
 
       if (selectedGift) {
-        await axios.post('/api/gifts/send', { receiverId, giftId: selectedGift.id });
+        try {
+          await axios.post('/api/gifts/send', { receiverId, giftId: selectedGift.id });
+          if (fetchUser) fetchUser();
+        } catch (giftErr) {
+          const data = giftErr.response?.data;
+          const msg = data?.message || 'Failed to send gift';
+          if (giftErr.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
+            const required = data?.required ?? 0;
+            const balance = data?.balance ?? 0;
+            alert(`Insufficient credits. This gift costs ${required} credits. Your balance: ${balance} credits. Please refill your account.`);
+          } else {
+            alert(msg);
+          }
+          setSending(false);
+          return;
+        }
       }
 
       const formData = new FormData();

@@ -12,7 +12,7 @@ import SearchFilterModal from './SearchFilterModal';
 import CreditPackModal from './CreditPackModal';
 
 const Header = () => {
-  const { user } = useAuth();
+  const { user, fetchUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [todayStatus, setTodayStatus] = useState(null);
@@ -67,10 +67,14 @@ const Header = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === conv.userId;
+          let message = conv.lastMessage?.content || 'No messages yet';
+          if (lastMsg?.messageType === 'gift') {
+            message = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+          }
           return {
             id: conv.userId,
             name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',
-            message: conv.lastMessage?.content || 'No messages yet',
+            message,
             unreadCount: conv.unreadCount || 0,
             avatar: profile?.photos?.[0]?.url || null,
             giftFromThem: !!giftFromThem,
@@ -418,6 +422,7 @@ const Header = () => {
       <CreditPackModal
         isOpen={showCreditPackModal}
         onClose={() => setShowCreditPackModal(false)}
+        onCreditsAdded={fetchUser}
       />
     </header>
   );

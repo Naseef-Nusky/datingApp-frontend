@@ -10,7 +10,7 @@ import ContactsSidebar from '../components/ContactsSidebar';
 import CreditPackModal from '../components/CreditPackModal';
 
 const MyProfile = () => {
-  const { user } = useAuth();
+  const { user, fetchUser } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -598,6 +598,9 @@ const MyProfile = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
+          if (lastMsg?.messageType === 'gift') {
+            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+          }
           
           return {
             id: conv.userId || otherUser?.id,
@@ -775,22 +778,25 @@ const MyProfile = () => {
         {/* Main Content */}
         <div className="flex-1 overflow-visible lg:mr-80">
           <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
-            {/* Cover Photo Banner inside container */}
-            <div className="relative h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400 overflow-hidden rounded-b-2xl">
-              {profile.coverPhoto ? (
-                <img
-                  src={profile.coverPhoto}
-                  alt="Cover"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400"></div>
-              )}
+            {/* Cover Photo Banner - overflow-visible so profile image can extend below */}
+            <div className="relative h-48 sm:h-64 lg:h-80 rounded-b-2xl">
+              {/* Background layer only - clipped to rounded banner */}
+              <div className="absolute inset-0 overflow-hidden rounded-b-2xl bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400">
+                {profile.coverPhoto ? (
+                  <img
+                    src={profile.coverPhoto}
+                    alt="Cover"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-orange-400 via-red-500 to-yellow-400"></div>
+                )}
+              </div>
 
-              {/* Banner Overlay Content within same container */}
+              {/* Banner Overlay Content - can extend below (profile pic) */}
               <div className="absolute inset-0 overflow-visible">
                 <div className="h-full relative overflow-visible">
                 {/* Top Left */}
@@ -826,7 +832,7 @@ const MyProfile = () => {
                     onClick={() => setShowCreditPackModal(true)}
                     className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold"
                   >
-                    {user?.credits || 135} CREDITS - REFILL
+                    {user?.credits ?? 0} CREDITS - REFILL
                   </button>
                 </div>
 
@@ -1782,6 +1788,7 @@ const MyProfile = () => {
       <CreditPackModal
         isOpen={showCreditPackModal}
         onClose={() => setShowCreditPackModal(false)}
+        onCreditsAdded={fetchUser}
       />
     </div>
   );

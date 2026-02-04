@@ -484,6 +484,9 @@ const Profile = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = !recentCall && lastMsg?.messageType === 'gift' && lastMsgSender === userId;
+          if (lastMsg?.messageType === 'gift') {
+            lastMessage = giftFromThem ? 'Sent a gift' : 'You sent a gift';
+          }
           
           // Determine if contact has call history (for icon overlay)
           // Check if there's any call between current user and this contact

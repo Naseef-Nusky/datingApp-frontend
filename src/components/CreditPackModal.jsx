@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { FaTimes, FaComment, FaPaperPlane, FaCoins } from 'react-icons/fa';
+import axios from 'axios';
 
-const CreditPackModal = ({ isOpen, onClose }) => {
+const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
+  const [purchasing, setPurchasing] = useState(false);
+  const [error, setError] = useState(null);
+
   if (!isOpen) return null;
 
   const packs = [
@@ -8,6 +13,26 @@ const CreditPackModal = ({ isOpen, onClose }) => {
     { credits: 600, wasPrice: 480, price: 150, save: '16%' },
     { credits: 1500, wasPrice: 360, price: 300, save: '16%' },
   ];
+
+  const handlePurchase = async (pack) => {
+    setError(null);
+    setPurchasing(true);
+    try {
+      const { data } = await axios.post('/api/credits/purchase', {
+        amount: pack.credits,
+        paymentMethod: 'refill',
+      });
+      alert(`Success! ${data.creditsAdded} credits added. Your balance: ${data.totalCredits} credits.`);
+      if (onCreditsAdded) onCreditsAdded();
+      onClose();
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to add credits';
+      setError(msg);
+      alert(msg);
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   const bonuses = [
     {
@@ -67,11 +92,16 @@ const CreditPackModal = ({ isOpen, onClose }) => {
             <h3 className="text-base font-semibold text-gray-900 mb-4">
               1. Choose Monthly Credit Pack Size:
             </h3>
+            {error && (
+              <p className="text-red-600 text-sm mb-3">{error}</p>
+            )}
             <div className="space-y-3">
               {packs.map((pack) => (
                 <button
                   key={pack.credits}
-                  className="w-full relative bg-teal-600 hover:bg-teal-700 text-white rounded-lg p-4 text-left transition shadow-md"
+                  onClick={() => handlePurchase(pack)}
+                  disabled={purchasing}
+                  className="w-full relative bg-teal-600 hover:bg-teal-700 disabled:opacity-70 text-white rounded-lg p-4 text-left transition shadow-md"
                 >
                   <span className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-bold px-2 py-1 rounded-sm shadow">
                     SAVE {pack.save}

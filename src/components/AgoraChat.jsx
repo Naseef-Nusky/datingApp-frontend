@@ -4,8 +4,10 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 import TypingIndicator from './TypingIndicator';
+import { useAuth } from '../context/AuthContext';
 
 const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
+  const { fetchUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -914,11 +916,18 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     setSendingGiftId(giftId);
     try {
       await axios.post('/api/gifts/send', { receiverId: remoteUserId.toString(), giftId });
+      if (fetchUser) fetchUser();
       setTimeout(() => reloadMessages(), 500);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to send gift';
-      const balance = err.response?.data?.balance;
-      alert(balance != null ? `${msg} (Your balance: ${balance} credits)` : msg);
+      const data = err.response?.data;
+      const msg = data?.message || 'Failed to send gift';
+      if (err.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
+        const required = data?.required ?? 0;
+        const balance = data?.balance ?? 0;
+        alert(`Insufficient credits. This gift costs ${required} credits. Your balance: ${balance} credits. Please refill your account.`);
+      } else {
+        alert(msg);
+      }
     } finally {
       setSendingGiftId(null);
     }
