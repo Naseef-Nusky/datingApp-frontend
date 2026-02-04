@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift } from 'react-icons/fa';
+import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins } from 'react-icons/fa';
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -9,6 +9,7 @@ import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
 import TodayIAmModal from './TodayIAmModal';
 import SearchFilterModal from './SearchFilterModal';
+import CreditPackModal from './CreditPackModal';
 
 const Header = () => {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ const Header = () => {
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [showTodayIAmModal, setShowTodayIAmModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showCreditPackModal, setShowCreditPackModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -246,7 +248,10 @@ const Header = () => {
                   INBOX
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
-                <button className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition">
+                <button
+                  onClick={() => setShowCreditPackModal(true)}
+                  className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
+                >
                   REFILL ACCOUNT
                 </button>
               </div>
@@ -314,6 +319,15 @@ const Header = () => {
                   <FaEnvelope className="text-lg sm:text-xl" />
                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                 </Link>
+
+                {/* 5. Refill Account Icon - opens Credit Pack modal */}
+                <button
+                  onClick={() => setShowCreditPackModal(true)}
+                  className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
+                  title="Refill Account"
+                >
+                  <FaCoins className="text-lg sm:text-xl" />
+                </button>
 
                 {/* Profile Dropdown */}
                 <ProfileDropdown />
@@ -399,6 +413,12 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Credit Pack / Refill Account Modal - same as My Profile refill */}
+      <CreditPackModal
+        isOpen={showCreditPackModal}
+        onClose={() => setShowCreditPackModal(false)}
+      />
     </header>
   );
 };

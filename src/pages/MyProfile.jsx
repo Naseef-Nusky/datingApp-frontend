@@ -7,6 +7,7 @@ import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaS
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
+import CreditPackModal from '../components/CreditPackModal';
 
 const MyProfile = () => {
   const { user } = useAuth();
@@ -57,6 +58,7 @@ const MyProfile = () => {
   const [draftWishlist, setDraftWishlist] = useState([]);
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [wishlistActiveTab, setWishlistActiveTab] = useState('wishlist');
+  const [showCreditPackModal, setShowCreditPackModal] = useState(false);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -820,7 +822,10 @@ const MyProfile = () => {
 
                 {/* Bottom Right - Credits */}
                 <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 lg:bottom-4 lg:right-6 z-10">
-                  <button className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold">
+                  <button
+                    onClick={() => setShowCreditPackModal(true)}
+                    className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold"
+                  >
                     {user?.credits || 135} CREDITS - REFILL
                   </button>
                 </div>
@@ -1149,11 +1154,6 @@ const MyProfile = () => {
                             {isPublic ? 'Public' : 'Private'}
                           </span>
                         </div>
-                        {index === 0 && (
-                          <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                            Thumbnail
-                          </span>
-                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1777,6 +1777,12 @@ const MyProfile = () => {
           isThumbnail={selectedPhotoIndex === 0}
         />
       )}
+
+      {/* Credit Pack / Refill Account Modal */}
+      <CreditPackModal
+        isOpen={showCreditPackModal}
+        onClose={() => setShowCreditPackModal(false)}
+      />
     </div>
   );
 };
