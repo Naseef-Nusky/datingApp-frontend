@@ -15,11 +15,11 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const [mediaPreview, setMediaPreview] = useState(null);
   const [catalogGifts, setCatalogGifts] = useState([]);
   const [loadingGifts, setLoadingGifts] = useState(false);
-  const [selectedGift, setSelectedGift] = useState(null);
+  const [selectedGifts, setSelectedGifts] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleSend = async () => {
-    if (!message.trim() && !selectedMedia && !selectedGift) {
+    if (!message.trim() && !selectedMedia && selectedGifts.length === 0) {
       alert('Please enter a message, add a photo/video, or add a gift');
       return;
     }
@@ -38,9 +38,10 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
     try {
       setSending(true);
 
-      if (selectedGift) {
+      // Send each selected gift first
+      for (const gift of selectedGifts) {
         try {
-          await axios.post('/api/gifts/send', { receiverId, giftId: selectedGift.id });
+          await axios.post('/api/gifts/send', { receiverId, giftId: gift.id });
           if (fetchUser) fetchUser();
         } catch (giftErr) {
           const data = giftErr.response?.data;
@@ -67,8 +68,8 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         formData.append('media', selectedMedia);
       }
 
-      if (selectedGift?.imageUrl) {
-        formData.append('mediaUrl', selectedGift.imageUrl);
+      if (selectedGifts.length > 0 && selectedGifts[0]?.imageUrl) {
+        formData.append('mediaUrl', selectedGifts[0].imageUrl);
       }
 
       await axios.post('/api/messages/send-email', formData, {
@@ -80,7 +81,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
       setMessage('');
       setSelectedMedia(null);
       setMediaPreview(null);
-      setSelectedGift(null);
+      setSelectedGifts([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onSent) onSent();
       if (onClose) onClose();
@@ -112,7 +113,16 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   }, [profile]);
 
   const addGiftToEmail = (g) => {
-    setSelectedGift({ id: g.id, imageUrl: g.imageUrl, name: g.name });
+    const item = { id: g.id, imageUrl: g.imageUrl, name: g.name };
+    setSelectedGifts((prev) => {
+      const exists = prev.some((sg) => sg.id === g.id);
+      if (exists) return prev.filter((sg) => sg.id !== g.id);
+      return [...prev, item];
+    });
+  };
+
+  const removeGiftFromEmail = (giftId) => {
+    setSelectedGifts((prev) => prev.filter((sg) => sg.id !== giftId));
   };
 
   const handlePhotoVideoClick = () => {
@@ -253,28 +263,32 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
 
-          {/* Selected gift preview – large, with X to remove */}
-          {selectedGift && (
-            <div className="mb-4 relative inline-block">
-              <div className="max-w-[200px] rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
-                {selectedGift.imageUrl ? (
-                  <img
-                    src={selectedGift.imageUrl}
-                    alt=""
-                    className="w-full h-auto object-contain max-h-48"
-                  />
-                ) : (
-                  <div className="w-48 h-48 flex items-center justify-center text-6xl">🎁</div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedGift(null)}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition shadow"
-                aria-label="Remove gift"
-              >
-                <FaTimes className="text-sm" />
-              </button>
+          {/* Selected gifts – multiple compact previews with X to remove each */}
+          {selectedGifts.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {selectedGifts.map((gift) => (
+                <div key={gift.id} className="relative inline-block">
+                  <div className="max-w-[100px] rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white">
+                    {gift.imageUrl ? (
+                      <img
+                        src={gift.imageUrl}
+                        alt=""
+                        className="w-full h-auto object-contain max-h-20"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 flex items-center justify-center text-3xl">🎁</div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeGiftFromEmail(gift.id)}
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition shadow"
+                    aria-label="Remove gift"
+                  >
+                    <FaTimes className="text-xs" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -337,20 +351,20 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
                 {catalogGifts.map((g) => {
                   const cost = g.creditCost ?? 0;
                   const isFree = cost === 0;
-                  const isSelected = selectedGift?.id === g.id;
+                  const isSelected = selectedGifts.some((sg) => sg.id === g.id);
                   return (
                     <button
                       key={g.id}
                       type="button"
                       onClick={() => addGiftToEmail(g)}
-                      className={`flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-lg transition-all relative min-w-[72px] border-2 ${
-                        isSelected ? 'border-pink-500 bg-pink-50 shadow-md' : 'bg-white border-gray-200 hover:border-pink-300 hover:shadow-md'
+                      className={`group flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 relative min-w-[72px] cursor-pointer hover:scale-110 hover:shadow-lg ${
+                        isSelected ? 'bg-pink-50 shadow-md' : 'bg-white hover:shadow-md'
                       }`}
                       title={g.name}
                     >
                       <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center mb-1 relative">
                         {g.imageUrl ? (
-                          <img src={g.imageUrl} alt="" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                          <img src={g.imageUrl} alt="" className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105" onError={(e) => { e.target.style.display = 'none'; }} />
                         ) : (
                           <span className="text-2xl">🎁</span>
                         )}
@@ -358,13 +372,12 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
                           <span className="absolute bottom-0 left-0 bg-red-500 text-white text-[9px] font-bold px-1 rounded-tr">FREE</span>
                         )}
                       </div>
-                      <span className="text-xs font-semibold text-gray-700">{cost}</span>
+                      <span className="text-xs font-semibold text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-h-[1rem]">
+                        {isFree ? 'FREE' : `${cost} Credits`}
+                      </span>
                     </button>
                   );
                 })}
-                <div className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg bg-gray-50">
-                  <span className="text-lg font-bold">↑</span>
-                </div>
               </div>
             )}
           </div>
@@ -374,7 +387,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         <div className="flex-shrink-0 p-4 pt-0 border-t border-gray-200 bg-white">
           <button
             onClick={handleSend}
-            disabled={sending || (!message.trim() && !selectedMedia && !selectedGift)}
+            disabled={sending || (!message.trim() && !selectedMedia && selectedGifts.length === 0)}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <FaEnvelope />
