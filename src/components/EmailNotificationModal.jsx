@@ -141,7 +141,7 @@ const EmailNotificationModal = ({ email, onClose, onReply }) => {
 
           {/* Footer info */}
           <div className="mt-6 pt-6 border-t border-gray-200 text-sm text-gray-500 text-center">
-            <p>This email was sent from Dating.com</p>
+            <p>This email was sent from Vantage Dating</p>
             <p className="mt-1">
               {senderName}{senderAge ? `, ${senderAge}` : ''} • {new Date(emailData.createdAt).toLocaleDateString()}
             </p>

@@ -4,8 +4,8 @@ const Logo = ({ className = "" }) => {
       {/* Logo Image */}
       <div className="relative">
         <img 
-          src="/logo-removebg.png" 
-          alt="Nex Dating Logo" 
+          src="/logonew.png" 
+          alt="Vantage Dating Logo" 
           className="h-10 w-auto object-contain"
         />
       </div>
