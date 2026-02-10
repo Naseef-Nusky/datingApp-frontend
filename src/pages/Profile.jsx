@@ -11,6 +11,7 @@ import {
 import AgoraVideoCall from '../components/AgoraVideoCall';
 import AgoraVoiceCall from '../components/AgoraVoiceCall';
 import AgoraChat from '../components/AgoraChat';
+import PresentShopModal from '../components/PresentShopModal';
 import ProfileEmailComposer from '../components/ProfileEmailComposer';
 import ProfilePhotoViewer from '../components/ProfilePhotoViewer';
 import ContactsSidebar from '../components/ContactsSidebar';
@@ -35,6 +36,7 @@ const Profile = () => {
   const [showVoiceCall, setShowVoiceCall] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [showPresentShop, setShowPresentShop] = useState(false);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [incomingCall, setIncomingCall] = useState(null);
@@ -1043,6 +1045,13 @@ const Profile = () => {
                   <FaPhone className="text-base sm:text-lg" />
                   <span>AUDIO CALL</span>
                 </button>
+                <button
+                  onClick={() => setShowPresentShop(true)}
+                  className="flex-1 bg-red-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-red-600 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
+                >
+                  <FaGift className="text-base sm:text-lg" />
+                  <span>SEND PRESENT</span>
+                </button>
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 border-t border-gray-200 gap-3 sm:gap-0">
@@ -1327,6 +1336,15 @@ const Profile = () => {
           chatRequestLimit={5}
         />
       </div>
+
+      {/* Present Shop Modal */}
+      {showPresentShop && profile && (
+        <PresentShopModal
+          isOpen={showPresentShop}
+          onClose={() => setShowPresentShop(false)}
+          receiver={profile}
+        />
+      )}
 
       {/* Incoming Call Notification */}
       {incomingCall && (
