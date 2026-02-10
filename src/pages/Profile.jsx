@@ -185,7 +185,7 @@ const Profile = () => {
           
           // Start the appropriate call type
           if (currentOutgoingCall.callType === 'video') {
-            console.log('✅ [CALLER] Starting video call');
+          console.log('✅ [CALLER] Starting video chat');
             setShowVideoCall(true);
           } else if (currentOutgoingCall.callType === 'voice') {
             console.log('✅ [CALLER] Starting voice call');
@@ -709,13 +709,13 @@ const Profile = () => {
         await axios.post('/api/notifications', {
           receiverId: id,
           type: 'call_request',
-          title: 'Video Call Request',
-          message: `${user?.email || 'Someone'} wants to video call you`,
+          title: 'Video Chat Request',
+          message: `${user?.email || 'Someone'} wants to video chat with you`,
           relatedId: id,
           relatedType: 'video_call',
         });
       } catch (notifError) {
-        console.error('Error creating video call notification:', notifError);
+        console.error('Error creating video chat notification:', notifError);
       }
       
       // Store outgoing call info - wait for receiver to accept
@@ -729,7 +729,7 @@ const Profile = () => {
       // Don't start call yet - wait for receiver to accept
       console.log('⏳ [CALLER] Waiting for receiver to accept call...');
     } catch (error) {
-      console.error('Error initiating video call:', error);
+      console.error('Error initiating video chat:', error);
     }
   };
 
@@ -1036,7 +1036,7 @@ const Profile = () => {
                   className="flex-1 bg-teal-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-teal-700 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
                 >
                   <FaVideo className="text-base sm:text-lg" />
-                  <span>VIDEO CALL</span>
+                  <span>VIDEO CHAT</span>
                 </button>
                 <button
                   onClick={handleAudioCall}
