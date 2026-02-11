@@ -2,9 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { FaTimes, FaGift } from 'react-icons/fa';
 import { useRefillModal } from '../context/RefillModalContext';
+import { useAuth } from '../context/AuthContext';
 
 const PresentShopModal = ({ isOpen, onClose, receiver }) => {
   const { openRefillModal } = useRefillModal();
+  const { fetchUser } = useAuth();
   const [gifts, setGifts] = useState([]);
   const [presentCategories, setPresentCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,12 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
     if (!cat) return '';
     const found = presentCategories.find((c) => c.slug === cat || c.name === cat);
     return found ? found.name : cat;
+  };
+
+  const categoryImageUrl = (cat) => {
+    if (!cat) return null;
+    const found = presentCategories.find((c) => c.slug === cat || c.name === cat);
+    return found?.imageUrl || null;
   };
 
   const categories = useMemo(() => {
@@ -117,6 +125,7 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
           message: null,
         });
       }
+      await fetchUser();
       alert('Your presents have been sent!');
       setCart([]);
       setStep('shop');
@@ -172,20 +181,31 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
               {/* Category tabs (no "All" – only real categories) */}
               {categories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setActiveCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border ${
-                        activeCategory === cat
-                          ? 'bg-red-500 text-white border-red-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {categoryDisplayName(cat)}
-                    </button>
-                  ))}
+                  {categories.map((cat) => {
+                    const imgUrl = categoryImageUrl(cat);
+                    const isActive = activeCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setActiveCategory(cat)}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm border ${
+                          isActive
+                            ? 'bg-red-500 text-white border-red-500'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt=""
+                            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                          />
+                        ) : null}
+                        <span>{categoryDisplayName(cat)}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
