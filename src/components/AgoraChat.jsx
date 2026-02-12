@@ -768,6 +768,11 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           }
           return updated;
         });
+
+        // Refresh user data so updated credit balance is shown
+        if (fetchUser) {
+          fetchUser();
+        }
         
         console.log('✅ Message saved to database with ID:', dbResponse.data.id);
         
@@ -777,8 +782,24 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         }, 1000);
       } catch (dbError) {
         console.error('❌ Failed to save message to database:', dbError.response?.data || dbError.message);
-        // Continue anyway - try to send via Agora
-        // But log the error so we know there's a problem
+
+        const msg = dbError.response?.data?.message || dbError.message || 'Failed to send message';
+        if (dbError.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
+          // Remove optimistic message because send actually failed
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated.pop();
+            return updated;
+          });
+          // Open refill modal so user can add credits
+          if (openRefillModal) {
+            openRefillModal();
+          } else {
+            alert(msg);
+          }
+          return;
+        }
+        // Continue anyway - try to send via Agora, but we know DB save failed
       }
       
       // Send message via Agora (real-time delivery)
@@ -1045,6 +1066,11 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           console.log('✅ Replacing optimistic message with real one:', realMessage);
           return [...filtered, realMessage];
         });
+
+        // Refresh user data so updated credit balance is shown
+        if (fetchUser) {
+          fetchUser();
+        }
       }
 
       // Send via Agora Chat (for all message types)
@@ -1097,7 +1123,21 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
       }, 500);
     } catch (error) {
       console.error('Send message error:', error);
-      // Remove optimistic message on error (use the optimisticMessage ID that was created)
+
+      const msg = error.response?.data?.message || error.message || 'Failed to send message';
+      if (error.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
+        // Remove optimistic message on insufficient credits
+        const tempId = optimisticMessage.id;
+        setMessages((prev) => prev.filter(m => m.id !== tempId));
+        if (openRefillModal) {
+          openRefillModal();
+        } else {
+          alert(msg);
+        }
+        return;
+      }
+
+      // Remove optimistic message on any other error
       const tempId = optimisticMessage.id;
       setMessages((prev) => prev.filter(m => m.id !== tempId));
       alert('Failed to send message');

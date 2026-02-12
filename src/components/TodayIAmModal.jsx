@@ -1,18 +1,26 @@
-import { useState } from 'react';
-import { FaTimes, FaRing, FaUsers, FaHeart, FaKiss, FaLaugh } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaTimes } from 'react-icons/fa';
+import { Heart, Users, Rose, CheckCircle, Smile } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate }) => {
+const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate, currentStatus }) => {
   const { user } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Keep local selection in sync with the currently saved status
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedStatus(currentStatus ?? null);
+    }
+  }, [isOpen, currentStatus]);
 
   const statusOptions = [
     {
       id: 'serious',
       label: 'Serious',
-      icon: FaRing,
+      icon: CheckCircle,
       color: 'text-teal-600',
       bgColor: 'bg-teal-100',
       selectedBg: 'bg-teal-500',
@@ -20,7 +28,7 @@ const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate }) => {
     {
       id: 'penpal',
       label: 'Pen pal',
-      icon: FaUsers,
+      icon: Users,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
       selectedBg: 'bg-orange-500',
@@ -28,7 +36,7 @@ const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate }) => {
     {
       id: 'romantic',
       label: 'Romantic',
-      icon: FaHeart,
+      icon: Rose,
       color: 'text-red-600',
       bgColor: 'bg-red-100',
       selectedBg: 'bg-red-500',
@@ -36,7 +44,7 @@ const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate }) => {
     {
       id: 'flirty',
       label: 'Flirty',
-      icon: FaKiss,
+      icon: Heart,
       color: 'text-pink-600',
       bgColor: 'bg-pink-100',
       selectedBg: 'bg-pink-500',
@@ -44,7 +52,7 @@ const TodayIAmModal = ({ isOpen, onClose, onStatusUpdate }) => {
     {
       id: 'naughty',
       label: 'Naughty',
-      icon: FaLaugh,
+      icon: Smile,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
       selectedBg: 'bg-orange-500',

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
 import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins } from 'react-icons/fa';
+import { Heart as LucideHeart, Users, Rose, CheckCircle, Smile } from 'lucide-react';
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -187,6 +188,17 @@ const Header = () => {
     return statusMap[status] || 'TODAY I AM';
   };
 
+  const getStatusIconComponent = (status) => {
+    const iconMap = {
+      serious: CheckCircle,
+      penpal: Users,
+      romantic: Rose,
+      flirty: LucideHeart,
+      naughty: Smile,
+    };
+    return iconMap[status] || null;
+  };
+
   return (
     <header className="bg-nex-blue shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
@@ -211,6 +223,14 @@ const Header = () => {
                     onClick={() => setShowTodayIAmModal(!showTodayIAmModal)}
                     className="flex items-center space-x-1 text-white hover:text-nex-orange transition"
                   >
+                    {(() => {
+                      const StatusIcon = getStatusIconComponent(todayStatus);
+                      return (
+                        StatusIcon && (
+                          <StatusIcon className="w-4 h-4 mr-1" />
+                        )
+                      );
+                    })()}
                     <span>{getStatusLabel(todayStatus)}</span>
                     <span className="text-xs">?</span>
                   </button>
@@ -219,6 +239,7 @@ const Header = () => {
                   <TodayIAmModal
                     isOpen={showTodayIAmModal}
                     onClose={() => setShowTodayIAmModal(false)}
+                    currentStatus={todayStatus}
                     onStatusUpdate={(status) => {
                       setTodayStatus(status);
                       fetchTodayStatus();
