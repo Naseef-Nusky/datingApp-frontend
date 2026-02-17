@@ -61,14 +61,14 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     fetchRemoteProfile();
   }, [remoteUserId]);
 
-  // Fetch gift catalog when chat is open (for Gift tab)
+  // Fetch gift catalog when chat is open (virtual gifts only)
   useEffect(() => {
     if (!remoteUserId) return;
     let cancelled = false;
     const load = async () => {
       setLoadingGifts(true);
       try {
-        const { data } = await axios.get('/api/gifts/catalog');
+        const { data } = await axios.get('/api/gifts/catalog?type=virtual');
         if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!cancelled) setCatalogGifts([]);

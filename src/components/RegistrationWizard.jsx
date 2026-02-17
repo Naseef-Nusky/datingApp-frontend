@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -91,6 +91,28 @@ const RegistrationWizard = () => {
       }));
     }
   };
+
+  // Auto-detect city/country for hometown when step 1 is shown
+  useEffect(() => {
+    if (currentStep !== 1) return;
+    const base = import.meta.env.VITE_API_URL || '';
+    const url = base ? `${base}/api/auth/location` : '/api/auth/location';
+    axios.get(url)
+      .then((res) => {
+        const { city, country } = res.data || {};
+        if (city && country && String(city).trim() && String(country).trim()) {
+          const c = String(city).trim();
+          const co = String(country).trim();
+          if (c !== 'Unknown' && co !== 'Unknown') {
+            setFormData((prev) => ({
+              ...prev,
+              hometown: prev.hometown || `${c}, ${co}`,
+            }));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [currentStep]);
 
   const toggleInterest = (interest) => {
     setFormData(prev => ({
@@ -375,13 +397,13 @@ const RegistrationWizard = () => {
                     }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 overflow-hidden ${
                         formData.gender === 'male'
                           ? 'border-red-500 bg-red-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">♂</span>
+                      <img src="/male_icon.png" alt="Man" className="w-16 h-16 object-cover" />
                     </div>
                     <span className="text-sm font-medium">Man</span>
                   </button>
@@ -395,13 +417,13 @@ const RegistrationWizard = () => {
                     }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 overflow-hidden ${
                         formData.gender === 'female'
                           ? 'border-red-500 bg-red-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">♀</span>
+                      <img src="/female_icon.png" alt="Woman" className="w-16 h-16 object-cover" />
                     </div>
                     <span className="text-sm font-medium">Woman</span>
                   </button>
@@ -421,13 +443,13 @@ const RegistrationWizard = () => {
                     }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 overflow-hidden ${
                         formData.seeking === 'male'
                           ? 'border-red-500 bg-red-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">♂</span>
+                      <img src="/male_icon.png" alt="Man" className="w-16 h-16 object-cover" />
                     </div>
                     <span className="text-sm font-medium">Man</span>
                   </button>
@@ -441,13 +463,13 @@ const RegistrationWizard = () => {
                     }`}
                   >
                     <div
-                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 ${
+                      className={`w-16 h-16 rounded-full border-2 flex items-center justify-center mb-1 overflow-hidden ${
                         formData.seeking === 'female'
                           ? 'border-red-500 bg-red-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">♀</span>
+                      <img src="/female_icon.png" alt="Woman" className="w-16 h-16 object-cover" />
                     </div>
                     <span className="text-sm font-medium">Woman</span>
                   </button>

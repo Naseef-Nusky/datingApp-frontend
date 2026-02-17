@@ -19,14 +19,14 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [selectedGifts, setSelectedGifts] = useState([]);
   const fileInputRef = useRef(null);
 
-  // Fetch gift catalog when composer is open (must be before any early return to satisfy hooks rules)
+  // Fetch virtual gift catalog when composer is open (no physical presents)
   useEffect(() => {
     if (!email) return;
     let cancelled = false;
     const load = async () => {
       setLoadingGifts(true);
       try {
-        const { data } = await axios.get('/api/gifts/catalog');
+        const { data } = await axios.get('/api/gifts/catalog?type=virtual');
         if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!cancelled) setCatalogGifts([]);

@@ -93,14 +93,14 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
     }
   };
 
-  // Fetch gift catalog when composer is open – virtual gifts show in place of stickers
+  // Fetch virtual gift catalog when composer is open – only virtual gifts (no presents)
   useEffect(() => {
     if (!profile) return;
     let cancelled = false;
     const load = async () => {
       setLoadingGifts(true);
       try {
-        const { data } = await axios.get('/api/gifts/catalog');
+        const { data } = await axios.get('/api/gifts/catalog?type=virtual');
         if (!cancelled) setCatalogGifts(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!cancelled) setCatalogGifts([]);
