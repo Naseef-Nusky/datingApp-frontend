@@ -567,13 +567,13 @@ const RegistrationWizard = () => {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-center mb-6">Your interests</h2>
             
-            <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-2">
               {interests.map((interest) => (
                 <button
                   key={interest}
                   type="button"
                   onClick={() => toggleInterest(interest)}
-                  className={`px-4 py-3 rounded-lg border-2 transition ${
+                  className={`px-2 py-2 text-xs sm:text-sm rounded-lg border transition ${
                     formData.interests.includes(interest)
                       ? 'bg-red-500 text-white border-red-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
@@ -600,8 +600,12 @@ const RegistrationWizard = () => {
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="text-center">
-                    <div className="text-6xl text-gray-400 mb-4">👤</div>
+                  <div className="text-center flex flex-col items-center">
+                    <img
+                      src="/profile.png"
+                      alt="Profile placeholder"
+                      className="w-32 h-32 object-cover rounded-full mb-4"
+                    />
                     <input
                       type="file"
                       accept="image/*"
@@ -668,7 +672,7 @@ const RegistrationWizard = () => {
 
           {renderStep()}
 
-          <div className="mt-8 flex items-center justify-between">
+            <div className="mt-8 flex items-center justify-between">
             <button
               type="button"
               onClick={handleBack}
@@ -682,11 +686,9 @@ const RegistrationWizard = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                className={`px-12 py-3 rounded-lg font-semibold transition ${
-                  currentStep === 5
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-red-500 text-white hover:bg-red-600'
-                } ${loading || checkingEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`px-12 py-3 rounded-lg font-semibold text-white transition bg-gradient-nex hover:opacity-90 shadow-md ${
+                  loading || checkingEmail ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
                 disabled={loading || checkingEmail}
               >
                 {loading ? 'Registering...' : checkingEmail ? 'Checking...' : currentStep === 5 ? 'Complete Registration' : 'NEXT'}

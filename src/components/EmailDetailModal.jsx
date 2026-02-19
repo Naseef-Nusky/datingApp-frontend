@@ -1,24 +1,35 @@
-import { FaTimes, FaEnvelope, FaCamera } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaTimes, FaEnvelope, FaCamera, FaUser, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import axios from 'axios';
+import { useRefillModal } from '../context/RefillModalContext';
 
 const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
+  const navigate = useNavigate();
+  const { openRefillModal } = useRefillModal();
+  const [emailState, setEmailState] = useState(email);
+  const [unlockingIndex, setUnlockingIndex] = useState(null);
+  const [viewAttachmentIndex, setViewAttachmentIndex] = useState(null);
+  useEffect(() => { setEmailState(email); }, [email]);
+  const currentEmail = emailState || email;
   if (!isOpen || !email) return null;
 
   const getSenderName = () => {
-    if (email.sender === user.id) {
-      return email.receiverData?.profile?.firstName || email.receiverData?.email?.split('@')[0] || 'Unknown';
+    if (currentEmail.sender === user.id) {
+      return currentEmail.receiverData?.profile?.firstName || currentEmail.receiverData?.email?.split('@')[0] || 'Unknown';
     }
-    return email.senderData?.profile?.firstName || email.senderData?.email?.split('@')[0] || 'Unknown';
+    return currentEmail.senderData?.profile?.firstName || currentEmail.senderData?.email?.split('@')[0] || 'Unknown';
   };
 
   const getSenderImage = () => {
-    if (email.sender === user.id) {
-      const photos = email.receiverData?.profile?.photos;
+    if (currentEmail.sender === user.id) {
+      const photos = currentEmail.receiverData?.profile?.photos;
       if (photos && Array.isArray(photos) && photos.length > 0) {
         return photos[0]?.url || photos[0] || null;
       }
       return null;
     }
-    const photos = email.senderData?.profile?.photos;
+    const photos = currentEmail.senderData?.profile?.photos;
     if (photos && Array.isArray(photos) && photos.length > 0) {
       return photos[0]?.url || photos[0] || null;
     }
@@ -26,16 +37,15 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
   };
 
   const getSubject = () => {
-    // Extract subject from content or use first line
-    if (email.subject) return email.subject;
-    const content = email.content || '';
+    if (currentEmail.subject) return currentEmail.subject;
+    const content = currentEmail.content || '';
     const text = content.replace(/<[^>]*>/g, '');
     const firstLine = text.split('\n')[0];
     return firstLine.length > 60 ? firstLine.substring(0, 60) + '...' : firstLine;
   };
 
   const getMessageBody = () => {
-    const content = email.content || '';
+    const content = currentEmail.content || '';
     const text = content.replace(/<[^>]*>/g, '');
     // Remove subject line if it's the first line
     const lines = text.split('\n');
@@ -49,7 +59,34 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
   const senderImage = getSenderImage();
   const subject = getSubject();
   const messageBody = getMessageBody();
-  const hasMedia = !!email.mediaUrl;
+  const hasMedia = !!currentEmail.mediaUrl;
+  const attachments = Array.isArray(currentEmail.attachments) ? currentEmail.attachments : [];
+  const creditCosts = currentEmail.creditCosts || { photoViewCredits: 15, voiceMessageCredits: 10 };
+  const senderId = currentEmail.sender === user.id ? currentEmail.receiver : currentEmail.sender;
+  const isReceiver = currentEmail.receiver === user.id;
+
+  const handleUnlockAttachment = async (index) => {
+    setUnlockingIndex(index);
+    try {
+      const { data } = await axios.post(`/api/messages/emails/${currentEmail.id}/unlock-attachment`, { index });
+      setEmailState((prev) => {
+        const next = { ...prev };
+        const att = [...(next.attachments || [])];
+        if (att[index]) att[index] = { ...att[index], url: data.url, locked: false };
+        next.attachments = att;
+        return next;
+      });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to unlock';
+      if (err.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
+        openRefillModal();
+      } else {
+        alert(msg);
+      }
+    } finally {
+      setUnlockingIndex(null);
+    }
+  };
 
   return (
     <div 
@@ -57,7 +94,6 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
       onClick={onClose}
       style={{
         background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(4px)',
       }}
     >
       <div 
@@ -191,9 +227,9 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
             {hasMedia && (
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-gray-200">
-                  {email.mediaUrl ? (
+                  {currentEmail.mediaUrl ? (
                     <img
-                      src={email.mediaUrl}
+                      src={currentEmail.mediaUrl}
                       alt="Attachment"
                       className="w-full h-full object-cover rounded-lg"
                     />
@@ -209,14 +245,86 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {messageBody || 'No message content'}
               </p>
+              {isReceiver && senderId && (
+                <button
+                  type="button"
+                  onClick={() => { navigate(`/profile/${senderId}`); onClose(); }}
+                  className="mt-2 text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium"
+                >
+                  <FaUser className="text-xs" /> Open profile
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Attached photos and voice messages (locked: image + lock icon; unlocked: clear) */}
+          {attachments.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Attached photos and voice messages:</p>
+              <div className="flex flex-wrap gap-3">
+                {attachments.map((att, idx) => (
+                  <div key={idx} className="relative">
+                    {att.locked ? (
+                      <button
+                        type="button"
+                        disabled={unlockingIndex === idx}
+                        onClick={() => setViewAttachmentIndex(idx)}
+                        className="w-24 h-24 rounded-lg overflow-hidden border border-gray-300 relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                      >
+                        {/* Background: real image when photo URL available, else gradient */}
+                        {att.type === 'photo' && att.url ? (
+                          <img
+                            src={att.url}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            style={{ filter: 'blur(4px)' }}
+                          />
+                        ) : (
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background: att.type === 'photo'
+                                ? 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%)'
+                                : 'linear-gradient(135deg, #bbf7d0 0%, #86efac 50%, #4ade80 100%)',
+                            }}
+                          />
+                        )}
+                        {/* Lock icon only - centered */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <img src="/lock_icon.png" alt="Locked" className="w-20 h-20 object-contain" />
+                        </div>
+                        {unlockingIndex === idx && (
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <span className="text-white text-xs font-medium">...</span>
+                          </div>
+                        )}
+                      </button>
+                    ) : (
+                      <div className={att.type === 'voice' ? 'w-full min-w-[200px]' : 'w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200'}>
+                        {att.type === 'photo' && att.url ? (
+                          <button
+                            type="button"
+                            onClick={() => setViewAttachmentIndex(idx)}
+                            className="w-full h-full block focus:outline-none focus:ring-2 focus:ring-red-500/50 rounded-lg"
+                          >
+                            <img src={att.url} alt="Attachment" className="w-full h-full object-cover rounded-lg" />
+                          </button>
+                        ) : att.type === 'voice' && att.url ? (
+                          <audio controls src={att.url} className="w-full h-10" />
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Reply Button */}
           <button
             onClick={() => {
               if (onReply) {
-                onReply(email);
+                onReply(currentEmail);
               }
             }}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors shadow-lg"
@@ -226,6 +334,105 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
           </button>
         </div>
       </div>
+
+      {/* Full-screen attachment view: locked template (blur + lock + VIEW PHOTO) or clear image; slider when multiple */}
+      {viewAttachmentIndex !== null && attachments[viewAttachmentIndex]?.type === 'photo' && (
+        (() => {
+          const currentAtt = attachments[viewAttachmentIndex];
+          const photoIndices = attachments.map((a, i) => (a.type === 'photo' ? i : null)).filter((i) => i !== null);
+          const currentPos = photoIndices.indexOf(viewAttachmentIndex);
+          const hasPrev = photoIndices.length > 1 && currentPos > 0;
+          const hasNext = photoIndices.length > 1 && currentPos >= 0 && currentPos < photoIndices.length - 1;
+          const isLocked = currentAtt?.locked;
+
+          return (
+            <div
+              className="fixed inset-0 z-[60] flex items-center justify-center"
+              style={{
+                background: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(8px)',
+              }}
+              onClick={() => setViewAttachmentIndex(null)}
+            >
+              <div
+                className="relative flex flex-col items-center justify-center w-full h-full p-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {isLocked ? (
+                  /* Locked template: heavily blurred image + lock icon + VIEW PHOTO button */
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                      {currentAtt?.url ? (
+                        <img
+                          src={currentAtt.url}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover"
+                          style={{ filter: 'blur(24px)', transform: 'scale(1.1)' }}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-b from-slate-400 to-slate-600" />
+                      )}
+                      <div className="absolute inset-0 bg-black/20" />
+                    </div>
+                    <div className="relative z-10 flex flex-col items-center justify-center gap-6">
+                      <img src="/lock_icon.png" alt="Locked" className="w-24 h-24 object-contain drop-shadow-lg" />
+                      <button
+                        type="button"
+                        disabled={unlockingIndex === viewAttachmentIndex}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnlockAttachment(currentAtt.index ?? viewAttachmentIndex);
+                        }}
+                        className="bg-red-600 hover:bg-red-700 disabled:opacity-70 text-white font-semibold uppercase tracking-wide px-8 py-3 rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                      >
+                        {unlockingIndex === viewAttachmentIndex ? '...' : 'VIEW PHOTO'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* Unlocked: clear image */
+                  currentAtt?.url && (
+                    <img
+                      src={currentAtt.url}
+                      alt="Attachment"
+                      className="max-w-[66vw] max-h-[90vh] w-auto h-auto object-contain"
+                    />
+                  )
+                )}
+
+                {/* Close button - white X on dark circle, viewport top right */}
+                <button
+                  type="button"
+                  onClick={() => setViewAttachmentIndex(null)}
+                  className="fixed top-4 right-4 z-[70] w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <FaTimes className="text-xl" />
+                </button>
+
+                {/* Slider: Prev / Next for multiple photo attachments */}
+                {hasPrev && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setViewAttachmentIndex(photoIndices[currentPos - 1]); }}
+                    className="fixed left-4 top-1/2 -translate-y-1/2 z-[70] w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors focus:outline-none"
+                  >
+                    <FaChevronLeft className="text-xl" />
+                  </button>
+                )}
+                {hasNext && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setViewAttachmentIndex(photoIndices[currentPos + 1]); }}
+                    className="fixed right-4 top-1/2 -translate-y-1/2 z-[70] w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors focus:outline-none"
+                  >
+                    <FaChevronRight className="text-xl" />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()
+      )}
     </div>
   );
 };

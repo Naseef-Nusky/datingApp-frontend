@@ -303,11 +303,11 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
 
           {/* Media Preview */}
           {mediaPreview && (
-            <div className="mb-4 relative">
+            <div className="mb-4 relative inline-block max-w-[200px]">
               {selectedMedia?.type.startsWith('image/') ? (
-                <img src={mediaPreview} alt="Preview" className="max-w-full max-h-48 rounded-lg" />
+                <img src={mediaPreview} alt="Preview" className="max-w-full max-h-28 rounded-lg object-cover" />
               ) : selectedMedia?.type.startsWith('video/') ? (
-                <video src={mediaPreview} controls className="max-w-full max-h-48 rounded-lg" />
+                <video src={mediaPreview} controls className="max-w-full max-h-28 rounded-lg" />
               ) : null}
               <button
                 onClick={() => {

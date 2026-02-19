@@ -14,6 +14,8 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
+  const [emailAttachments, setEmailAttachments] = useState([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [catalogGifts, setCatalogGifts] = useState([]);
   const [loadingGifts, setLoadingGifts] = useState(false);
   const [selectedGifts, setSelectedGifts] = useState([]);
@@ -76,7 +78,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   };
 
   const handleSend = async () => {
-    if (!message.trim() && !selectedMedia && selectedGifts.length === 0) {
+    if (!message.trim() && !selectedMedia && selectedGifts.length === 0 && emailAttachments.length === 0) {
       alert('Please enter a message, add a photo/video, or add a gift');
       return;
     }
@@ -118,6 +120,10 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
         formData.append('mediaUrl', selectedGifts[0].imageUrl);
       }
 
+      if (emailAttachments.length > 0) {
+        formData.append('attachments', JSON.stringify(emailAttachments));
+      }
+
       await axios.post('/api/messages/send-email', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -129,6 +135,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
       setMessage('');
       setSelectedMedia(null);
       setMediaPreview(null);
+      setEmailAttachments([]);
       setSelectedGifts([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (onSent) onSent();
@@ -158,24 +165,39 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedMedia(file);
-      // Create preview
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setMediaPreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-      } else if (file.type.startsWith('video/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setMediaPreview(reader.result);
-        };
-        reader.readAsDataURL(file);
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    // First file is used for local preview and as main media
+    const first = files[0];
+    setSelectedMedia(first);
+    if (first.type.startsWith('image/') || first.type.startsWith('video/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => setMediaPreview(reader.result);
+      reader.readAsDataURL(first);
+    }
+
+    // All files (including first) are uploaded as email attachments
+    setUploadingAttachment(true);
+    try {
+      const receiverId = getReceiverId();
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('receiverId', receiverId);
+        const { data } = await axios.post('/api/messages/upload', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const mt = data.messageType || '';
+        const type = mt === 'voice' ? 'voice' : 'photo'; // treat image & video as 'photo' for email layout/credits
+        setEmailAttachments((prev) => [...prev, { type, url: data.url }]);
       }
+    } catch (err) {
+      console.error('Upload attachment error:', err);
+      alert(err.response?.data?.message || 'Failed to upload attachment(s)');
+    } finally {
+      setUploadingAttachment(false);
     }
   };
 
@@ -285,6 +307,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               ref={fileInputRef}
               type="file"
               accept="image/*,video/*"
+              multiple
               onChange={handleFileChange}
               className="hidden"
             />
@@ -335,24 +358,34 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
             />
 
-            {/* Media Preview */}
-            {mediaPreview && (
-              <div className="mb-4 relative">
-                {selectedMedia?.type.startsWith('image/') ? (
-                  <img src={mediaPreview} alt="Preview" className="max-w-full max-h-48 rounded-lg" />
-                ) : selectedMedia?.type.startsWith('video/') ? (
-                  <video src={mediaPreview} controls className="max-w-full max-h-48 rounded-lg" />
-                ) : null}
-                <button
-                  onClick={() => {
-                    setSelectedMedia(null);
-                    setMediaPreview(null);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <FaTimes />
-                </button>
+            {/* Thumbnails for all selected attachments (each can be removed) */}
+            {emailAttachments.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {emailAttachments.map((att, idx) => (
+                  <div key={idx} className="relative inline-block">
+                    <div className="w-20 h-20 rounded-xl bg-gray-100 border overflow-hidden flex items-center justify-center shadow-sm">
+                      {att.type === 'photo' && att.url ? (
+                        <img
+                          src={att.url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-600">▶</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEmailAttachments((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] shadow"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -419,7 +452,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
             {/* Send Button */}
             <button
               onClick={handleSend}
-              disabled={sending || (!message.trim() && !selectedMedia && selectedGifts.length === 0)}
+              disabled={sending || (!message.trim() && !selectedMedia && selectedGifts.length === 0 && emailAttachments.length === 0)}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
             >
               <FaEnvelope className="text-xl" />
