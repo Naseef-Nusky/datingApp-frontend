@@ -9,6 +9,8 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
+import SettingsModal from './SettingsModal';
+import QuickPresentsModal from './QuickPresentsModal';
 import TodayIAmModal from './TodayIAmModal';
 import SearchFilterModal from './SearchFilterModal';
 
@@ -23,6 +25,8 @@ const Header = () => {
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [showTodayIAmModal, setShowTodayIAmModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPresentsModal, setShowPresentsModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -355,12 +359,18 @@ const Header = () => {
                 </button>
 
                 {/* Profile Dropdown */}
-                <ProfileDropdown />
+                <ProfileDropdown
+                  onOpenSettings={() => setShowSettingsModal(true)}
+                  onOpenPresents={() => setShowPresentsModal(true)}
+                />
               </div>
 
               {/* Desktop Profile Dropdown */}
               <div className="hidden lg:block">
-                <ProfileDropdown />
+                <ProfileDropdown
+                  onOpenSettings={() => setShowSettingsModal(true)}
+                  onOpenPresents={() => setShowPresentsModal(true)}
+                />
               </div>
             </nav>
           )}
@@ -438,6 +448,16 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
+
+      <QuickPresentsModal
+        isOpen={showPresentsModal}
+        onClose={() => setShowPresentsModal(false)}
+      />
 
     </header>
   );

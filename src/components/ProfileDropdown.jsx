@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt } from 'react-icons/fa';
 
-const ProfileDropdown = () => {
+const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const dropdownRef = useRef(null);
@@ -74,17 +74,17 @@ const ProfileDropdown = () => {
       id: 'presents', 
       label: 'Presents', 
       icon: FaGift, 
-      path: '/presents',
-      color: 'text-gray-500',
-      disabled: true
+      path: null,
+      color: 'text-gray-800',
+      action: 'openPresents'
     },
     { 
       id: 'settings', 
       label: 'Settings', 
       icon: FaCog, 
-      path: '/settings',
-      color: 'text-gray-500',
-      disabled: true
+      path: null,
+      color: 'text-gray-800',
+      action: 'openSettings'
     },
     { 
       id: 'help', 
@@ -193,6 +193,60 @@ const ProfileDropdown = () => {
                         ? 'cursor-not-allowed opacity-50'
                         : 'hover:bg-gray-50 cursor-pointer'
                     } ${isActive ? 'bg-red-50' : ''}`}
+                  >
+                    <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
+                    <span
+                      className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
+                        item.underline ? 'underline' : ''
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              }
+
+              if (item.action === 'openSettings') {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (!onOpenSettings) {
+                        return;
+                      }
+                      setIsOpen(false);
+                      onOpenSettings();
+                    }}
+                    className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
+                      isActive ? 'bg-red-50' : ''
+                    }`}
+                  >
+                    <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
+                    <span
+                      className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
+                        item.underline ? 'underline' : ''
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              }
+
+              if (item.action === 'openPresents') {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (!onOpenPresents) return;
+                      setIsOpen(false);
+                      onOpenPresents();
+                    }}
+                    className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
+                      isActive ? 'bg-red-50' : ''
+                    }`}
                   >
                     <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
                     <span
