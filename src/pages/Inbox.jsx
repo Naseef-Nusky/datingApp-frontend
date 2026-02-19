@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,7 @@ import ContactsSidebar from '../components/ContactsSidebar';
 const Inbox = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -171,6 +172,26 @@ const Inbox = () => {
     fetchContacts();
     fetchChatRequests();
   }, [filter]);
+
+  // Open that email in inbox (detail modal) when landing from SendGrid link (e.g. ?messageId=123)
+  const openMessageId = searchParams.get('messageId');
+  useEffect(() => {
+    if (!openMessageId || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await axios.get(`/api/messages/emails/${openMessageId}`);
+        const email = response?.data;
+        if (cancelled || !email) return;
+        setSelectedEmail(email);
+        setShowEmailModal(true);
+        setSearchParams({}, { replace: true });
+      } catch (_) {
+        if (!cancelled) setSearchParams({}, { replace: true });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [openMessageId, user?.id, setSearchParams]);
 
   // Handle hash navigation - show sidebar on mobile when hash is present
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);

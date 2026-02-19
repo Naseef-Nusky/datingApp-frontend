@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
 
+const VIDEO_THUMBNAIL_URL = 'https://nexdatingmedia.lon1.digitaloceanspaces.com/Icons/video_thumbnail.png';
+
 const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const { fetchUser } = useAuth();
   const { openRefillModal } = useRefillModal();
@@ -124,6 +126,8 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
         formData.append('attachments', JSON.stringify(emailAttachments));
       }
 
+      formData.append('frontendUrl', window.location.origin);
+
       await axios.post('/api/messages/send-email', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -190,7 +194,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         const mt = data.messageType || '';
-        const type = mt === 'voice' ? 'voice' : 'photo'; // treat image & video as 'photo' for email layout/credits
+        const type = mt === 'voice' ? 'voice' : (mt === 'video' ? 'video' : 'photo');
         setEmailAttachments((prev) => [...prev, { type, url: data.url }]);
       }
     } catch (err) {
@@ -368,6 +372,13 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
                         <img
                           src={att.url}
                           alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : att.type === 'video' ? (
+                        <img
+                          src={VIDEO_THUMBNAIL_URL}
+                          alt="Video"
                           className="w-full h-full object-cover"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />

@@ -72,6 +72,8 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         formData.append('mediaUrl', selectedGifts[0].imageUrl);
       }
 
+      formData.append('frontendUrl', window.location.origin);
+
       await axios.post('/api/messages/send-email', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

@@ -73,6 +73,7 @@ const ComposeEmail = () => {
         receiverId,
         subject: subject || undefined,
         content,
+        frontendUrl: window.location.origin,
       });
       alert('Email sent successfully!');
       navigate('/inbox');
