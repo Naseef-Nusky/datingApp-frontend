@@ -142,8 +142,14 @@ export const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   };
 
+  const loginWithToken = (newToken) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, fetchUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, fetchUser, loginWithToken }}>
       {children}
     </AuthContext.Provider>
   );

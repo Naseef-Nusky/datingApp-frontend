@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import RegistrationSuccessModal from './RegistrationSuccessModal';
 
-const RegistrationWizard = () => {
+const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null, onComplete }) => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(completeProfileOnly ? 1 : 0);
   const [loading, setLoading] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [error, setError] = useState('');
@@ -91,6 +91,33 @@ const RegistrationWizard = () => {
       }));
     }
   };
+
+  // Prefill form when completing profile (magic-link signup)
+  useEffect(() => {
+    if (!completeProfileOnly || !initialProfile) return;
+    const loc = initialProfile.location || {};
+    const city = loc.city || '';
+    const country = loc.country || '';
+    const hometown = city && country ? `${city}, ${country}` : (city || country || '');
+    const age = initialProfile.age || 18;
+    const prefs = initialProfile.preferences || {};
+    setFormData(prev => ({
+      ...prev,
+      firstName: initialProfile.firstName || prev.firstName,
+      lastName: initialProfile.lastName != null ? initialProfile.lastName : prev.lastName,
+      gender: initialProfile.gender || prev.gender,
+      seeking: prefs.lookingFor || prev.seeking,
+      birthday: {
+        month: prev.birthday.month || '1',
+        day: prev.birthday.day || '1',
+        year: String(new Date().getFullYear() - age),
+      },
+      hometown: hometown || prev.hometown,
+      bio: initialProfile.bio != null ? initialProfile.bio : prev.bio,
+      idealPartner: (prefs.description != null ? prefs.description : prev.idealPartner) || '',
+      interests: Array.isArray(initialProfile.interests) ? initialProfile.interests : prev.interests,
+    }));
+  }, [completeProfileOnly, initialProfile]);
 
   // Auto-detect city/country for hometown when step 1 is shown
   useEffect(() => {
@@ -215,8 +242,7 @@ const RegistrationWizard = () => {
         // Interests are optional
         return true;
       case 5:
-        // Photo is optional
-        return true;
+        return !!formData.photo;
       default:
         return true;
     }
@@ -242,10 +268,10 @@ const RegistrationWizard = () => {
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      setError('');
-    }
+    if (currentStep === 0) return;
+    if (completeProfileOnly && currentStep === 1) return;
+    setCurrentStep(currentStep - 1);
+    setError('');
   };
 
   const handleSubmit = async () => {
@@ -254,6 +280,38 @@ const RegistrationWizard = () => {
 
     try {
       const age = calculateAge();
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+
+      if (completeProfileOnly) {
+        const profilePayload = {
+          firstName: formData.firstName,
+          lastName: formData.lastName || '',
+          age: age,
+          gender: formData.gender,
+          bio: formData.bio || null,
+          preferences: {
+            lookingFor: formData.seeking,
+            description: formData.idealPartner || '',
+          },
+          interests: formData.interests,
+          location: {
+            city: formData.hometown.split(',')[0]?.trim() || '',
+            country: formData.hometown.split(',')[1]?.trim() || '',
+          },
+        };
+        await axios.put('/api/profiles/me', profilePayload);
+        if (formData.photo) {
+          const photoFormData = new FormData();
+          photoFormData.append('photo', formData.photo);
+          await axios.post('/api/profiles/me/photos', photoFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        }
+        await axios.put('/api/auth/me/registration-complete');
+        if (onComplete) onComplete();
+        return;
+      }
+
       const registrationData = {
         email: formData.email,
         password: formData.password,
@@ -277,23 +335,17 @@ const RegistrationWizard = () => {
       const result = await register(registrationData);
 
       if (result.success) {
-        // Upload photo if provided
         if (formData.photo) {
           const photoFormData = new FormData();
           photoFormData.append('photo', formData.photo);
           try {
-            await axios.post('/api/profiles/me/photos', photoFormData, {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              },
+            await axios.post(`${apiUrl}/api/profiles/me/photos`, photoFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
             });
           } catch (photoError) {
             console.error('Photo upload error:', photoError);
-            // Continue even if photo upload fails
           }
         }
-        
-        // Show success modal instead of navigating
         setRegisteredUser({
           firstName: formData.firstName,
           email: formData.email,
@@ -303,7 +355,7 @@ const RegistrationWizard = () => {
         setError(result.message || 'Registration failed');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || (completeProfileOnly ? 'Failed to save profile' : 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -590,7 +642,6 @@ const RegistrationWizard = () => {
         return (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-center mb-6">Add photo. Get noticed.</h2>
-            
             <div className="flex justify-center">
               <div className="w-64 h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center relative">
                 {formData.photo ? (
@@ -676,7 +727,7 @@ const RegistrationWizard = () => {
             <button
               type="button"
               onClick={handleBack}
-              disabled={currentStep === 0}
+              disabled={currentStep === 0 || (completeProfileOnly && currentStep === 1)}
               className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
               Back
@@ -687,15 +738,19 @@ const RegistrationWizard = () => {
                 type="button"
                 onClick={handleNext}
                 className={`px-12 py-3 rounded-lg font-semibold text-white transition bg-gradient-nex hover:opacity-90 shadow-md ${
-                  loading || checkingEmail ? 'opacity-50 cursor-not-allowed' : ''
+                  loading || checkingEmail || (currentStep === 5 && !formData.photo) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
-                disabled={loading || checkingEmail}
+                disabled={loading || checkingEmail || (currentStep === 5 && !formData.photo)}
               >
-                {loading ? 'Registering...' : checkingEmail ? 'Checking...' : currentStep === 5 ? 'Complete Registration' : 'NEXT'}
+                {loading
+                  ? (completeProfileOnly ? 'Saving...' : 'Registering...')
+                  : checkingEmail
+                    ? 'Checking...'
+                    : 'NEXT'}
               </button>
 
               <div className="flex space-x-2 mt-4">
-                {[0, 1, 2, 3, 4, 5].map((step) => (
+                {(completeProfileOnly ? [1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5]).map((step) => (
                   <div
                     key={step}
                     className={`w-2 h-2 rounded-full ${
@@ -706,7 +761,7 @@ const RegistrationWizard = () => {
               </div>
             </div>
 
-            {currentStep > 0 && currentStep < 5 && (
+            {currentStep > 0 && currentStep < 5 && !completeProfileOnly && (
               <button
                 type="button"
                 onClick={handleSkip}

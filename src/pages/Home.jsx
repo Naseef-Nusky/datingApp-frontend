@@ -1,41 +1,14 @@
-import { Link } from 'react-router-dom';
-import Logo from '../components/Logo';
+import WelcomeAuthCard from '../components/WelcomeAuthCard';
 import { FaHeart, FaCheckCircle } from 'react-icons/fa';
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-nex-blue">
-      {/* Hero Section */}
-      <section className="relative py-20 px-4">
-        <div className="container mx-auto">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8 flex justify-center">
-              <Logo className="scale-150" />
-            </div>
-            <h2 className="text-2xl md:text-3xl text-white mb-8 font-light">
-              Your next date starts here.
-            </h2>
-            <p className="text-gray-300 mb-8 text-lg max-w-2xl mx-auto">
-              Enjoy global connectivity with like-minded people around the world.
-            </p>
-            <Link
-              to="/register"
-              className="bg-gradient-nex text-white px-8 py-3 rounded-lg hover:opacity-90 transition inline-block font-semibold"
-            >
-              Join us now
-            </Link>
-            <p className="mt-6 text-gray-300">
-              Already a member?{' '}
-              <Link to="/login" className="text-nex-orange hover:underline">
-                Log in
-              </Link>
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen">
+      {/* Welcome / Signup card (dating.com-style) */}
+      <WelcomeAuthCard />
 
       {/* Features Section */}
-      <section className="py-16 px-4 bg-nex-dark">
+      <section className="py-16 px-4 bg-nex-blue">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">

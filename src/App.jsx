@@ -5,12 +5,17 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import SignupEmail from './pages/SignupEmail';
+import CheckEmail from './pages/CheckEmail';
+import LoginCallback from './pages/LoginCallback';
+import GoogleCallback from './pages/GoogleCallback';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
 import Inbox from './pages/Inbox';
 import VipPage from './pages/VipPage';
 import ComposeEmail from './pages/ComposeEmail';
+import CompleteProfile from './pages/CompleteProfile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -43,6 +48,18 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/signup-email" element={<SignupEmail />} />
+            <Route path="/auth/check-email" element={<CheckEmail />} />
+            <Route path="/auth/login-callback" element={<LoginCallback />} />
+            <Route path="/auth/google-callback" element={<GoogleCallback />} />
+            <Route
+              path="/complete-profile"
+              element={
+                <ProtectedRoute>
+                  <CompleteProfile />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
