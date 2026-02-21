@@ -318,6 +318,18 @@ const Profile = () => {
     }
   }, [id]);
   
+  // Listen for global "openPresentShop" events (from header quick presents)
+  useEffect(() => {
+    const handler = (event) => {
+      const targetId = event.detail?.receiverId;
+      if (targetId && targetId === id) {
+        setShowPresentShop(true);
+      }
+    };
+    window.addEventListener('openPresentShop', handler);
+    return () => window.removeEventListener('openPresentShop', handler);
+  }, [id]);
+  
   // Handle call start from sessionStorage (when accepting incoming call)
   useEffect(() => {
     if (profile && id) {

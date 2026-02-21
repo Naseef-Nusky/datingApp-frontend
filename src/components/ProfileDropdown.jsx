@@ -2,11 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt } from 'react-icons/fa';
+import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo } from 'react-icons/fa';
+
+function formatVipDeadline(isoDate) {
+  if (!isoDate) return '';
+  const d = new Date(isoDate);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [vipProgress, setVipProgress] = useState(null);
   const dropdownRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -17,6 +24,14 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (isOpen && user) {
+      axios.get('/api/vip/progress').then((res) => setVipProgress(res.data)).catch(() => setVipProgress(null));
+    } else if (!isOpen) {
+      setVipProgress(null);
+    }
+  }, [isOpen, user]);
+
   const fetchProfile = async () => {
     try {
       const response = await axios.get('/api/auth/me');
@@ -25,6 +40,12 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
       console.error('Fetch profile error:', error);
     }
   };
+
+  const canViewVip = vipProgress && (vipProgress.premiumActive || (vipProgress.totalCreditsSpent ?? 0) > 0);
+  const creditsRequired = vipProgress?.creditsRequired ?? 160;
+  const vipPercent = vipProgress && creditsRequired > 0
+    ? Math.min(100, (vipProgress.creditsSpentLast30Days ?? 0) / creditsRequired * 100)
+    : 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -62,6 +83,14 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
       path: null, // No navigation, will open modal
       color: 'text-gray-800',
       action: 'openMingleModal'
+    },
+    { 
+      id: 'media', 
+      label: 'My Media', 
+      icon: FaPhotoVideo, 
+      path: '/my-media',
+      color: 'text-gray-800',
+      disabled: true
     },
     { 
       id: 'network', 
@@ -162,6 +191,52 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
             <p className="text-sm text-gray-500 mt-1">
               ID: {user?.id?.substring(0, 12) || 'N/A'}
             </p>
+
+            {/* VIP progress – only for paid / credit-used customers */}
+            {canViewVip && !vipProgress.vipActive && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-nex-orange to-nex-pink rounded-full transition-all"
+                      style={{ width: `${vipPercent}%` }}
+                    />
+                  </div>
+                  <FaCrown className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                </div>
+                <p className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+                  Become a VIP member
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Spend {vipProgress.remainingToVip ?? 0} credits by {formatVipDeadline(vipProgress.deadlineDate)} to earn VIP status.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/vip');
+                  }}
+                  className="mt-2 text-xs font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1.5 rounded transition"
+                >
+                  More &gt;
+                </button>
+              </div>
+            )}
+            {canViewVip && vipProgress.vipActive && (
+              <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-600">VIP member</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/vip');
+                  }}
+                  className="text-xs font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1.5 rounded transition"
+                >
+                  More &gt;
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Menu Items */}
@@ -263,9 +338,10 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
               return (
                 <Link
                   key={item.id}
-                  to={item.path}
-                  onClick={() => {
+                  to={item.disabled ? '#' : item.path}
+                  onClick={(e) => {
                     if (item.disabled) {
+                      e.preventDefault();
                       return;
                     }
                     setIsOpen(false);

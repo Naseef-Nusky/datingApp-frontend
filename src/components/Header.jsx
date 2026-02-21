@@ -27,6 +27,7 @@ const Header = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPresentsModal, setShowPresentsModal] = useState(false);
+  const [presentsReceiverId, setPresentsReceiverId] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -203,6 +204,17 @@ const Header = () => {
     return iconMap[status] || null;
   };
 
+  const handleOpenPresents = () => {
+    // Only allow quick presents when viewing someone else's profile
+    const match = location.pathname.match(/^\/profile\/([^/]+)$/);
+    if (match && match[1] !== 'me') {
+      setPresentsReceiverId(match[1]);
+      setShowPresentsModal(true);
+    } else {
+      alert('Open a member profile first to send a present.');
+    }
+  };
+
   return (
     <header className="bg-nex-blue shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
@@ -361,7 +373,7 @@ const Header = () => {
                 {/* Profile Dropdown */}
                 <ProfileDropdown
                   onOpenSettings={() => setShowSettingsModal(true)}
-                  onOpenPresents={() => setShowPresentsModal(true)}
+                  onOpenPresents={handleOpenPresents}
                 />
               </div>
 
@@ -369,7 +381,7 @@ const Header = () => {
               <div className="hidden lg:block">
                 <ProfileDropdown
                   onOpenSettings={() => setShowSettingsModal(true)}
-                  onOpenPresents={() => setShowPresentsModal(true)}
+                  onOpenPresents={handleOpenPresents}
                 />
               </div>
             </nav>
@@ -457,6 +469,7 @@ const Header = () => {
       <QuickPresentsModal
         isOpen={showPresentsModal}
         onClose={() => setShowPresentsModal(false)}
+        receiverId={presentsReceiverId}
       />
 
     </header>

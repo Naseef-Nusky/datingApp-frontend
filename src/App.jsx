@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
 import Inbox from './pages/Inbox';
+import VipPage from './pages/VipPage';
 import ComposeEmail from './pages/ComposeEmail';
 
 // Protected Route Component
@@ -71,6 +72,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Inbox />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vip"
+              element={
+                <ProtectedRoute>
+                  <VipPage />
                 </ProtectedRoute>
               }
             />
