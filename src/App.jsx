@@ -47,6 +47,7 @@ function App() {
             <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/privacy" element={<></>} />
             <Route path="/register" element={<Register />} />
             <Route path="/signup-email" element={<SignupEmail />} />
             <Route path="/auth/check-email" element={<CheckEmail />} />

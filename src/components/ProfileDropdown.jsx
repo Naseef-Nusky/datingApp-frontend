@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle } from 'react-icons/fa';
+import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock } from 'react-icons/fa';
 
 function formatVipDeadline(isoDate) {
   if (!isoDate) return '';
@@ -138,6 +138,14 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
       path: null,
       color: 'text-gray-500',
       action: 'openAbout'
+    },
+    { 
+      id: 'privacy', 
+      label: 'Privacy Policy', 
+      icon: FaLock, 
+      path: null,
+      color: 'text-gray-500',
+      action: 'openPrivacyPolicy'
     },
     { 
       id: 'terms', 
@@ -352,6 +360,23 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                       if (!onOpenAbout) return;
                       setIsOpen(false);
                       onOpenAbout();
+                    }}
+                    className="w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
+                  >
+                    <Icon className={`mr-3 ${item.color}`} />
+                    <span className={item.underline ? 'underline' : ''}>{item.label}</span>
+                  </button>
+                );
+              }
+
+              if (item.action === 'openPrivacyPolicy') {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      window.dispatchEvent(new CustomEvent('openPrivacyPolicy'));
                     }}
                     className="w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
                   >

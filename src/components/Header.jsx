@@ -15,6 +15,7 @@ import TodayIAmModal from './TodayIAmModal';
 import SearchFilterModal from './SearchFilterModal';
 import AboutModal from './AboutModal';
 import VerifyIdentityModal from './VerifyIdentityModal';
+import PrivacyPolicyModal from './PrivacyPolicyModal';
 
 const Header = () => {
   const { user, fetchUser } = useAuth();
@@ -33,6 +34,7 @@ const Header = () => {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [aboutSectionId, setAboutSectionId] = useState(null);
   const [showVerifyIdentityModal, setShowVerifyIdentityModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -203,6 +205,16 @@ const Header = () => {
     return () => window.removeEventListener('openAboutWithSection', handleOpenAbout);
   }, []);
 
+  // Open Privacy Policy modal when visiting /privacy or when event is dispatched
+  useEffect(() => {
+    if (location.pathname === '/privacy') setShowPrivacyModal(true);
+  }, [location.pathname]);
+  useEffect(() => {
+    const handleOpenPrivacy = () => setShowPrivacyModal(true);
+    window.addEventListener('openPrivacyPolicy', handleOpenPrivacy);
+    return () => window.removeEventListener('openPrivacyPolicy', handleOpenPrivacy);
+  }, []);
+
   // Listen for "Get Verified" from VerifiedBadge – open Verify Identity modal
   useEffect(() => {
     const handleOpenVerify = () => {
@@ -320,6 +332,13 @@ const Header = () => {
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
                 <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="text-white hover:text-nex-orange transition"
+                >
+                  PRIVACY POLICY
+                </button>
+                <button
                   onClick={openRefillModal}
                   className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                 >
@@ -421,6 +440,13 @@ const Header = () => {
 
           {!user && (
             <nav className="flex items-center space-x-4">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="text-white hover:text-nex-orange transition"
+              >
+                Privacy Policy
+              </button>
               <Link
                 to="/login"
                 className="text-white hover:text-nex-orange transition"
@@ -513,6 +539,14 @@ const Header = () => {
       <VerifyIdentityModal
         isOpen={showVerifyIdentityModal}
         onClose={() => setShowVerifyIdentityModal(false)}
+      />
+
+      <PrivacyPolicyModal
+        isOpen={showPrivacyModal}
+        onClose={() => {
+          setShowPrivacyModal(false);
+          if (location.pathname === '/privacy') navigate('/');
+        }}
       />
 
     </header>
