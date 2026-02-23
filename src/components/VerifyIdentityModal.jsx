@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaUser } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 
 /**
  * "Verify your identity" modal – portrait photo criteria, upload area, Start Verification.
@@ -57,10 +56,9 @@ export default function VerifyIdentityModal({ isOpen, onClose }) {
     e.target.value = '';
   };
 
-  const hasPhoto = selectedFile || profilePhotoUrl;
   const handleStartVerification = () => {
-    if (!hasPhoto) return;
-    // TODO: integrate with SumSub or backend verification API (use selectedFile or existing profile photo)
+    if (!selectedFile) return;
+    // TODO: integrate with SumSub or backend verification API (use selectedFile)
     onClose();
   };
 
@@ -122,19 +120,13 @@ export default function VerifyIdentityModal({ isOpen, onClose }) {
             </ol>
           </div>
 
-          {/* The selected photo – show new upload preview, or current profile photo, or placeholder */}
+          {/* The selected photo – show new upload preview only (verification requires fresh upload) */}
           <p className="text-gray-600 font-medium mb-2">The selected photo</p>
           <div className="mb-4 flex justify-center">
             {previewUrl ? (
               <img
                 src={previewUrl}
                 alt="Selected for verification"
-                className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-              />
-            ) : profilePhotoUrl ? (
-              <img
-                src={profilePhotoUrl}
-                alt="Your profile photo"
                 className="w-32 h-32 object-cover rounded-lg border border-gray-200"
               />
             ) : (
@@ -154,12 +146,12 @@ export default function VerifyIdentityModal({ isOpen, onClose }) {
               onClick={() => fileInputRef.current?.click()}
               className="text-blue-600 hover:underline font-medium"
             >
-              Upload Profile Photo
+              Upload verification photo
             </button>
             <button
               type="button"
               onClick={handleStartVerification}
-              disabled={!hasPhoto}
+              disabled={!selectedFile}
               className="w-full max-w-xs py-3 px-4 rounded-lg font-semibold transition disabled:bg-gray-200 disabled:text-gray-500 bg-gray-700 text-white hover:bg-gray-800 disabled:hover:bg-gray-200 disabled:cursor-not-allowed"
             >
               START VERIFICATION
