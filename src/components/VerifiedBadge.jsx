@@ -8,6 +8,23 @@ export default function VerifiedBadge({ className = '', size = 'sm' }) {
   const [popupStyle, setPopupStyle] = useState({});
   const anchorRef = useRef(null);
   const popupRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+
+  const clearCloseTimeout = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleClose = () => {
+    clearCloseTimeout();
+    closeTimeoutRef.current = setTimeout(() => setShowPopup(false), 150);
+  };
+
+  useEffect(() => {
+    return () => clearCloseTimeout();
+  }, []);
 
   const updatePosition = () => {
     if (anchorRef.current) {
@@ -58,6 +75,8 @@ export default function VerifiedBadge({ className = '', size = 'sm' }) {
       className="w-72 sm:w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-4 text-left"
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
+      onMouseEnter={clearCloseTimeout}
+      onMouseLeave={scheduleClose}
     >
       <h4 className="font-bold text-gray-900 text-sm mb-2">Verified Account</h4>
       <p className="text-gray-700 text-xs leading-relaxed mb-4">
@@ -109,7 +128,11 @@ export default function VerifiedBadge({ className = '', size = 'sm' }) {
             e.stopPropagation();
             setShowPopup((v) => !v);
           }}
-          onMouseEnter={() => setShowPopup(true)}
+          onMouseEnter={() => {
+            clearCloseTimeout();
+            setShowPopup(true);
+          }}
+          onMouseLeave={scheduleClose}
           className={`bg-blue-500 rounded-full shadow ${padding} cursor-pointer hover:ring-2 hover:ring-blue-300 transition focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center justify-center`}
           title="Verified Account"
           aria-label="Verified Account"
