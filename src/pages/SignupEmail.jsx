@@ -123,7 +123,7 @@ export default function SignupEmail() {
             <Link to="/terms" className="text-vantage-purple underline">Terms</Link>,{' '}
             <Link to="/terms#privacy" className="text-vantage-purple underline">Privacy Policy</Link>{' '}
             and{' '}
-            <Link to="/terms#refund" className="text-vantage-purple underline">Refund and Cancellation Policy</Link>.
+            <Link to="/refund" className="text-vantage-purple underline">Refund and Cancellation Policy</Link>.
             You can terminate your account or opt out of any or part of the services (including linked ones) any time.
           </p>
         </div>

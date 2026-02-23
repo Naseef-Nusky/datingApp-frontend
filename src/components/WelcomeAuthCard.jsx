@@ -71,7 +71,7 @@ export default function WelcomeAuthCard() {
             ,{' '}
             <Link to="/terms#privacy" className="text-vantage-purple underline hover:opacity-80">Privacy Policy</Link>
             ,{' '}
-            <Link to="/terms#refund" className="text-vantage-purple underline hover:opacity-80">Refund and Cancellation Policy</Link>
+            <Link to="/refund" className="text-vantage-purple underline hover:opacity-80">Refund and Cancellation Policy</Link>
             {' '}and{' '}
             <Link to="/terms#content" className="text-vantage-purple underline hover:opacity-80">Content Policy</Link>
             . You can terminate your account or opt out of any or part of the services (including linked ones) any time.

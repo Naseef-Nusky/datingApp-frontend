@@ -16,6 +16,9 @@ import SearchFilterModal from './SearchFilterModal';
 import AboutModal from './AboutModal';
 import VerifyIdentityModal from './VerifyIdentityModal';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
+import RefundPolicyModal from './RefundPolicyModal';
+import SafetyPolicyModal from './SafetyPolicyModal';
+import TermsOfUseModal from './TermsOfUseModal';
 
 const Header = () => {
   const { user, fetchUser } = useAuth();
@@ -35,6 +38,9 @@ const Header = () => {
   const [aboutSectionId, setAboutSectionId] = useState(null);
   const [showVerifyIdentityModal, setShowVerifyIdentityModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -214,6 +220,30 @@ const Header = () => {
     window.addEventListener('openPrivacyPolicy', handleOpenPrivacy);
     return () => window.removeEventListener('openPrivacyPolicy', handleOpenPrivacy);
   }, []);
+  useEffect(() => {
+    if (location.pathname === '/refund') setShowRefundModal(true);
+  }, [location.pathname]);
+  useEffect(() => {
+    const handleOpenRefund = () => setShowRefundModal(true);
+    window.addEventListener('openRefundPolicy', handleOpenRefund);
+    return () => window.removeEventListener('openRefundPolicy', handleOpenRefund);
+  }, []);
+  useEffect(() => {
+    if (location.pathname === '/safety') setShowSafetyModal(true);
+  }, [location.pathname]);
+  useEffect(() => {
+    const handleOpenSafety = () => setShowSafetyModal(true);
+    window.addEventListener('openSafetyPolicy', handleOpenSafety);
+    return () => window.removeEventListener('openSafetyPolicy', handleOpenSafety);
+  }, []);
+  useEffect(() => {
+    if (location.pathname === '/terms') setShowTermsModal(true);
+  }, [location.pathname]);
+  useEffect(() => {
+    const handleOpenTerms = () => setShowTermsModal(true);
+    window.addEventListener('openTermsOfUse', handleOpenTerms);
+    return () => window.removeEventListener('openTermsOfUse', handleOpenTerms);
+  }, []);
 
   // Listen for "Get Verified" from VerifiedBadge – open Verify Identity modal
   useEffect(() => {
@@ -339,6 +369,20 @@ const Header = () => {
                   PRIVACY POLICY
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setShowRefundModal(true)}
+                  className="text-white hover:text-nex-orange transition"
+                >
+                  REFUND POLICY
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSafetyModal(true)}
+                  className="text-white hover:text-nex-orange transition"
+                >
+                  SAFETY & SECURITY
+                </button>
+                <button
                   onClick={openRefillModal}
                   className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                 >
@@ -447,6 +491,20 @@ const Header = () => {
               >
                 Privacy Policy
               </button>
+              <button
+                type="button"
+                onClick={() => setShowRefundModal(true)}
+                className="text-white hover:text-nex-orange transition"
+              >
+                Refund Policy
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSafetyModal(true)}
+                className="text-white hover:text-nex-orange transition"
+              >
+                Safety & Security
+              </button>
               <Link
                 to="/login"
                 className="text-white hover:text-nex-orange transition"
@@ -546,6 +604,30 @@ const Header = () => {
         onClose={() => {
           setShowPrivacyModal(false);
           if (location.pathname === '/privacy') navigate('/');
+        }}
+      />
+
+      <RefundPolicyModal
+        isOpen={showRefundModal}
+        onClose={() => {
+          setShowRefundModal(false);
+          if (location.pathname === '/refund') navigate('/');
+        }}
+      />
+
+      <SafetyPolicyModal
+        isOpen={showSafetyModal}
+        onClose={() => {
+          setShowSafetyModal(false);
+          if (location.pathname === '/safety') navigate('/');
+        }}
+      />
+
+      <TermsOfUseModal
+        isOpen={showTermsModal}
+        onClose={() => {
+          setShowTermsModal(false);
+          if (location.pathname === '/terms') navigate('/');
         }}
       />
 

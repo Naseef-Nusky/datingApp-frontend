@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock } from 'react-icons/fa';
+import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 function formatVipDeadline(isoDate) {
   if (!isoDate) return '';
@@ -12,6 +12,7 @@ function formatVipDeadline(isoDate) {
 
 const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [termsSubmenuOpen, setTermsSubmenuOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [vipProgress, setVipProgress] = useState(null);
   const dropdownRef = useRef(null);
@@ -52,6 +53,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+        setTermsSubmenuOpen(false);
       }
     };
 
@@ -132,28 +134,19 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
       disabled: true
     },
     { 
-      id: 'about', 
-      label: 'About Vantage Dating', 
-      icon: FaInfoCircle, 
-      path: null,
-      color: 'text-gray-500',
-      action: 'openAbout'
-    },
-    { 
-      id: 'privacy', 
-      label: 'Privacy Policy', 
-      icon: FaLock, 
-      path: null,
-      color: 'text-gray-500',
-      action: 'openPrivacyPolicy'
-    },
-    { 
-      id: 'terms', 
+      id: 'terms-parent', 
       label: 'Terms & Privacy', 
       icon: FaFileContract, 
-      path: '/terms',
+      path: null,
       color: 'text-gray-500',
-      underline: true
+      hasSubmenu: true,
+      submenu: [
+        { id: 'about', label: 'About Vantage Dating', action: 'openAbout' },
+        { id: 'terms', label: 'Terms of Use', action: 'openTermsOfUse' },
+        { id: 'privacy', label: 'Privacy Policy', action: 'openPrivacyPolicy' },
+        { id: 'refund', label: 'Refund & Cancellation Policy', action: 'openRefundPolicy' },
+        { id: 'safety', label: 'Safety & Security Policy', action: 'openSafetyPolicy' },
+      ]
     },
   ];
 
@@ -351,38 +344,61 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                 );
               }
 
-              if (item.action === 'openAbout') {
+              if (item.hasSubmenu) {
                 return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (!onOpenAbout) return;
-                      setIsOpen(false);
-                      onOpenAbout();
-                    }}
-                    className="w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
-                  >
-                    <Icon className={`mr-3 ${item.color}`} />
-                    <span className={item.underline ? 'underline' : ''}>{item.label}</span>
-                  </button>
-                );
-              }
-
-              if (item.action === 'openPrivacyPolicy') {
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setIsOpen(false);
-                      window.dispatchEvent(new CustomEvent('openPrivacyPolicy'));
-                    }}
-                    className="w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
-                  >
-                    <Icon className={`mr-3 ${item.color}`} />
-                    <span className={item.underline ? 'underline' : ''}>{item.label}</span>
-                  </button>
+                  <div key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => setTermsSubmenuOpen(!termsSubmenuOpen)}
+                      className="w-full flex items-center justify-between px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
+                    >
+                      <div className="flex items-center">
+                        <Icon className={`mr-3 ${item.color}`} />
+                        <span className={item.color}>{item.label}</span>
+                      </div>
+                      {termsSubmenuOpen ? (
+                        <FaChevronDown className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <FaChevronRight className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                    {termsSubmenuOpen && item.submenu && (
+                      <div className="bg-gray-50 border-l-2 border-gray-200 ml-2">
+                        {item.submenu.map((sub) => (
+                          sub.path ? (
+                            <Link
+                              key={sub.id}
+                              to={sub.path}
+                              onClick={() => {
+                                setIsOpen(false);
+                                setTermsSubmenuOpen(false);
+                              }}
+                              className="block px-6 py-2.5 pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
+                            >
+                              {sub.label}
+                            </Link>
+                          ) : (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() => {
+                                setIsOpen(false);
+                                setTermsSubmenuOpen(false);
+                                if (sub.action === 'openAbout') onOpenAbout?.();
+                                if (sub.action === 'openTermsOfUse') window.dispatchEvent(new CustomEvent('openTermsOfUse'));
+                                if (sub.action === 'openPrivacyPolicy') window.dispatchEvent(new CustomEvent('openPrivacyPolicy'));
+                                if (sub.action === 'openRefundPolicy') window.dispatchEvent(new CustomEvent('openRefundPolicy'));
+                                if (sub.action === 'openSafetyPolicy') window.dispatchEvent(new CustomEvent('openSafetyPolicy'));
+                              }}
+                              className="block w-full text-left px-6 py-2.5 pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
+                            >
+                              {sub.label}
+                            </button>
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               }
 
