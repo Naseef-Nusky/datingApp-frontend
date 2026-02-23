@@ -362,27 +362,6 @@ const Header = () => {
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
                 <button
-                  type="button"
-                  onClick={() => setShowPrivacyModal(true)}
-                  className="text-white hover:text-nex-orange transition"
-                >
-                  PRIVACY POLICY
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowRefundModal(true)}
-                  className="text-white hover:text-nex-orange transition"
-                >
-                  REFUND POLICY
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSafetyModal(true)}
-                  className="text-white hover:text-nex-orange transition"
-                >
-                  SAFETY & SECURITY
-                </button>
-                <button
                   onClick={openRefillModal}
                   className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                 >
@@ -484,27 +463,6 @@ const Header = () => {
 
           {!user && (
             <nav className="flex items-center space-x-4">
-              <button
-                type="button"
-                onClick={() => setShowPrivacyModal(true)}
-                className="text-white hover:text-nex-orange transition"
-              >
-                Privacy Policy
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowRefundModal(true)}
-                className="text-white hover:text-nex-orange transition"
-              >
-                Refund Policy
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowSafetyModal(true)}
-                className="text-white hover:text-nex-orange transition"
-              >
-                Safety & Security
-              </button>
               <Link
                 to="/login"
                 className="text-white hover:text-nex-orange transition"
