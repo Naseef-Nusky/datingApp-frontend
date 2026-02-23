@@ -26,11 +26,11 @@ export default function LoginCallback() {
         if (jwt && user && loginWithToken) {
           loginWithToken(jwt);
           setStatus('success');
-          if (registrationComplete === false) {
-            navigate('/complete-profile', { replace: true });
-          } else {
-            navigate('/dashboard', { replace: true });
-          }
+          // Always open dashboard when login link is valid (existing or new account)
+          navigate('/dashboard', {
+            replace: true,
+            state: registrationComplete === false ? { openCompleteProfile: true } : undefined,
+          });
         } else {
           setStatus('invalid');
         }
@@ -52,9 +52,9 @@ export default function LoginCallback() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Invalid or expired link</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Invalid link</h1>
           <p className="text-gray-600 text-sm mb-6">
-            This login link is invalid or has expired. Please request a new one.
+            This login link is invalid or was already used. Please request a new one.
           </p>
           <a
             href="/signup-email"

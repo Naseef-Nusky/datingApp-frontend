@@ -9,6 +9,8 @@ import LetsMingleModal from '../components/LetsMingleModal';
 import MingleSuccessModal from '../components/MingleSuccessModal';
 import StoriesCarousel from '../components/StoriesCarousel';
 import ContactsSidebar from '../components/ContactsSidebar';
+import FreeUserBadge from '../components/FreeUserBadge';
+import VerifiedBadge from '../components/VerifiedBadge';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -270,17 +272,19 @@ const Dashboard = () => {
     };
   }, [user]);
 
-  // Check if we should open search modal from navigation
+  // Check if we should open search modal, mingle intro, or redirect to complete profile
   useEffect(() => {
     if (location.state?.openSearchModal) {
       setShowSearchModal(true);
-      // Clear the state to prevent reopening on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
     if (location.state?.openMingleIntro) {
       setShowMingleIntro(true);
-      // Clear the state to prevent reopening on refresh
       navigate(location.pathname, { replace: true, state: {} });
+    }
+    // Login link with incomplete registration: open dashboard first, then redirect to complete profile
+    if (location.state?.openCompleteProfile) {
+      navigate('/complete-profile', { replace: true, state: {} });
     }
   }, [location.state, navigate, location.pathname]);
 
@@ -846,19 +850,18 @@ const Dashboard = () => {
                   {/* Gradient overlay for better text readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent z-[5]"></div>
 
-                  {/* Top-left flame icon */}
-                  <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-[20] pointer-events-none">
-                    <div className="bg-orange-500 rounded-full p-1 sm:p-2">
-                      <FaFire className="text-white text-xs sm:text-sm" />
+                  {/* Top-left: Free User badge (flame) – only if user is Free User */}
+                  {profile.user?.isFreeUser !== false && (
+                    <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-[20]" onClick={(e) => e.stopPropagation()}>
+                      <FreeUserBadge size="sm" />
                     </div>
-                  </div>
-                  
-                  {/* Top-right checkmark */}
-                  <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-[20] pointer-events-none">
-                    <div className="bg-blue-500 rounded-full p-1 sm:p-2">
-                      <FaCheckCircle className="text-white text-xs sm:text-sm" />
+                  )}
+                  {/* Top-right: Verified badge – only if user is verified */}
+                  {profile.user?.isVerified && (
+                    <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-[20]" onClick={(e) => e.stopPropagation()}>
+                      <VerifiedBadge size="sm" />
                     </div>
-                  </div>
+                  )}
                   
                   {/* Bottom-left photo/video count */}
                   <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-[20]">

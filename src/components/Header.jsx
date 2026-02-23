@@ -13,6 +13,8 @@ import SettingsModal from './SettingsModal';
 import QuickPresentsModal from './QuickPresentsModal';
 import TodayIAmModal from './TodayIAmModal';
 import SearchFilterModal from './SearchFilterModal';
+import AboutModal from './AboutModal';
+import VerifyIdentityModal from './VerifyIdentityModal';
 
 const Header = () => {
   const { user, fetchUser } = useAuth();
@@ -28,6 +30,9 @@ const Header = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPresentsModal, setShowPresentsModal] = useState(false);
   const [presentsReceiverId, setPresentsReceiverId] = useState(null);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [aboutSectionId, setAboutSectionId] = useState(null);
+  const [showVerifyIdentityModal, setShowVerifyIdentityModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const socketRef = useRef(null);
@@ -166,10 +171,15 @@ const Header = () => {
 
   const fetchTodayStatus = async () => {
     try {
-      const response = await axios.get('/api/user/status');
-      setTodayStatus(response.data.status);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const base = apiUrl ? apiUrl.replace(/\/$/, '') : '';
+      const response = await axios.get(base ? `${base}/api/user/status` : '/api/user/status');
+      setTodayStatus(response.data.status ?? null);
     } catch (error) {
-      console.error('Fetch status error:', error);
+      if (error.response?.status !== 404) {
+        console.error('Fetch status error:', error);
+      }
+      setTodayStatus(null);
     }
   };
 
@@ -180,6 +190,26 @@ const Header = () => {
     };
     window.addEventListener('statusUpdated', handleStatusUpdate);
     return () => window.removeEventListener('statusUpdated', handleStatusUpdate);
+  }, []);
+
+  // Listen for "learn more" from badge popups – open About modal and scroll to section
+  useEffect(() => {
+    const handleOpenAbout = (e) => {
+      const sectionId = e.detail?.sectionId;
+      setAboutSectionId(sectionId || null);
+      setShowAboutModal(true);
+    };
+    window.addEventListener('openAboutWithSection', handleOpenAbout);
+    return () => window.removeEventListener('openAboutWithSection', handleOpenAbout);
+  }, []);
+
+  // Listen for "Get Verified" from VerifiedBadge – open Verify Identity modal
+  useEffect(() => {
+    const handleOpenVerify = () => {
+      setShowVerifyIdentityModal(true);
+    };
+    window.addEventListener('openVerifyIdentityModal', handleOpenVerify);
+    return () => window.removeEventListener('openVerifyIdentityModal', handleOpenVerify);
   }, []);
 
   const getStatusLabel = (status) => {
@@ -374,6 +404,7 @@ const Header = () => {
                 <ProfileDropdown
                   onOpenSettings={() => setShowSettingsModal(true)}
                   onOpenPresents={handleOpenPresents}
+                  onOpenAbout={() => setShowAboutModal(true)}
                 />
               </div>
 
@@ -382,6 +413,7 @@ const Header = () => {
                 <ProfileDropdown
                   onOpenSettings={() => setShowSettingsModal(true)}
                   onOpenPresents={handleOpenPresents}
+                  onOpenAbout={() => setShowAboutModal(true)}
                 />
               </div>
             </nav>
@@ -470,6 +502,17 @@ const Header = () => {
         isOpen={showPresentsModal}
         onClose={() => setShowPresentsModal(false)}
         receiverId={presentsReceiverId}
+      />
+
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => { setShowAboutModal(false); setAboutSectionId(null); }}
+        initialSectionId={aboutSectionId}
+      />
+
+      <VerifyIdentityModal
+        isOpen={showVerifyIdentityModal}
+        onClose={() => setShowVerifyIdentityModal(false)}
       />
 
     </header>

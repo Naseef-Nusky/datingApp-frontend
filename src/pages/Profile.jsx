@@ -5,7 +5,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { 
   FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, FaGift,
-  FaCheckCircle, FaLeaf, FaMedal, FaMapMarkerAlt, FaPlay,
+  FaLeaf, FaMedal, FaMapMarkerAlt, FaPlay,
   FaSearch, FaVolumeUp, FaChevronDown, FaTimes
 } from 'react-icons/fa';
 import AgoraVideoCall from '../components/AgoraVideoCall';
@@ -15,6 +15,8 @@ import PresentShopModal from '../components/PresentShopModal';
 import ProfileEmailComposer from '../components/ProfileEmailComposer';
 import ProfilePhotoViewer from '../components/ProfilePhotoViewer';
 import ContactsSidebar from '../components/ContactsSidebar';
+import FreeUserBadge from '../components/FreeUserBadge';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { createSafeChannelName } from '../utils/agoraUtils';
 
 const Profile = () => {
@@ -986,7 +988,12 @@ const Profile = () => {
                     <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white truncate">
                       {profile.firstName} {profile.lastName || ''}
                     </h1>
-                    <FaCheckCircle className="text-blue-400 text-xs sm:text-base lg:text-xl flex-shrink-0" />
+                    {profile.user?.isFreeUser !== false && (
+                      <FreeUserBadge className="flex-shrink-0" size="lg" />
+                    )}
+                    {profile.user?.isVerified && (
+                      <VerifiedBadge className="flex-shrink-0" size="lg" />
+                    )}
                     <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>

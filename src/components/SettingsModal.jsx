@@ -12,7 +12,7 @@ const languages = [
   { value: 'fr', label: 'Français' },
 ];
 
-const SettingsModal = ({ isOpen, onClose }) => {
+export default function SettingsModal({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [soundMyContacts, setSoundMyContacts] = useState(true);
@@ -621,7 +621,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                       logout();
                       setShowManageAccountModal(false);
                       onClose?.();
-                      navigate('/login');
+                      navigate('/');
                       return;
                     }
 
@@ -720,7 +720,4 @@ const SettingsModal = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
-};
-
-export default SettingsModal;
-
+}

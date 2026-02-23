@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo } from 'react-icons/fa';
+import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle } from 'react-icons/fa';
 
 function formatVipDeadline(isoDate) {
   if (!isoDate) return '';
@@ -10,7 +10,7 @@ function formatVipDeadline(isoDate) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
+const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [vipProgress, setVipProgress] = useState(null);
@@ -63,7 +63,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
 
   const handleSignOut = () => {
     logout();
-    navigate('/login');
+    navigate('/');
     setIsOpen(false);
   };
 
@@ -130,6 +130,14 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
       path: '/promo-code',
       color: 'text-gray-500',
       disabled: true
+    },
+    { 
+      id: 'about', 
+      label: 'About Vantage Dating', 
+      icon: FaInfoCircle, 
+      path: null,
+      color: 'text-gray-500',
+      action: 'openAbout'
     },
     { 
       id: 'terms', 
@@ -331,6 +339,24 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents }) => {
                     >
                       {item.label}
                     </span>
+                  </button>
+                );
+              }
+
+              if (item.action === 'openAbout') {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (!onOpenAbout) return;
+                      setIsOpen(false);
+                      onOpenAbout();
+                    }}
+                    className="w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer text-left"
+                  >
+                    <Icon className={`mr-3 ${item.color}`} />
+                    <span className={item.underline ? 'underline' : ''}>{item.label}</span>
                   </button>
                 );
               }
