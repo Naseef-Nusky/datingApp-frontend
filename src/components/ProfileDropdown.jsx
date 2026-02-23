@@ -174,7 +174,9 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-64 min-w-[14rem] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col">
+          {/* Profile Header + Menu Items - scrollable on mobile */}
+          <div className="overflow-y-auto overscroll-contain flex-1 min-h-0 min-w-0">
           {/* Profile Header */}
           <div className="px-6 py-4 border-b border-gray-200 text-center">
             <div className="flex justify-center mb-3">
@@ -373,7 +375,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                                 setIsOpen(false);
                                 setTermsSubmenuOpen(false);
                               }}
-                              className="block px-6 py-2.5 pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
+                              className="block px-6 py-3 min-h-[44px] pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition break-words"
                             >
                               {sub.label}
                             </Link>
@@ -390,7 +392,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                                 if (sub.action === 'openRefundPolicy') window.dispatchEvent(new CustomEvent('openRefundPolicy'));
                                 if (sub.action === 'openSafetyPolicy') window.dispatchEvent(new CustomEvent('openSafetyPolicy'));
                               }}
-                              className="block w-full text-left px-6 py-2.5 pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
+                              className="block w-full text-left px-6 py-3 min-h-[44px] pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition break-words"
                             >
                               {sub.label}
                             </button>
@@ -439,6 +441,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
               <FaSignOutAlt className="mr-3" />
               <span>Sign out</span>
             </button>
+          </div>
           </div>
         </div>
       )}
