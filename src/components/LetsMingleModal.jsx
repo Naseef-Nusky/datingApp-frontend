@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
-  const [gender, setGender] = useState('woman');
+  const [gender, setGender] = useState('female');
   const [ageMin, setAgeMin] = useState(20);
   const [ageMax, setAgeMax] = useState(35);
   const [message, setMessage] = useState('');
@@ -28,9 +28,9 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
         // Set gender preference
         const lookingFor = profile.preferences.lookingFor;
         if (lookingFor === 'male') {
-          setGender('man');
+          setGender('male');
         } else if (lookingFor === 'female') {
-          setGender('woman');
+          setGender('female');
         } else if (lookingFor === 'both') {
           setGender('both');
         }
@@ -143,7 +143,7 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
             {/* Display selected preferences in readable format */}
             <div className="mb-4 flex items-center space-x-2">
               <span className="text-gray-700 text-sm">
-                {gender === 'woman' ? 'Women' : gender === 'man' ? 'Man' : 'Man or Woman'}, {ageMin} - {ageMax} years old
+                {gender === 'female' ? 'Women' : gender === 'male' ? 'Men' : 'Men or Women'}, {ageMin} - {ageMax} years old
               </span>
               <button
                 type="button"
@@ -177,9 +177,9 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
                   }}
                   className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                 >
-                  <option value="woman">Women</option>
-                  <option value="man">Man</option>
-                  <option value="both">Man or Woman</option>
+                  <option value="female">Women</option>
+                  <option value="male">Men</option>
+                  <option value="both">Men or Women</option>
                 </select>
               </div>
 

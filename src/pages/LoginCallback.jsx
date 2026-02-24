@@ -22,15 +22,19 @@ export default function LoginCallback() {
     axios
       .post('/api/auth/verify-login-link', { token })
       .then((res) => {
-        const { token: jwt, user, registrationComplete } = res.data;
+        const { token: jwt, user, registrationComplete, needsProfileCompletion } = res.data;
         if (jwt && user && loginWithToken) {
           loginWithToken(jwt);
           setStatus('success');
-          // Always open dashboard when login link is valid (existing or new account)
-          navigate('/dashboard', {
-            replace: true,
-            state: registrationComplete === false ? { openCompleteProfile: true } : undefined,
-          });
+
+          // If this user was auto-created via send-login-link (registration not complete yet),
+          // send them directly into the “about you” registration wizard.
+          if (needsProfileCompletion === true || registrationComplete === false) {
+            navigate('/complete-profile', { replace: true });
+          } else {
+            // Existing / fully registered users go straight to dashboard.
+            navigate('/dashboard', { replace: true });
+          }
         } else {
           setStatus('invalid');
         }

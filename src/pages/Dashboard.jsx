@@ -507,6 +507,7 @@ const Dashboard = () => {
               // Fetch sender profile if available
               let senderName = 'Unknown';
               let senderAvatar = null;
+              let senderAge = null;
               
               if (request.senderData?.id) {
                 try {
@@ -514,6 +515,7 @@ const Dashboard = () => {
                   if (profileResponse.data) {
                     senderName = profileResponse.data.firstName || senderName;
                     senderAvatar = profileResponse.data.photos?.[0]?.url || null;
+                    senderAge = profileResponse.data.age ?? senderAge;
                   }
                 } catch (profileError) {
                   // Use email as fallback
@@ -530,9 +532,11 @@ const Dashboard = () => {
               return {
                 id: request.id,
                 name: senderName,
+                age: senderAge,
                 message: messageText,
                 avatar: senderAvatar,
                 createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
                 status: request.status || 'pending',
                 senderId: request.senderData?.id || request.senderId,
                 senderData: request.senderData,
@@ -544,9 +548,11 @@ const Dashboard = () => {
               return {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
+                age: null,
                 message: request.firstMessage || request.content || 'New message',
                 avatar: null,
                 createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
                 status: request.status || 'pending',
                 senderId: request.senderData?.id || request.senderId,
                 senderData: request.senderData,
@@ -569,6 +575,7 @@ const Dashboard = () => {
   };
 
   const displayedChatRequests = showLessChatRequests ? chatRequests.slice(0, 5) : chatRequests;
+
 
   const acceptChatRequestAndOpenChat = async (request) => {
     try {
@@ -757,6 +764,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
       {/* Stories Carousel */}
       <StoriesCarousel />
 

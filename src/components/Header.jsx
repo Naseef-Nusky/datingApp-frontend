@@ -43,6 +43,9 @@ const Header = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
+  const [showChatRequestTeaser, setShowChatRequestTeaser] = useState(false);
+  const [chatRequestTeaserProgress, setChatRequestTeaserProgress] = useState(0);
+  const [dismissedChatRequestKey, setDismissedChatRequestKey] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -124,12 +127,14 @@ const Header = () => {
             try {
               let senderName = 'Unknown';
               let senderAvatar = null;
+              let senderAge = null;
               if (request.senderData?.id) {
                 try {
                   const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
                   if (profileResponse.data) {
                     senderName = profileResponse.data.firstName || senderName;
                     senderAvatar = profileResponse.data.photos?.[0]?.url || null;
+                    senderAge = profileResponse.data.age ?? null;
                   }
                 } catch (profileError) {
                   senderName = request.senderData.email?.split('@')[0] || 'Unknown';
@@ -138,17 +143,23 @@ const Header = () => {
               return {
                 id: request.id,
                 name: senderName,
+                age: senderAge,
                 message: request.firstMessage || request.content || 'New message',
                 avatar: senderAvatar,
                 senderId: request.senderData?.id || request.senderId,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
               };
             } catch (err) {
               return {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
+                age: null,
                 message: request.firstMessage || request.content || 'New message',
                 avatar: null,
                 senderId: request.senderData?.id || request.senderId,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
               };
             }
           })
@@ -286,6 +297,53 @@ const Header = () => {
       alert('Open a member profile first to send a present.');
     }
   };
+
+  const latestPendingChatRequest =
+    [...chatRequests]
+      .filter((r) => !r.status || r.status === 'pending')
+      .sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return db - da;
+      })[0] || null;
+
+  const latestPendingChatRequestKey = latestPendingChatRequest
+    ? `${latestPendingChatRequest.id}-${latestPendingChatRequest.updatedAt || latestPendingChatRequest.createdAt || ''}-${latestPendingChatRequest.message || ''}`
+    : null;
+
+  useEffect(() => {
+    const requestKey = latestPendingChatRequestKey;
+    if (!requestKey) {
+      setShowChatRequestTeaser(false);
+      setChatRequestTeaserProgress(0);
+      return;
+    }
+    if (dismissedChatRequestKey === requestKey) {
+      setShowChatRequestTeaser(false);
+      return;
+    }
+
+    setShowChatRequestTeaser(true);
+    setChatRequestTeaserProgress(0);
+
+    const durationMs = 9000;
+    const tickMs = 100;
+    const step = (100 * tickMs) / durationMs;
+    const timer = setInterval(() => {
+      setChatRequestTeaserProgress((prev) => {
+        const next = prev + step;
+        if (next >= 100) {
+          clearInterval(timer);
+          setShowChatRequestTeaser(false);
+          setDismissedChatRequestKey(requestKey);
+          return 100;
+        }
+        return next;
+      });
+    }, tickMs);
+
+    return () => clearInterval(timer);
+  }, [latestPendingChatRequestKey, dismissedChatRequestKey]);
 
   return (
     <header className="bg-nex-blue shadow-md sticky top-0 z-50">
@@ -484,6 +542,68 @@ const Header = () => {
           )}
         </div>
       </div>
+
+      {/* Global floating chat-request teaser (works anywhere in site) */}
+      {latestPendingChatRequest &&
+        showChatRequestTeaser &&
+        latestPendingChatRequestKey !== dismissedChatRequestKey && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] px-2 sm:px-0 pointer-events-none">
+            <div className="w-[275px] sm:w-[300px] rounded-xl shadow-2xl overflow-hidden border border-gray-200 pointer-events-auto bg-white">
+              <div className="h-60 sm:h-72 w-full overflow-hidden relative">
+                {latestPendingChatRequest.avatar ? (
+                  <img
+                    src={latestPendingChatRequest.avatar}
+                    alt={latestPendingChatRequest.name || 'Chat request'}
+                    className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-500" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChatRequestTeaser(false);
+                    setDismissedChatRequestKey(latestPendingChatRequestKey);
+                  }}
+                  className="absolute top-2 right-2 z-30 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 flex items-center justify-center shadow"
+                  title="Remove"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/30 via-black/15 to-transparent" />
+                <div className="absolute left-3 right-3 bottom-12 z-20 text-white">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-2xl leading-none">
+                      {latestPendingChatRequest.name}
+                      {latestPendingChatRequest.age ? `, ${latestPendingChatRequest.age}` : ''}
+                    </h4>
+                    <span className="w-3 h-3 rounded-full bg-teal-400 animate-pulse inline-block" />
+                  </div>
+                  <p className="text-sm opacity-95 line-clamp-1">
+                    {latestPendingChatRequest.message}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => acceptChatRequestAndOpenChat(latestPendingChatRequest)}
+                  className="absolute bottom-0 left-0 right-0 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 text-sm transition flex items-center justify-center gap-2 overflow-hidden"
+                >
+                  <span
+                    className="absolute inset-y-0 left-0 bg-teal-700 transition-[width] duration-100 linear"
+                    style={{ width: `${chatRequestTeaserProgress}%` }}
+                  />
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <FaComments className="text-sm" />
+                    <span>REPLY</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Contacts sidebar modal - My Contacts + Chat Requests (same as page sidebars) */}
       {(showContactsModal || showChatRequestsModal) && (

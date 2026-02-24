@@ -18,6 +18,7 @@ const MyProfile = () => {
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
+  const [typingUsers, setTypingUsers] = useState(new Set());
   const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAdditionalPhoto, setUploadingAdditionalPhoto] = useState(false);
@@ -88,6 +89,27 @@ const MyProfile = () => {
     });
     socket.on('new-chat-request', () => {
       fetchChatRequests();
+    });
+    socket.on('user-typing', (data) => {
+      if (data.userId && data.userId !== String(user.id)) {
+        setTypingUsers((prev) => new Set([...prev, data.userId]));
+        setTimeout(() => {
+          setTypingUsers((prev) => {
+            const next = new Set(prev);
+            next.delete(data.userId);
+            return next;
+          });
+        }, 3000);
+      }
+    });
+    socket.on('user-stopped-typing', (data) => {
+      if (data.userId && data.userId !== String(user.id)) {
+        setTypingUsers((prev) => {
+          const next = new Set(prev);
+          next.delete(data.userId);
+          return next;
+        });
+      }
     });
     return () => {
       socket.disconnect();
@@ -737,38 +759,20 @@ const MyProfile = () => {
     }
   };
 
-  const handleAcceptChatRequest = async (requestId, senderId) => {
+  const acceptChatRequestAndOpenChat = async (request) => {
     try {
-      const response = await axios.put(`/api/messages/chat-requests/${requestId}/accept`);
-      
-      if (response.data && response.data.chatId) {
-        alert('Chat request accepted! You can now send messages.');
-        // Refresh chat requests and contacts
-        fetchChatRequests();
-        fetchContacts();
-        // Optionally navigate to chat or refresh contacts
-        if (senderId) {
-          // Navigate to sender's profile or open chat
-          navigate(`/profile/${senderId}`);
-        }
-      }
+      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
     } catch (error) {
-      console.error('Accept chat request error:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to accept chat request';
-      alert(errorMessage);
-    }
-  };
-
-  const handleRejectChatRequest = async (requestId) => {
-    try {
-      await axios.put(`/api/messages/chat-requests/${requestId}/reject`);
-      alert('Chat request rejected');
-      // Refresh chat requests
+      console.error('Accept chat request error (myprofile):', error);
+    } finally {
       fetchChatRequests();
-    } catch (error) {
-      console.error('Reject chat request error:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to reject chat request';
-      alert(errorMessage);
+      fetchContacts();
+
+      if (request.senderId) {
+        navigate(`/profile/${request.senderId}`, {
+          state: { openChat: true, from: 'chat-request', requestId: request.id },
+        });
+      }
     }
   };
 
@@ -1381,18 +1385,17 @@ const MyProfile = () => {
           <ContactsSidebar
             contacts={contacts}
             chatRequests={chatRequests}
-            typingUsers={new Set()}
+            typingUsers={typingUsers}
             onContactClick={(contact) => {
               if (contact.id && contact.id !== 'system-concierge' && typeof contact.id === 'string' && !contact.id.includes('system-')) {
                 navigate(`/profile/${contact.id}`, { state: { openChat: true } });
               }
             }}
-            onAcceptChatRequest={(request) => handleAcceptChatRequest(request.id, request.senderId)}
-            onRejectChatRequest={(request) => handleRejectChatRequest(request.id)}
+            onAcceptChatRequest={acceptChatRequestAndOpenChat}
             showLessChatRequests={showLessChatRequests}
             onToggleShowMoreChatRequests={() => setShowLessChatRequests(!showLessChatRequests)}
-            contactsMaxHeight="max-h-96"
-            chatRequestsMaxHeight="max-h-96"
+            contactsMaxHeight="max-h-64"
+            chatRequestsMaxHeight="flex-1 min-h-0"
             chatRequestLimit={5}
           />
         </div>

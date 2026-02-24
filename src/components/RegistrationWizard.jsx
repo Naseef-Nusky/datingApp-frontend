@@ -103,14 +103,16 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
     const prefs = initialProfile.preferences || {};
     setFormData(prev => ({
       ...prev,
-      firstName: initialProfile.firstName || prev.firstName,
+      // Do NOT prefill nickname or birthday on the About step – user should choose these.
+      firstName: prev.firstName || '',
       lastName: initialProfile.lastName != null ? initialProfile.lastName : prev.lastName,
       gender: initialProfile.gender || prev.gender,
       seeking: prefs.lookingFor || prev.seeking,
+      // Leave birthday empty so month/day/year are not pre-selected
       birthday: {
-        month: prev.birthday.month || '1',
-        day: prev.birthday.day || '1',
-        year: String(new Date().getFullYear() - age),
+        month: prev.birthday.month || '',
+        day: prev.birthday.day || '',
+        year: prev.birthday.year || '',
       },
       hometown: hometown || prev.hometown,
       bio: initialProfile.bio != null ? initialProfile.bio : prev.bio,
