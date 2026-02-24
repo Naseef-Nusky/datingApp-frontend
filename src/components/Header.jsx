@@ -361,12 +361,15 @@ const Header = () => {
                   INBOX
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
-                <button
-                  onClick={openRefillModal}
-                  className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
-                >
-                  REFILL ACCOUNT
-                </button>
+                {/* Refill Account button (hidden for streamers/talents) */}
+                {!(user.userType === 'streamer' || user.userType === 'talent') && (
+                  <button
+                    onClick={openRefillModal}
+                    className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
+                  >
+                    REFILL ACCOUNT
+                  </button>
+                )}
               </div>
 
               {/* Mobile Navigation - Icons only */}
@@ -433,14 +436,16 @@ const Header = () => {
                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                 </Link>
 
-                {/* 5. Refill Account Icon - opens Credit Pack modal */}
-                <button
-                  onClick={openRefillModal}
-                  className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
-                  title="Refill Account"
-                >
-                  <FaCoins className="text-lg sm:text-xl" />
-                </button>
+                {/* 5. Refill Account Icon - opens Credit Pack modal (hidden for streamers/talents) */}
+                {!(user.userType === 'streamer' || user.userType === 'talent') && (
+                  <button
+                    onClick={openRefillModal}
+                    className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
+                    title="Refill Account"
+                  >
+                    <FaCoins className="text-lg sm:text-xl" />
+                  </button>
+                )}
 
                 {/* Profile Dropdown */}
                 <ProfileDropdown

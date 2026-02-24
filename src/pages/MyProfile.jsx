@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
+import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
@@ -59,7 +59,12 @@ const MyProfile = () => {
   const [draftWishlist, setDraftWishlist] = useState([]);
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [wishlistActiveTab, setWishlistActiveTab] = useState('wishlist');
+  const [streamerLocationCity, setStreamerLocationCity] = useState('');
+  const [streamerLocationCountry, setStreamerLocationCountry] = useState('');
+  const [savingStreamerLocation, setSavingStreamerLocation] = useState(false);
   const socketRef = useRef(null);
+
+  const isStreamer = user?.userType === 'streamer' || user?.userType === 'talent';
 
   useEffect(() => {
     fetchProfile();
@@ -107,6 +112,38 @@ const MyProfile = () => {
       console.error('Fetch profile error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profile?.location && isStreamer) {
+      setStreamerLocationCity(profile.location.city || '');
+      setStreamerLocationCountry(profile.location.country || '');
+    }
+  }, [profile?.location, isStreamer]);
+
+  const handleSaveStreamerLocation = async () => {
+    setSavingStreamerLocation(true);
+    try {
+      await axios.put('/api/profiles/me/location', {
+        city: streamerLocationCity.trim(),
+        country: streamerLocationCountry.trim(),
+      });
+      setProfile((prev) => ({
+        ...prev,
+        location: {
+          ...prev?.location,
+          city: streamerLocationCity.trim(),
+          country: streamerLocationCountry.trim(),
+          isAutoDetected: false,
+        },
+      }));
+      alert('Display location updated. You can set it to anywhere in the world.');
+    } catch (error) {
+      console.error('Update streamer location error:', error);
+      alert(error.response?.data?.message || 'Failed to update location');
+    } finally {
+      setSavingStreamerLocation(false);
     }
   };
 
@@ -826,15 +863,17 @@ const MyProfile = () => {
                   </label>
                 </div>
 
-                {/* Bottom Right - Credits */}
-                <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 lg:bottom-4 lg:right-6 z-10">
-                  <button
-                    onClick={openRefillModal}
-                    className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold"
-                  >
-                    {user?.credits ?? 0} CREDITS - REFILL
-                  </button>
-                </div>
+                {/* Bottom Right - Credits (hide for streamers/talents) */}
+                {!isStreamer && (
+                  <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 lg:bottom-4 lg:right-6 z-10">
+                    <button
+                      onClick={openRefillModal}
+                      className="bg-black bg-opacity-70 text-white px-3 py-1 sm:px-6 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-90 transition font-semibold"
+                    >
+                      {user?.credits ?? 0} CREDITS - REFILL
+                    </button>
+                  </div>
+                )}
 
                 {/* Profile Picture - Left Side, Overlapping Bottom */}
                 <div className="absolute bottom-0 left-2 sm:left-4 lg:left-6 transform translate-y-1/2 z-20">
@@ -1260,6 +1299,49 @@ const MyProfile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Display location (Streamers only) – set to anywhere in the world */}
+            {isStreamer && (
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaMapMarkerAlt className="text-gray-600" />
+                  <h2 className="text-lg sm:text-xl font-semibold">Display location</h2>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  As a streamer you can set your display location to anywhere in the world. This is the location shown on your profile.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                    <input
+                      type="text"
+                      value={streamerLocationCity}
+                      onChange={(e) => setStreamerLocationCity(e.target.value)}
+                      placeholder="e.g. London"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                    <input
+                      type="text"
+                      value={streamerLocationCountry}
+                      onChange={(e) => setStreamerLocationCountry(e.target.value)}
+                      placeholder="e.g. United Kingdom"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveStreamerLocation}
+                  disabled={savingStreamerLocation}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+                >
+                  {savingStreamerLocation ? 'Saving…' : 'Save location'}
+                </button>
+              </div>
+            )}
 
             {/* I'm Looking for */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">

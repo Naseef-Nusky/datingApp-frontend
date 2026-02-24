@@ -312,6 +312,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
         return;
       }
 
+      // Only send profile data; backend always creates real users (userType: regular, isAdminCreated: false)
       const registrationData = {
         email: formData.email,
         password: formData.password,
@@ -319,7 +320,6 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
         lastName: formData.lastName || '',
         age: age,
         gender: formData.gender,
-        userType: 'regular',
         bio: formData.bio,
         preferences: {
           lookingFor: formData.seeking,
