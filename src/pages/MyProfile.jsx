@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaGlobe, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, FaBook, FaCampground, FaUtensils, FaCompactDisc, FaShip, FaShoppingCart, FaGamepad, FaPalette, FaHockeyPuck, FaFilm, FaLandmark, FaMusic, FaLeaf, FaGlassMartiniAlt, FaFish, FaTv, FaPrayingHands, FaSwimmer, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
@@ -792,20 +792,37 @@ const MyProfile = () => {
     );
   }
 
-  // Map interests to icons
+  // Interest icon + color map (styled like circular icon chips)
   const interestIcons = {
-    'Lying on the beach': { icon: FaUmbrellaBeach, color: 'bg-green-500' },
-    'Cars': { icon: FaCar, color: 'bg-red-500' },
-    'Dancing': { icon: FaGlobe, color: 'bg-purple-500' },
-    'Nature': { icon: FaHeart, color: 'bg-green-500' },
-    'Sports': { icon: FaHeart, color: 'bg-blue-500' },
-    'Travelling': { icon: FaHeart, color: 'bg-purple-500' },
-    'Watching TV': { icon: FaHeart, color: 'bg-red-500' },
-    'Reading': { icon: FaHeart, color: 'bg-indigo-500' },
-    'Music': { icon: FaHeart, color: 'bg-pink-500' },
-    'Cooking': { icon: FaHeart, color: 'bg-orange-500' },
-    'Photography': { icon: FaCamera, color: 'bg-gray-500' },
-    'Fitness': { icon: FaHeart, color: 'bg-teal-500' },
+    'Lying on the beach': { icon: FaUmbrellaBeach, color: 'bg-lime-500' },
+    Biking: { icon: FaBicycle, color: 'bg-orange-500' },
+    'Reading books': { icon: FaBook, color: 'bg-fuchsia-900' },
+    Camping: { icon: FaCampground, color: 'bg-emerald-500' },
+    Cars: { icon: FaCar, color: 'bg-red-500' },
+    Cooking: { icon: FaUtensils, color: 'bg-amber-400' },
+    Dancing: { icon: FaCompactDisc, color: 'bg-violet-900' },
+    Diving: { icon: FaSwimmer, color: 'bg-blue-500' },
+    Fashion: { icon: FaGift, color: 'bg-purple-400' },
+    'Fishing & Hunting': { icon: FaFish, color: 'bg-indigo-700' },
+    Games: { icon: FaGamepad, color: 'bg-lime-600' },
+    'Hobbies & Crafts': { icon: FaPalette, color: 'bg-rose-400' },
+    Hockey: { icon: FaHockeyPuck, color: 'bg-teal-500' },
+    Movies: { icon: FaFilm, color: 'bg-cyan-800' },
+    'Museums & Art': { icon: FaLandmark, color: 'bg-amber-400' },
+    'Music & Concerts': { icon: FaMusic, color: 'bg-sky-500' },
+    Nature: { icon: FaLeaf, color: 'bg-emerald-500' },
+    'Party & Night Clubs': { icon: FaGlassMartiniAlt, color: 'bg-red-500' },
+    Sailing: { icon: FaShip, color: 'bg-orange-300' },
+    Shopping: { icon: FaShoppingCart, color: 'bg-sky-300' },
+    Sports: { icon: FaHeart, color: 'bg-lime-400' },
+    Travelling: { icon: FaMapMarkerAlt, color: 'bg-blue-600' },
+    'Watching TV': { icon: FaTv, color: 'bg-orange-500' },
+    'Meditation & Yoga': { icon: FaPrayingHands, color: 'bg-slate-300' },
+    // Backward-compatible aliases
+    Reading: { icon: FaBook, color: 'bg-fuchsia-900' },
+    Music: { icon: FaMusic, color: 'bg-sky-500' },
+    Photography: { icon: FaCamera, color: 'bg-gray-500' },
+    Fitness: { icon: FaHeart, color: 'bg-teal-500' },
   };
 
   // Available interests list
@@ -1255,17 +1272,17 @@ const MyProfile = () => {
                     <FaEdit className="text-sm sm:text-base" />
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-3 sm:gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4">
                   {profile.interests && profile.interests.length > 0 ? (
-                    profile.interests.slice(0, 3).map((interest, index) => {
+                    profile.interests.map((interest, index) => {
                       const interestData = interestIcons[interest] || { icon: FaHeart, color: 'bg-blue-500' };
                       const Icon = interestData.icon;
                       return (
                         <div key={index} className="flex flex-col items-center">
-                          <div className={`w-12 h-12 sm:w-16 sm:h-16 ${interestData.color} rounded-full flex items-center justify-center text-white text-xl sm:text-2xl mb-1 sm:mb-2`}>
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 ${interestData.color} rounded-full flex items-center justify-center text-white text-lg sm:text-xl mb-1.5`}>
                             <Icon />
                           </div>
-                          <span className="text-xs sm:text-sm text-gray-700 text-center">{interest}</span>
+                          <span className="text-[11px] sm:text-xs text-gray-800 text-center leading-tight">{interest}</span>
                         </div>
                       );
                     })

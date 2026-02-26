@@ -212,7 +212,8 @@ export default function VipPage() {
                 to={`/profile/${profile.id}`}
                 className="flex flex-col items-center gap-1.5 group"
               >
-                <div className="w-14 h-14 rounded-full bg-gray-200 border-2 border-gray-200 overflow-hidden flex-shrink-0 group-hover:border-nex-orange transition">
+                <div className="relative w-14 h-14">
+                  <div className="w-14 h-14 rounded-full bg-gray-200 border-[3px] border-gray-500 overflow-hidden flex-shrink-0 group-hover:border-gray-600 transition">
                   {profile.photoUrl ? (
                     <img
                       src={profile.photoUrl}
@@ -224,6 +225,11 @@ export default function VipPage() {
                       {profile.firstName?.charAt(0) || '?'}
                     </span>
                   )}
+                  </div>
+                  {/* Small bottom-center status badge like sample UI */}
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-2 border-gray-500 flex items-center justify-center shadow-sm">
+                    <span className="w-2.5 h-2.5 rounded-full border-2 border-gray-500" />
+                  </span>
                 </div>
                 <span className="text-xs text-gray-600 group-hover:text-nex-orange transition truncate max-w-[72px]">
                   {profile.firstName}
