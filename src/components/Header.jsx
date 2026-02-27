@@ -19,6 +19,7 @@ import PrivacyPolicyModal from './PrivacyPolicyModal';
 import RefundPolicyModal from './RefundPolicyModal';
 import SafetyPolicyModal from './SafetyPolicyModal';
 import TermsOfUseModal from './TermsOfUseModal';
+import UpgradeSubscriptionModal from './UpgradeSubscriptionModal';
 
 const Header = () => {
   const { user, fetchUser } = useAuth();
@@ -366,6 +367,18 @@ const Header = () => {
     return () => clearInterval(timer);
   }, [latestPendingChatRequestKey, dismissedChatRequestKey]);
 
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const hasSubscription = !!(user?.subscriptionPlan && user.subscriptionPlan !== 'free');
+
+  const handleRefillOrUpgrade = () => {
+    if (hasSubscription) {
+      openRefillModal();
+    } else {
+      setShowUpgradeModal(true);
+    }
+  };
+
   return (
     <header className="bg-nex-blue shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
@@ -440,13 +453,14 @@ const Header = () => {
                   INBOX
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
-                {/* Refill Account button (hidden for streamers/talents) */}
+                {/* Upgrade / Refill button (hidden for streamers/talents) */}
                 {!(user.userType === 'streamer' || user.userType === 'talent') && (
                   <button
-                    onClick={openRefillModal}
+                    type="button"
+                    onClick={handleRefillOrUpgrade}
                     className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                   >
-                    REFILL ACCOUNT
+                    {hasSubscription ? 'REFILL ACCOUNT' : 'UPGRADE ACCOUNT'}
                   </button>
                 )}
               </div>
@@ -515,12 +529,13 @@ const Header = () => {
                   <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                 </Link>
 
-                {/* 5. Refill Account Icon - opens Credit Pack modal (hidden for streamers/talents) */}
+                {/* 5. Upgrade/Refill Account Icon - opens appropriate modal (hidden for streamers/talents) */}
                 {!(user.userType === 'streamer' || user.userType === 'talent') && (
                   <button
-                    onClick={openRefillModal}
+                    type="button"
+                    onClick={handleRefillOrUpgrade}
                     className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
-                    title="Refill Account"
+                    title={hasSubscription ? 'Refill Account' : 'Upgrade Account'}
                   >
                     <FaCoins className="text-lg sm:text-xl" />
                   </button>
@@ -732,6 +747,14 @@ const Header = () => {
         onClose={() => {
           setShowTermsModal(false);
           if (location.pathname === '/terms') navigate('/');
+        }}
+      />
+
+      <UpgradeSubscriptionModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onSubscribed={async () => {
+          await fetchUser();
         }}
       />
 
