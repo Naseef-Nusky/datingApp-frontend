@@ -21,6 +21,9 @@ export default function SettingsModal({ isOpen, onClose }) {
   const [language, setLanguage] = useState('en');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [showConciergeSettings, setShowConciergeSettings] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -125,6 +128,29 @@ export default function SettingsModal({ isOpen, onClose }) {
     e.preventDefault();
     await saveAllSettings();
     onClose?.();
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await saveAllSettings({ newPassword });
+      setNewPassword('');
+      setPasswordSuccess('Password updated successfully.');
+    } catch (error) {
+      console.error('Change password error:', error);
+      const message = error.response?.data?.message || 'Could not change password. Please try again.';
+      setPasswordError(message);
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -304,11 +330,23 @@ export default function SettingsModal({ isOpen, onClose }) {
               />
               <button
                 type="button"
-                className="px-4 py-2 rounded-md bg-slate-200 text-xs font-semibold text-slate-500 cursor-not-allowed"
+                onClick={handleChangePassword}
+                disabled={passwordSaving || !newPassword}
+                className={`px-4 py-2 rounded-md text-xs font-semibold ${
+                  passwordSaving || !newPassword
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : 'bg-nex-pink text-white hover:bg-pink-600 cursor-pointer'
+                }`}
               >
-                CHANGE
+                {passwordSaving ? 'CHANGING...' : 'CHANGE'}
               </button>
             </div>
+            {passwordError && (
+              <p className="text-xs text-red-500 mt-1">{passwordError}</p>
+            )}
+            {!passwordError && passwordSuccess && (
+              <p className="text-xs text-emerald-600 mt-1">{passwordSuccess}</p>
+            )}
           </section>
 
           {/* Manage account */}
