@@ -462,6 +462,13 @@ const Dashboard = () => {
           if (lastMsg?.messageType === 'gift') {
             message = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
+          if (
+            typeof message === 'string' &&
+            message.trim() === 'Added you to my contacts.' &&
+            senderId === user?.id
+          ) {
+            message = 'Added to your Contacts';
+          }
           return {
             id: conv.userId,
             name: profile?.firstName || otherUser?.email?.split('@')[0] || 'Unknown',

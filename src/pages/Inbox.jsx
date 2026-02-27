@@ -269,6 +269,13 @@ const Inbox = () => {
           if (lastMsg?.messageType === 'gift') {
             lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
+          if (
+            typeof lastMessage === 'string' &&
+            lastMessage.trim() === 'Added you to my contacts.' &&
+            lastMsgSender === user?.id
+          ) {
+            lastMessage = 'Added to your Contacts';
+          }
           
           return {
             id: conv.userId || otherUser?.id,

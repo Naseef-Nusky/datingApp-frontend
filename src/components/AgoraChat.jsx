@@ -1955,6 +1955,13 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
               .map((msg, index) => {
               const isOwn = msg.senderId === userId.toString();
               const msgDate = safeDate(msg.timestamp);
+
+              const rawText = (msg.text || '').trim();
+              let displayText = rawText;
+              if (rawText === 'Added you to my contacts.') {
+                displayText = isOwn ? 'Added to my contacts' : 'Added you to contacts';
+              }
+
               return (
                 <div
                   key={msg.id || index}
@@ -1999,9 +2006,11 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition rounded-lg pointer-events-none"></div>
                         </div>
-                        {msg.text && msg.text !== '[Image]' && msg.text !== '[image]' && msg.text.trim() && (
-                          <p className="text-sm mt-2">{msg.text}</p>
-                        )}
+                        {displayText &&
+                          displayText !== '[Image]' &&
+                          displayText !== '[image]' && (
+                            <p className="text-sm mt-2">{displayText}</p>
+                          )}
                       </div>
                     ) : msg.messageType === 'gift' && (msg.mediaUrl || msg.media_url) ? (
                       <div className="mt-1 cursor-pointer">
@@ -2044,9 +2053,11 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                         >
                           Your browser does not support the video tag.
                         </video>
-                        {msg.text && msg.text !== '[Video]' && msg.text !== '[video]' && msg.text.trim() && (
-                          <p className="text-sm mt-2">{msg.text}</p>
-                        )}
+                        {displayText &&
+                          displayText !== '[Video]' &&
+                          displayText !== '[video]' && (
+                            <p className="text-sm mt-2">{displayText}</p>
+                          )}
                       </div>
                     ) : msg.messageType === 'voice' && (msg.mediaUrl || msg.media_url) ? (
                       <div style={{ padding: 0, margin: 0 }}>
@@ -2065,12 +2076,14 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                             e.target.parentElement.appendChild(errorDiv);
                           }}
                         />
-                        {msg.text && msg.text !== '[Voice]' && msg.text !== '[voice]' && msg.text.trim() && (
-                          <p className="text-sm">{msg.text}</p>
-                        )}
+                        {displayText &&
+                          displayText !== '[Voice]' &&
+                          displayText !== '[voice]' && (
+                            <p className="text-sm">{displayText}</p>
+                          )}
                       </div>
                     ) : (
-                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-sm">{displayText}</p>
                     )}
                     <div className="flex items-center justify-between mt-1">
                       <p

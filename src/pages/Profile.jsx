@@ -443,6 +443,20 @@ const Profile = () => {
           let lastMessage = 'No messages yet';
           let lastMessageAt = conv.lastMessage?.createdAt || conv.lastMessage?.created_at;
           
+          // Transform special last-message types (call history, add-to-contacts)
+          const rawLastMsg = conv.lastMessage;
+          const rawLastMsgSender = rawLastMsg?.sender ?? rawLastMsg?.sender_id;
+          if (rawLastMsg && lastMessage === 'No messages yet') {
+            lastMessage = rawLastMsg.content || rawLastMsg.message || lastMessage;
+          }
+          if (
+            typeof lastMessage === 'string' &&
+            lastMessage.trim() === 'Added you to my contacts.' &&
+            rawLastMsgSender === user?.id
+          ) {
+            lastMessage = 'Added to your Contacts';
+          }
+
           // Check for call history (missed or ended calls)
           const userId = conv.userId || otherUser?.id;
           // Find the most recent call where this user is involved (either as caller or receiver)
@@ -924,6 +938,9 @@ const Profile = () => {
   const photoCount = profile.photos?.length || 0;
   const videoCount = 0; // Placeholder for video count
 
+  const profileOwnerId = profile.userId || id;
+  const isInContacts = contacts.some((c) => String(c.id) === String(profileOwnerId));
+
   // Interest icons mapping
   const interestIcons = {
     'Nature': { icon: FaLeaf, color: 'bg-green-500' },
@@ -973,11 +990,25 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={handleAddToContacts}
-                    disabled={!user || user?.id === (profile?.userId ?? id)}
-                    className="bg-gray-800 bg-opacity-90 p-2 sm:p-3 rounded-full hover:bg-opacity-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={user?.id === (profile?.userId ?? id) ? 'Your profile' : 'Add to contacts'}
+                    disabled={!user || user?.id === profileOwnerId}
+                    className={`p-2 sm:p-3 rounded-full hover:bg-opacity-100 transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isInContacts ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 bg-opacity-90 text-white'
+                    }`}
+                    title={
+                      !user
+                        ? 'Log in to add contacts'
+                        : user?.id === profileOwnerId
+                        ? 'Your profile'
+                        : isInContacts
+                        ? 'Already in your contacts'
+                        : 'Add to contacts'
+                    }
                   >
-                    <FaStar className="text-yellow-400 text-sm sm:text-xl" />
+                    <FaStar
+                      className={`text-sm sm:text-xl ${
+                        isInContacts ? 'text-white' : 'text-yellow-400'
+                      }`}
+                    />
                   </button>
                 </div>
 
