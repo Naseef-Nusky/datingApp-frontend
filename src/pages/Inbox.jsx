@@ -266,15 +266,23 @@ const Inbox = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === (conv.userId || otherUser?.id);
+          const lowerLastMessage =
+            typeof lastMessage === 'string' ? lastMessage.toLowerCase().trim() : '';
           if (lastMsg?.messageType === 'gift') {
             lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
           if (
-            typeof lastMessage === 'string' &&
-            lastMessage.trim() === 'Added you to my contacts.' &&
+            lowerLastMessage.includes('removed you from my contacts') &&
             lastMsgSender === user?.id
           ) {
-            lastMessage = 'Added to your Contacts';
+            // Hide this contact – you removed them
+            return null;
+          }
+          if (
+            lowerLastMessage.includes('added you to my contacts') &&
+            lastMsgSender === user?.id
+          ) {
+            lastMessage = 'Added to my contacts';
           }
           
           return {
@@ -287,7 +295,7 @@ const Inbox = () => {
             lastMessageAt: conv.lastMessage?.createdAt || conv.lastMessage?.created_at,
             giftFromThem: !!giftFromThem,
           };
-        });
+        }).filter(Boolean);
         
         const filtered = contactsList.filter(
           (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')

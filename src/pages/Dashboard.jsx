@@ -462,12 +462,19 @@ const Dashboard = () => {
           if (lastMsg?.messageType === 'gift') {
             message = giftFromThem ? 'Received a gift' : 'You sent a gift';
           }
+          const lowerMessage = typeof message === 'string' ? message.toLowerCase().trim() : '';
           if (
-            typeof message === 'string' &&
-            message.trim() === 'Added you to my contacts.' &&
+            lowerMessage.includes('removed you from my contacts') &&
             senderId === user?.id
           ) {
-            message = 'Added to your Contacts';
+            // Hide contacts where you explicitly removed them
+            return null;
+          }
+          if (
+            lowerMessage.includes('added you to my contacts') &&
+            senderId === user?.id
+          ) {
+            message = 'Added to my contacts';
           }
           return {
             id: conv.userId,
@@ -479,7 +486,7 @@ const Dashboard = () => {
             lastMessageAt: conv.lastMessage?.createdAt,
             giftFromThem: !!giftFromThem,
           };
-        });
+        }).filter(Boolean);
         // Remove contacts with no activity (\"No messages yet\" and no timestamp)
         const filtered = contactsList.filter(
           (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')

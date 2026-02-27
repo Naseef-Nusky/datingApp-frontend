@@ -1952,6 +1952,15 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 if (!dateA || !dateB) return 0;
                 return dateA - dateB;
               })
+              // Hide add/remove-contact system messages from chat view
+              .filter((msg) => {
+                const raw = (msg.text || '').toLowerCase().trim();
+                if (!raw) return true;
+                if (raw.includes('added you to my contacts') || raw.includes('removed you from my contacts')) {
+                  return false;
+                }
+                return true;
+              })
               .map((msg, index) => {
               const isOwn = msg.senderId === userId.toString();
               const msgDate = safeDate(msg.timestamp);

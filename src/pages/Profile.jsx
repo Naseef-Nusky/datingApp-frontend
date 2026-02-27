@@ -449,12 +449,20 @@ const Profile = () => {
           if (rawLastMsg && lastMessage === 'No messages yet') {
             lastMessage = rawLastMsg.content || rawLastMsg.message || lastMessage;
           }
+          const lowerLastMessage =
+            typeof lastMessage === 'string' ? lastMessage.toLowerCase().trim() : '';
           if (
-            typeof lastMessage === 'string' &&
-            lastMessage.trim() === 'Added you to my contacts.' &&
+            lowerLastMessage.includes('removed you from my contacts') &&
             rawLastMsgSender === user?.id
           ) {
-            lastMessage = 'Added to your Contacts';
+            // Hide this contact if you removed them
+            return null;
+          }
+          if (
+            lowerLastMessage.includes('added you to my contacts') &&
+            rawLastMsgSender === user?.id
+          ) {
+            lastMessage = 'Added to my contacts';
           }
 
           // Check for call history (missed or ended calls)
@@ -549,7 +557,7 @@ const Profile = () => {
             isCallMessage: recentCall ? true : false,
             giftFromThem: !!giftFromThem,
           };
-        });
+        }).filter(Boolean);
         
         // Sort contacts by lastMessageAt (most recent first)
         contactsList.sort((a, b) => {
@@ -684,20 +692,25 @@ const Profile = () => {
 
   const handleAddToContacts = async (e) => {
     if (e) e.stopPropagation();
-    const profileOwnerId = profile?.userId ?? id;
-    if (!profileOwnerId || user?.id === profileOwnerId) return;
+    const profileOwnerIdInner = profile?.userId ?? id;
+    if (!profileOwnerIdInner || user?.id === profileOwnerIdInner) return;
+
+    const alreadyInContacts = contacts.some((c) => String(c.id) === String(profileOwnerIdInner));
+    const contentText = alreadyInContacts
+      ? 'Removed you from my contacts.'
+      : 'Added you to my contacts.';
 
     try {
       await axios.post('/api/messages', {
-        receiverId: profileOwnerId,
-        content: 'Added you to my contacts.',
+        receiverId: profileOwnerIdInner,
+        content: contentText,
         messageType: 'text',
       });
 
-      // Refresh contacts so this profile appears in My Contacts lists
+      // Refresh contacts so this profile appears / disappears in My Contacts lists
       fetchContacts();
     } catch (error) {
-      console.error('Add to contacts (star) error:', error);
+      console.error('Add/remove contacts (star) error:', error);
     }
   };
 
