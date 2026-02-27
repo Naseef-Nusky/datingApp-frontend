@@ -47,6 +47,9 @@ const Header = () => {
   const [chatRequestTeaserProgress, setChatRequestTeaserProgress] = useState(0);
   const [dismissedChatRequestKey, setDismissedChatRequestKey] = useState(null);
   const socketRef = useRef(null);
+  // Popup only for requests that arrive after load (socket). Not for requests already present on refresh.
+  const seenRequestKeysRef = useRef(new Set());
+  const initialLoadDoneRef = useRef(false);
 
   useEffect(() => {
     if (user) {
@@ -311,6 +314,19 @@ const Header = () => {
     ? `${latestPendingChatRequest.id}-${latestPendingChatRequest.updatedAt || latestPendingChatRequest.createdAt || ''}-${latestPendingChatRequest.message || ''}`
     : null;
 
+  // Mark all pending requests present on first load so we never show popup for them on refresh
+  useEffect(() => {
+    if (!user?.id || chatRequests.length === 0) return;
+    if (initialLoadDoneRef.current) return;
+    initialLoadDoneRef.current = true;
+    const pending = chatRequests.filter((r) => !r.status || r.status === 'pending');
+    pending.forEach((r) => {
+      const key = `${r.id}-${r.updatedAt || r.createdAt || ''}-${r.message || ''}`;
+      seenRequestKeysRef.current.add(key);
+    });
+  }, [user?.id, chatRequests]);
+
+  // Show popup only for requests that arrived after load (socket), not on refresh
   useEffect(() => {
     const requestKey = latestPendingChatRequestKey;
     if (!requestKey) {
@@ -318,11 +334,16 @@ const Header = () => {
       setChatRequestTeaserProgress(0);
       return;
     }
+    if (seenRequestKeysRef.current.has(requestKey)) {
+      setShowChatRequestTeaser(false);
+      return;
+    }
     if (dismissedChatRequestKey === requestKey) {
       setShowChatRequestTeaser(false);
       return;
     }
 
+    seenRequestKeysRef.current.add(requestKey);
     setShowChatRequestTeaser(true);
     setChatRequestTeaserProgress(0);
 

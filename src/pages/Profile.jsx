@@ -668,6 +668,25 @@ const Profile = () => {
     }
   };
 
+  const handleAddToContacts = async (e) => {
+    if (e) e.stopPropagation();
+    const profileOwnerId = profile?.userId ?? id;
+    if (!profileOwnerId || user?.id === profileOwnerId) return;
+
+    try {
+      await axios.post('/api/messages', {
+        receiverId: profileOwnerId,
+        content: 'Added you to my contacts.',
+        messageType: 'text',
+      });
+
+      // Refresh contacts so this profile appears in My Contacts lists
+      fetchContacts();
+    } catch (error) {
+      console.error('Add to contacts (star) error:', error);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
@@ -949,9 +968,15 @@ const Profile = () => {
                   </button>
                 </div>
 
-                {/* Top Right - Star icon for favorite */}
+                {/* Top Right - Star icon for add to contacts / favorites */}
                 <div className="absolute top-2 right-2 sm:top-4 sm:right-4 lg:top-4 lg:right-6 z-10">
-                  <button className="bg-gray-800 bg-opacity-90 p-2 sm:p-3 rounded-full hover:bg-opacity-100 transition">
+                  <button
+                    type="button"
+                    onClick={handleAddToContacts}
+                    disabled={!user || user?.id === (profile?.userId ?? id)}
+                    className="bg-gray-800 bg-opacity-90 p-2 sm:p-3 rounded-full hover:bg-opacity-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={user?.id === (profile?.userId ?? id) ? 'Your profile' : 'Add to contacts'}
+                  >
                     <FaStar className="text-yellow-400 text-sm sm:text-xl" />
                   </button>
                 </div>
