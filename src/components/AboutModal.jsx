@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
 /**
- * About Vantage Dating popup – scrollable modal with full about content (like Dating.com style).
+ * About Vantage Dating popup – scrollable modal with full about content (like Vantage Dating site style).
  */
 export default function AboutModal({ isOpen, onClose, initialSectionId }) {
   useEffect(() => {

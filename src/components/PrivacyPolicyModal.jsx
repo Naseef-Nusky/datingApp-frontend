@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
 /**
- * Privacy Policy popup – scrollable modal with table of contents (Dating.com style).
+ * Privacy Policy popup – scrollable modal with table of contents (Vantage Dating style).
  */
 export default function PrivacyPolicyModal({ isOpen, onClose }) {
   useEffect(() => {
