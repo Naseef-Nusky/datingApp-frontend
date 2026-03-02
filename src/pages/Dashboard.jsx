@@ -14,7 +14,8 @@ import VerifiedBadge from '../components/VerifiedBadge';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, fetchUser } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
@@ -42,6 +43,40 @@ const Dashboard = () => {
   const [showMingleModal, setShowMingleModal] = useState(false);
   const [showMingleSuccess, setShowMingleSuccess] = useState(false);
   const [mingleMatchedProfiles, setMingleMatchedProfiles] = useState([]);
+
+  // After Stripe checkout success: confirm payment with backend (uses secret key only), then refresh user
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get('session_id');
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+
+    if (params.get('upgrade') === 'success' && sessionId) {
+      axios.post(`${apiUrl}/api/credits/confirm-payment`, { session_id: sessionId })
+        .then(() => {
+          fetchUser();
+          window.history.replaceState({}, '', location.pathname);
+          alert('Payment successful! Your subscription is now active.');
+        })
+        .catch((err) => {
+          window.history.replaceState({}, '', location.pathname);
+          const msg = err.response?.data?.message || 'Could not confirm payment. Credits may still be applied.';
+          alert(msg);
+        });
+    } else if (params.get('refill') === 'success' && sessionId) {
+      axios.post(`${apiUrl}/api/credits/confirm-refill-payment`, { session_id: sessionId })
+        .then((res) => {
+          fetchUser();
+          window.history.replaceState({}, '', location.pathname);
+          const added = res.data?.creditsAdded ?? '';
+          alert(added ? `Payment successful! ${added} credits added to your balance.` : 'Payment successful! Credits added to your balance.');
+        })
+        .catch((err) => {
+          window.history.replaceState({}, '', location.pathname);
+          const msg = err.response?.data?.message || 'Could not confirm refill payment. Credits may still be applied.';
+          alert(msg);
+        });
+    }
+  }, [location.search, location.pathname, fetchUser]);
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {

@@ -1,72 +1,82 @@
-import { useState } from 'react';
-import { FaTimes, FaApple, FaGoogle, FaBitcoin, FaCreditCard } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaTimes, FaApple, FaGoogle, FaBitcoin, FaCreditCard, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import axios from 'axios';
 
-const packs = [
-  {
-    id: 'starter',
-    credits: 50,
-    price: 39,
-    badge: 'BESTSELLER',
-    badgeColor: 'bg-amber-400 text-amber-900',
-    saveLabel: 'SAVE 17%',
-  },
-  {
-    id: 'standard',
-    credits: 160,
-    price: 99,
-    badge: null,
-    badgeColor: '',
-    saveLabel: 'SAVE 16%',
-  },
-  {
-    id: 'max',
-    credits: 1000,
-    price: 480,
-    badge: 'BEST VALUE',
-    badgeColor: 'bg-emerald-400 text-emerald-900',
-    saveLabel: 'SAVE 16%',
-  },
+// Default refill credit packs; can be overridden by CRM config
+const DEFAULT_REFILL_PACKS = [
+  { id: 'p20', credits: 20, price: 16, saveLabel: 'SAVE 20%', badge: 'BESTSELLER', imageUrl: '' },
+  { id: 'p50', credits: 50, price: 39, saveLabel: 'SAVE 17%', badge: '', imageUrl: '' },
+  { id: 'p160', credits: 160, price: 99, saveLabel: 'SAVE 16%', badge: '', imageUrl: '' },
+  { id: 'p1000', credits: 1000, price: 480, saveLabel: 'SAVE 16%', badge: 'BEST VALUE', imageUrl: '' },
 ];
 
 const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
-  const [selectedPackId, setSelectedPackId] = useState(packs[0]?.id || null);
+  const [packs, setPacks] = useState(DEFAULT_REFILL_PACKS);
+  const [selectedPackId, setSelectedPackId] = useState(DEFAULT_REFILL_PACKS[0]?.id || null);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    axios
+      .get(`${apiUrl}/api/credits/refill-packs`)
+      .then((res) => {
+        if (Array.isArray(res.data?.packs) && res.data.packs.length) {
+          setPacks(res.data.packs);
+          setSelectedPackId(res.data.packs[0]?.id || res.data.packs[0]?.credits?.toString() || null);
+        }
+      })
+      .catch(() => {
+        // fallback to defaults
+      });
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const selectedPack = packs.find((p) => p.id === selectedPackId) || packs[0];
+  const maxStart = Math.max(0, (packs?.length || 0) - 3);
+  const clampedIndex = Math.min(currentIndex, maxStart);
+  const visiblePacks = (packs || []).slice(clampedIndex, clampedIndex + 3);
 
-  const handlePurchase = async (paymentMethod) => {
+  const handlePurchase = async () => {
     if (!selectedPack) return;
     setError(null);
     setPurchasing(true);
     try {
-      const { data } = await axios.post('/api/credits/purchase', {
-        amount: selectedPack.credits,
-        paymentMethod: paymentMethod || 'refill',
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const { data } = await axios.post(`${apiUrl}/api/credits/refill-checkout-session`, {
+        packId: selectedPack.id,
       });
-      alert(
-        `Success! ${data.creditsAdded} credits added. Your balance: ${data.totalCredits} credits.`
-      );
-      if (onCreditsAdded) onCreditsAdded();
-      onClose();
+      if (data?.url) {
+        onClose?.();
+        window.location.href = data.url;
+        return;
+      }
+      if (data?.message?.includes('not configured')) {
+        setError('Payment is not configured. Please try again later.');
+        return;
+      }
+      setError('Could not start checkout.');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to add credits';
+      if (err.response?.status === 503 || err.response?.data?.message?.includes('Stripe')) {
+        setError('Payment is not configured. Please try again later.');
+        return;
+      }
+      const msg = err.response?.data?.message || 'Failed to start checkout';
       setError(msg);
-      alert(msg);
     } finally {
       setPurchasing(false);
     }
   };
 
-  const payWith = (method) => {
+  const payWith = () => {
     if (!selectedPack) {
       setError('Please select a credit pack first.');
       return;
     }
-    handlePurchase(method);
+    handlePurchase();
   };
 
   return (
@@ -85,8 +95,14 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
               Purchase Credits and continue communicating!
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-gray-600 max-w-xl">
-              Communication with Free Users costs: Live Chat — 1 Credit per minute, Offline message —
-              1 Credit, Email — 10 Credits.
+              Communication with Free Users costs: Live Chat — 1 Credit per minute, Offline message — 1 Credit,
+              Email — 10 Credits.&nbsp;
+              <button
+                type="button"
+                className="text-xs font-semibold text-red-600 hover:underline"
+              >
+                Read more
+              </button>
             </p>
           </div>
           <button
@@ -101,8 +117,18 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
         {/* Packs */}
         <div className="px-6 pt-4 pb-2">
           {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {packs.map((pack) => {
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              disabled={clampedIndex === 0}
+              className="hidden sm:inline-flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FaChevronLeft />
+            </button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
+              {visiblePacks.map((pack) => {
               const isActive = selectedPackId === pack.id;
               return (
                 <button
@@ -118,88 +144,88 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
                 >
                   {pack.badge && (
                     <span
-                      className={`absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-semibold shadow ${pack.badgeColor}`}
+                      className={`absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-semibold shadow ${
+                        pack.badge === 'BEST VALUE'
+                          ? 'bg-emerald-400 text-emerald-900'
+                          : 'bg-amber-400 text-amber-900'
+                      }`}
                     >
                       {pack.badge}
                     </span>
                   )}
-                  <div className="mt-1">
+                  <div className="mt-1 space-y-1">
+                    {pack.imageUrl && (
+                      <div className="w-full flex justify-center mb-1">
+                        <img
+                          src={pack.imageUrl}
+                          alt={`${pack.credits} Credits`}
+                          className="h-16 w-16 object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <div className="text-sm font-semibold text-gray-900">
                       {pack.credits} Credits
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-gray-900">${pack.price}</div>
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="text-[11px] text-gray-500">
+                      {pack.credits > 0 && pack.price > 0 && (
+                        <>
+                          ≈{' '}
+                          <span className="line-through">
+                            {(() => {
+                              const unitNow = pack.price / pack.credits;
+                              const match = String(pack.saveLabel || '').match(/(\d+)%/);
+                              if (!match) return unitNow.toFixed(2);
+                              const percent = parseInt(match[1], 10);
+                              if (!percent || percent >= 100) return unitNow.toFixed(2);
+                              const unitWas = unitNow / (1 - percent / 100);
+                              return unitWas.toFixed(2);
+                            })()}
+                          </span>{' '}
+                          <span className="font-semibold text-gray-800">
+                            {(pack.price / pack.credits).toFixed(2)} USD
+                          </span>{' '}
+                          each
+                        </>
+                      )}
+                    </div>
+                    <div className="pt-1 text-2xl font-bold text-gray-900">
+                      ${pack.price}
+                    </div>
+                    <div className="text-xs font-semibold text-emerald-700">
                       {pack.saveLabel}
                     </div>
                   </div>
                 </button>
               );
-            })}
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCurrentIndex((i) => Math.min(maxStart, i + 1))}
+              disabled={clampedIndex >= maxStart}
+              className="hidden sm:inline-flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FaChevronRight />
+            </button>
           </div>
         </div>
 
-        {/* Payment methods */}
+        {/* Single payment button */}
         <div className="px-6 pt-4 pb-6 space-y-3">
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => payWith('apple-pay')}
-              disabled={purchasing}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <FaApple className="text-xl" />
-              <span>Pay with Apple Pay</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => payWith('google-pay')}
-              disabled={purchasing}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <FaGoogle className="text-xl text-[#4285F4]" />
-              <span>Pay with Google Pay</span>
-            </button>
-          </div>
-
-          {/* Card payment */}
-          <div className="border border-gray-200 rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <FaCreditCard className="text-gray-500" />
-              <span>Pay by card</span>
-            </div>
-            <select
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              defaultValue="saved"
-            >
-              <option value="saved">Use saved card •••• 1254</option>
-              <option value="new">Add new card</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => payWith('card')}
-              disabled={purchasing}
-              className="w-full inline-flex items-center justify-center rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {purchasing ? 'PROCESSING...' : 'PAY BY CARD'}
-            </button>
-          </div>
-
-          {/* Crypto */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-gray-200 pt-3 text-xs text-gray-600">
-            <button
-              type="button"
-              onClick={() => payWith('crypto')}
-              disabled={purchasing}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <FaBitcoin className="text-lg text-amber-500" />
-              <span>Pay via Crypto</span>
-            </button>
-            <p className="text-[11px] text-right sm:text-left text-gray-500 flex-1">
-              Your transactions are protected. Selected credits will be added to your balance
-              instantly after successful payment.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => payWith()}
+            disabled={purchasing}
+            className="w-full inline-flex items-center justify-center rounded-lg bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {purchasing ? 'PROCESSING...' : `PAY ${selectedPack ? `$${selectedPack.price} USD` : ''}`}
+          </button>
+          <p className="text-[11px] text-center text-gray-500">
+            You&apos;ve selected {selectedPack?.credits ?? 0} Credits. They will be added to your balance
+            instantly after successful payment.
+          </p>
         </div>
       </div>
     </div>
