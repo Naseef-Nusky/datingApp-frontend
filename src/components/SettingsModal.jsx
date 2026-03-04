@@ -13,7 +13,7 @@ const languages = [
 ];
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, fetchUser } = useAuth();
   const navigate = useNavigate();
   const [soundMyContacts, setSoundMyContacts] = useState(true);
   const [soundChatRequests, setSoundChatRequests] = useState(true);
@@ -651,6 +651,18 @@ export default function SettingsModal({ isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={async () => {
+                    if (manageAccountOption === 'cancel-subscription') {
+                      const apiUrl = import.meta.env.VITE_API_URL || '';
+                      try {
+                        await axios.post(`${apiUrl}/api/credits/cancel-subscription`);
+                        if (typeof fetchUser === 'function') fetchUser();
+                      } catch (err) {
+                        console.error('Cancel subscription error:', err);
+                        const msg = err.response?.data?.message || 'Failed to cancel subscription. Please try again.';
+                        alert(msg);
+                        return;
+                      }
+                    }
                     await saveAllSettings({
                       manageAccountOption,
                     });
