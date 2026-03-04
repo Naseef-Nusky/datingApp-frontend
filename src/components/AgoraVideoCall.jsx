@@ -105,6 +105,20 @@ const AgoraVideoCall = ({
     };
   }, []);
 
+  // Ensure local video is rendered into its container whenever it's available
+  useEffect(() => {
+    if (callType !== 'video') return;
+    if (!localVideoTrack) return;
+    if (!localVideoContainerRef.current) return;
+
+    try {
+      localVideoTrack.play(localVideoContainerRef.current);
+      console.log('📹 [LOCAL VIDEO] Playing local video in container');
+    } catch (error) {
+      console.warn('⚠️ [LOCAL VIDEO] Error playing local video track:', error);
+    }
+  }, [callType, localVideoTrack]);
+
   // Clear video container when remote video becomes inactive
   useEffect(() => {
     if (!isRemoteVideoActive) {
@@ -328,9 +342,6 @@ const AgoraVideoCall = ({
       if (callType === 'video') {
         try {
           const videoTrack = await AgoraRTC.createCameraVideoTrack();
-          if (localVideoContainerRef.current) {
-            videoTrack.play(localVideoContainerRef.current);
-          }
           setLocalVideoTrack(videoTrack);
           tracksToPublish.push(videoTrack);
           console.log('✅ [RTC TRACK] Video track created');
