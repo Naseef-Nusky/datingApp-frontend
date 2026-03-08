@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { RefillModalProvider } from './context/RefillModalContext';
+import { UpgradeModalProvider } from './context/UpgradeModalContext';
 import Header from './components/Header';
 import SiteFooter from './components/SiteFooter';
 import Home from './pages/Home';
@@ -139,6 +140,7 @@ function App() {
   return (
     <AuthProvider>
       <RefillModalProvider>
+        <UpgradeModalProvider>
         <Router
           future={{
             v7_startTransition: true,
@@ -147,6 +149,7 @@ function App() {
         >
           <AppShell />
         </Router>
+        </UpgradeModalProvider>
       </RefillModalProvider>
     </AuthProvider>
   );

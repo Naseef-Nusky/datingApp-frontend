@@ -19,11 +19,12 @@ import PrivacyPolicyModal from './PrivacyPolicyModal';
 import RefundPolicyModal from './RefundPolicyModal';
 import SafetyPolicyModal from './SafetyPolicyModal';
 import TermsOfUseModal from './TermsOfUseModal';
-import UpgradeSubscriptionModal from './UpgradeSubscriptionModal';
+import { useUpgradeModal } from '../context/UpgradeModalContext';
 
 const Header = () => {
-  const { user, fetchUser } = useAuth();
+  const { user } = useAuth();
   const { openRefillModal } = useRefillModal();
+  const { openUpgradeModal } = useUpgradeModal();
   const location = useLocation();
   const navigate = useNavigate();
   const [todayStatus, setTodayStatus] = useState(null);
@@ -367,15 +368,13 @@ const Header = () => {
     return () => clearInterval(timer);
   }, [latestPendingChatRequestKey, dismissedChatRequestKey]);
 
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
   const hasSubscription = !!(user?.subscriptionPlan && user.subscriptionPlan !== 'free');
 
   const handleRefillOrUpgrade = () => {
     if (hasSubscription) {
       openRefillModal();
     } else {
-      setShowUpgradeModal(true);
+      openUpgradeModal();
     }
   };
 
@@ -747,14 +746,6 @@ const Header = () => {
         onClose={() => {
           setShowTermsModal(false);
           if (location.pathname === '/terms') navigate('/');
-        }}
-      />
-
-      <UpgradeSubscriptionModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        onSubscribed={async () => {
-          await fetchUser();
         }}
       />
 

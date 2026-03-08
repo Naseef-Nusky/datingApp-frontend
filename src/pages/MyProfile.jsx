@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
+import { useUpgradeModal } from '../context/UpgradeModalContext';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, FaBook, FaCampground, FaUtensils, FaCompactDisc, FaShip, FaShoppingCart, FaGamepad, FaPalette, FaHockeyPuck, FaFilm, FaLandmark, FaMusic, FaLeaf, FaGlassMartiniAlt, FaFish, FaTv, FaPrayingHands, FaSwimmer, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
@@ -12,6 +13,7 @@ import ContactsSidebar from '../components/ContactsSidebar';
 const MyProfile = () => {
   const { user, fetchUser } = useAuth();
   const { openRefillModal } = useRefillModal();
+  const { openUpgradeModal } = useUpgradeModal();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -880,9 +882,15 @@ const MyProfile = () => {
                   >
                     BACK
                   </button>
-                  <button className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition block">
-                    CHANGE SUBSCRIPTION PLAN
-                  </button>
+                  {!(user?.userType === 'streamer' || user?.userType === 'talent') && (
+                    <button
+                      type="button"
+                      onClick={openUpgradeModal}
+                      className="bg-gray-800 bg-opacity-90 text-white px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded hover:bg-opacity-100 transition block"
+                    >
+                      CHANGE SUBSCRIPTION PLAN
+                    </button>
+                  )}
                 </div>
 
                 {/* Top Right */}
