@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FaTimes } from 'react-icons/fa';
 
 /**
  * Terms of Use Agreement modal – scrollable with table of contents (same style as Privacy/Refund/Safety).
+ * When asPage=true, renders as full page (no overlay) for /terms route.
  */
-export default function TermsOfUseModal({ isOpen, onClose }) {
+export default function TermsOfUseModal({ isOpen, onClose, asPage }) {
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen && !asPage) return;
+    if (asPage) return;
     const handleEscape = (e) => {
       if (e.key === 'Escape') onClose();
     };
@@ -16,9 +19,9 @@ export default function TermsOfUseModal({ isOpen, onClose }) {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, asPage]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !asPage) return null;
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -51,22 +54,22 @@ export default function TermsOfUseModal({ isOpen, onClose }) {
     { id: 'section-23', label: '23. Contact Us' },
   ];
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div
-        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+  const content = (
+    <>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Vantage Dating – Terms of Use Agreement</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition"
-            aria-label="Close"
-          >
-            <FaTimes className="w-5 h-5" />
-          </button>
+          {asPage ? (
+            <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800">← Back to Home</Link>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition"
+              aria-label="Close"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <div className="overflow-y-auto px-6 py-5 text-gray-800 text-sm leading-relaxed">
@@ -234,6 +237,25 @@ export default function TermsOfUseModal({ isOpen, onClose }) {
             <p>Support available via Live Support or Contact Form.</p>
           </section>
         </div>
+    </>
+  );
+
+  if (asPage) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            {content}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {content}
       </div>
     </div>
   );

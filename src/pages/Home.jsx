@@ -165,9 +165,9 @@ const Home = () => {
             <img
               src="/virtualdating.png"
               alt="Interactive virtual dating tools"
-              className="object-contain w-full h-80 sm:h-96"
+              className="object-contain w-full h-80 sm:h-96 order-2 md:order-1"
             />
-            <div>
+            <div className="order-1 md:order-2">
               <h2 className="text-2xl font-bold mb-3">Interactive virtual dating tools</h2>
               <p className="text-gray-600 mb-4">
                 Explore features that simplify connection, including video calls, voice messaging, and virtual gifts. Our platform is built to deliver smooth, engaging, and enjoyable conversations.
@@ -255,12 +255,45 @@ const Home = () => {
 
       <section className="bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-2">Vantage Dating User Reviews</h3>
-          <p className="text-center text-gray-500 mb-8">
+          <h3 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-2 px-2">Vantage Dating User Reviews</h3>
+          <p className="text-center text-gray-500 mb-6 sm:mb-8 px-2 text-sm sm:text-base">
             Hear directly from genuine users who found success on our platform.
           </p>
 
-          <div className="grid md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-center">
+          {/* Mobile: single card with arrows */}
+          <div className="flex md:hidden items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveReviewIndex((prev) => getWrappedReviewIndex(prev - 1))}
+              className="shrink-0 w-10 h-10 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center hover:bg-gray-50 transition"
+              aria-label="Previous review"
+            >
+              <FaChevronLeft className="text-sm" />
+            </button>
+            <article className="flex-1 min-w-0 bg-white rounded-2xl p-5 sm:p-6 border border-gray-300 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between overflow-hidden">
+              <p className="text-gray-800 text-base sm:text-lg leading-relaxed mb-4 line-clamp-6">
+                {centerReview.text}
+              </p>
+              <div className="flex items-center gap-3">
+                <img src="/profile.png" alt={centerReview.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-800 truncate">{centerReview.name}</p>
+                  <p className="text-xs text-gray-500">{centerReview.source}</p>
+                </div>
+              </div>
+            </article>
+            <button
+              type="button"
+              onClick={() => setActiveReviewIndex((prev) => getWrappedReviewIndex(prev + 1))}
+              className="shrink-0 w-10 h-10 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center hover:bg-gray-50 transition"
+              aria-label="Next review"
+            >
+              <FaChevronRight className="text-sm" />
+            </button>
+          </div>
+
+          {/* Desktop: three cards with arrows */}
+          <div className="hidden md:grid grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-center">
             <article className="bg-white rounded-2xl p-6 border border-gray-200 h-[320px] flex flex-col justify-between overflow-hidden">
               <p className="text-gray-400 text-lg leading-relaxed mb-6 line-clamp-6">
                 {leftReview.text}
@@ -277,7 +310,8 @@ const Home = () => {
             <button
               type="button"
               onClick={() => setActiveReviewIndex((prev) => getWrappedReviewIndex(prev - 1))}
-              className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center"
+              className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center hover:bg-gray-50"
+              aria-label="Previous review"
             >
               <FaChevronLeft className="text-xs" />
             </button>
@@ -298,7 +332,8 @@ const Home = () => {
             <button
               type="button"
               onClick={() => setActiveReviewIndex((prev) => getWrappedReviewIndex(prev + 1))}
-              className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center"
+              className="w-8 h-8 rounded-full border border-gray-300 text-gray-500 inline-flex items-center justify-center hover:bg-gray-50"
+              aria-label="Next review"
             >
               <FaChevronRight className="text-xs" />
             </button>
@@ -317,7 +352,7 @@ const Home = () => {
             </article>
           </div>
 
-          <div className="flex justify-center items-center gap-2 mt-6">
+          <div className="flex justify-center items-center gap-2 mt-4 sm:mt-6">
             {reviewCards.map((_, dot) => (
               <button
                 key={dot}
@@ -360,7 +395,7 @@ const Home = () => {
       </section>
 
       {/* Relationship experts section */}
-      <section className="w-full bg-white px-4 sm:px-6 py-12">
+      <section id="relationship-experts" className="w-full bg-white px-4 sm:px-6 py-12">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-3">
             We&apos;re Partnering with Relationship Experts
@@ -449,7 +484,7 @@ const Home = () => {
 
       {/* Our Shared Journey — full-width slider */}
       <section
-        className="w-full relative min-h-[520px] sm:min-h-[620px] flex flex-col items-center justify-center overflow-hidden"
+        className="w-full relative min-h-[420px] sm:min-h-[520px] lg:min-h-[620px] flex flex-col items-center justify-center overflow-hidden"
         style={{
           backgroundImage: "url('/OurSharedSuccess.png')",
           backgroundSize: 'cover',
@@ -459,24 +494,52 @@ const Home = () => {
         {/* subtle overlay to improve readability */}
         <div className="absolute inset-0 bg-slate-700/20 pointer-events-none" />
 
-        <div className="relative z-10 w-full px-4 sm:px-6 py-10 flex flex-col items-center">
-          <h3 className="text-2xl sm:text-4xl font-bold text-white text-center mb-3">
+        <div className="relative z-10 w-full px-4 sm:px-6 py-8 sm:py-10 flex flex-col items-center">
+          <h3 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-2 sm:mb-3 px-2">
             Our Shared Journey
           </h3>
-          <p className="text-white/90 text-sm sm:text-base text-center max-w-xl mx-auto leading-relaxed mb-10">
+          <p className="text-white/90 text-sm sm:text-base text-center max-w-xl mx-auto leading-relaxed mb-6 sm:mb-10 px-2">
             Vantage Dating is dedicated to reducing loneliness by encouraging virtual closeness
             and meaningful online connections. Join us today and take your first step toward
             meeting the right match online.
           </p>
 
-          {/* Three-card slider */}
-          <div className="w-full max-w-6xl flex items-center justify-center gap-4 sm:gap-6">
+          {/* Mobile: single center card with arrows */}
+          <div className="flex md:hidden w-full items-center gap-2 sm:gap-3 px-1">
+            <button
+              type="button"
+              onClick={() => setActiveJourneyIndex(getJourneyIndex(-1))}
+              className="shrink-0 w-10 h-10 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
+              aria-label="Previous"
+            >
+              <FaChevronLeft className="text-sm" />
+            </button>
+            <article className="flex-1 min-w-0 bg-white rounded-2xl p-5 sm:p-6 min-h-[200px] sm:min-h-[240px] flex flex-col justify-center text-center shadow-xl">
+              <h4 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                {journeySlides[activeJourneyIndex].heading}
+              </h4>
+              <p className="text-sm sm:text-base text-gray-600">
+                {journeySlides[activeJourneyIndex].sub}
+              </p>
+            </article>
+            <button
+              type="button"
+              onClick={() => setActiveJourneyIndex(getJourneyIndex(1))}
+              className="shrink-0 w-10 h-10 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
+              aria-label="Next"
+            >
+              <FaChevronRight className="text-sm" />
+            </button>
+          </div>
+
+          {/* Desktop: three-card slider */}
+          <div className="hidden md:flex w-full max-w-6xl items-center justify-center gap-4 lg:gap-6">
             {/* Left muted card */}
-            <article className="flex-[1.1] min-w-0 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl p-6 sm:p-8 min-h-[220px] sm:min-h-[260px] flex flex-col justify-center text-center">
-              <h4 className="text-lg sm:text-2xl font-semibold text-white mb-1">
+            <article className="flex-[1.1] min-w-0 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl p-6 lg:p-8 min-h-[220px] lg:min-h-[260px] flex flex-col justify-center text-center">
+              <h4 className="text-lg lg:text-2xl font-semibold text-white mb-1">
                 {journeySlides[getJourneyIndex(-1)].heading}
               </h4>
-              <p className="text-sm sm:text-base text-white/80">
+              <p className="text-sm lg:text-base text-white/80">
                 {journeySlides[getJourneyIndex(-1)].sub}
               </p>
             </article>
@@ -485,18 +548,18 @@ const Home = () => {
             <button
               type="button"
               onClick={() => setActiveJourneyIndex(getJourneyIndex(-1))}
-              className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
+              className="shrink-0 w-8 h-8 lg:w-9 lg:h-9 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
               aria-label="Previous"
             >
               <FaChevronLeft className="text-xs" />
             </button>
 
             {/* Center prominent card */}
-            <article className="flex-[1.4] min-w-0 bg-white rounded-2xl p-7 sm:p-12 min-h-[260px] sm:min-h-[320px] flex flex-col justify-center text-center shadow-xl">
-              <h4 className="text-3xl sm:text-5xl font-bold text-gray-800 mb-2">
+            <article className="flex-[1.4] min-w-0 bg-white rounded-2xl p-7 lg:p-12 min-h-[260px] lg:min-h-[320px] flex flex-col justify-center text-center shadow-xl">
+              <h4 className="text-3xl lg:text-5xl font-bold text-gray-800 mb-2">
                 {journeySlides[activeJourneyIndex].heading}
               </h4>
-              <p className="text-base sm:text-2xl text-gray-600">
+              <p className="text-base lg:text-2xl text-gray-600">
                 {journeySlides[activeJourneyIndex].sub}
               </p>
             </article>
@@ -505,25 +568,25 @@ const Home = () => {
             <button
               type="button"
               onClick={() => setActiveJourneyIndex(getJourneyIndex(1))}
-              className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
+              className="shrink-0 w-8 h-8 lg:w-9 lg:h-9 rounded-full border border-white/60 bg-white/10 text-white hover:bg-white/25 transition inline-flex items-center justify-center"
               aria-label="Next"
             >
               <FaChevronRight className="text-xs" />
             </button>
 
             {/* Right muted card */}
-            <article className="flex-[1.1] min-w-0 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl p-6 sm:p-8 min-h-[220px] sm:min-h-[260px] flex flex-col justify-center text-center">
-              <h4 className="text-lg sm:text-2xl font-semibold text-white mb-1">
+            <article className="flex-[1.1] min-w-0 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl p-6 lg:p-8 min-h-[220px] lg:min-h-[260px] flex flex-col justify-center text-center">
+              <h4 className="text-lg lg:text-2xl font-semibold text-white mb-1">
                 {journeySlides[getJourneyIndex(1)].heading}
               </h4>
-              <p className="text-sm sm:text-base text-white/80">
+              <p className="text-sm lg:text-base text-white/80">
                 {journeySlides[getJourneyIndex(1)].sub}
               </p>
             </article>
           </div>
 
           {/* Dot indicators */}
-          <div className="flex justify-center items-center gap-2 mt-6">
+          <div className="flex justify-center items-center gap-2 mt-4 sm:mt-6">
             {journeySlides.map((_, dot) => (
               <button
                 key={`journey-dot-${dot}`}

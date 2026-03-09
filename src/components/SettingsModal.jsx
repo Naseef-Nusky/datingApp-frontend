@@ -3,22 +3,16 @@ import { FaTimes, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-
-const languages = [
-  { value: 'en', label: 'English (US)' },
-  { value: 'en-uk', label: 'English (UK)' },
-  { value: 'es', label: 'Español' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'fr', label: 'Français' },
-];
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SettingsModal({ isOpen, onClose }) {
   const { user, logout, fetchUser } = useAuth();
+  const { language: i18nLanguage, changeLanguage, languages } = useLanguage();
   const navigate = useNavigate();
   const [soundMyContacts, setSoundMyContacts] = useState(true);
   const [soundChatRequests, setSoundChatRequests] = useState(true);
   const [repeatUntilRead, setRepeatUntilRead] = useState(false);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(i18nLanguage || 'en');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -87,6 +81,10 @@ export default function SettingsModal({ isOpen, onClose }) {
       loadSettings();
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    if (isOpen && i18nLanguage) setLanguage(i18nLanguage);
+  }, [isOpen, i18nLanguage]);
 
   if (!isOpen) return null;
 
@@ -231,7 +229,11 @@ export default function SettingsModal({ isOpen, onClose }) {
               <select
                 className="block w-full rounded-md border border-slate-300 bg-white py-2 px-3 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-nex-pink focus:border-nex-pink"
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLanguage(val);
+                  changeLanguage(val);
+                }}
               >
                 {languages.map((opt) => (
                   <option key={opt.value} value={opt.value}>

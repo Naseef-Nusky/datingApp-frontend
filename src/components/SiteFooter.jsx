@@ -36,18 +36,17 @@ export default function SiteFooter() {
         <div>
           <h4 className="text-lg font-semibold mb-4">Company</h4>
           <ul className="space-y-3 text-white/70 text-base">
-            <li><a href="#" className="hover:text-white">About</a></li>
-            <li><a href="#" className="hover:text-white">Investments/M&amp;A</a></li>
-            <li><a href="#" className="hover:text-white">Become a Partner</a></li>
+            <li><Link to="/about" className="hover:text-white">About</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-lg font-semibold mb-4">Contact</h4>
           <ul className="space-y-3 text-white/70 text-base">
-            <li><a href="#" className="hover:text-white">Help Center</a></li>
-            <li><a href="#" className="hover:text-white">Dating Securely</a></li>
-            <li><a href="#" className="hover:text-white">Online dating advice</a></li>
+            <li><Link to="/contact" className="hover:text-white">Contact Us</Link></li>
+            <li><Link to="/help" className="hover:text-white">Help Center</Link></li>
+            <li><Link to="/safety" className="hover:text-white">Dating Securely</Link></li>
+            <li><Link to="/online-dating-advice" className="hover:text-white">Online dating advice</Link></li>
           </ul>
         </div>
 
@@ -56,7 +55,7 @@ export default function SiteFooter() {
           <ul className="space-y-3 text-white/70 text-base">
             <li><Link to="/terms" className="hover:text-white">Terms &amp; Conditions</Link></li>
             <li><Link to="/privacy" className="hover:text-white">Privacy policy</Link></li>
-            <li><Link to="/refund" className="hover:text-white">Cookie Policy</Link></li>
+            <li><Link to="/refund" className="hover:text-white">Refund and Cancellation Policy</Link></li>
           </ul>
         </div>
 

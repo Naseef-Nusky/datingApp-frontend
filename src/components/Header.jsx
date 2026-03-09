@@ -20,11 +20,13 @@ import RefundPolicyModal from './RefundPolicyModal';
 import SafetyPolicyModal from './SafetyPolicyModal';
 import TermsOfUseModal from './TermsOfUseModal';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
+import { useTranslation } from 'react-i18next';
 
 const Header = () => {
   const { user } = useAuth();
   const { openRefillModal } = useRefillModal();
   const { openUpgradeModal } = useUpgradeModal();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [todayStatus, setTodayStatus] = useState(null);
@@ -431,7 +433,7 @@ const Header = () => {
                     onClick={() => setShowSearchModal(!showSearchModal)}
                     className="text-white hover:text-nex-orange transition"
                   >
-                    SEARCH
+                    {t('nav.search')}
                   </button>
                   
                   {/* Search Dropdown */}
@@ -449,7 +451,7 @@ const Header = () => {
                   to="/inbox"
                   className="relative text-white hover:text-nex-orange transition"
                 >
-                  INBOX
+                  {t('nav.inbox')}
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-nex-pink rounded-full"></span>
                 </Link>
                 {/* Upgrade / Refill button (hidden for streamers/talents) */}
@@ -459,7 +461,7 @@ const Header = () => {
                     onClick={handleRefillOrUpgrade}
                     className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                   >
-                    {hasSubscription ? 'REFILL ACCOUNT' : 'UPGRADE ACCOUNT'}
+                    {hasSubscription ? t('common.refillAccount') : t('common.upgradeAccount')}
                   </button>
                 )}
               </div>
@@ -561,17 +563,11 @@ const Header = () => {
 
           {!user && (
             <nav className="flex items-center space-x-4">
-              <Link
-                to="/login"
-                className="text-white hover:text-nex-orange transition"
-              >
-                Log in
+              <Link to="/login" className="text-white hover:text-nex-orange transition">
+                {t('home.login')}
               </Link>
-              <Link
-                to="/register"
-                className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
-              >
-                Join us now
+              <Link to="/register" className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition">
+                {t('home.getStarted')}
               </Link>
             </nav>
           )}

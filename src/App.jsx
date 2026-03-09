@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { RefillModalProvider } from './context/RefillModalContext';
 import { UpgradeModalProvider } from './context/UpgradeModalContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Header from './components/Header';
 import SiteFooter from './components/SiteFooter';
 import Home from './pages/Home';
@@ -24,6 +25,14 @@ import AsianOnlineDating from './pages/AsianOnlineDating';
 import GayDatingOnline from './pages/GayDatingOnline';
 import SinglesOnlineDating from './pages/SinglesOnlineDating';
 import CompleteProfile from './pages/CompleteProfile';
+import TermsOfUseModal from './components/TermsOfUseModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import RefundPolicyModal from './components/RefundPolicyModal';
+import SafetyPolicyModal from './components/SafetyPolicyModal';
+import AboutModal from './components/AboutModal';
+import Contact from './pages/Contact';
+import HelpCenter from './pages/HelpCenter';
+import OnlineDatingAdvice from './pages/OnlineDatingAdvice';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -48,23 +57,35 @@ function ScrollToTop() {
   return null;
 }
 
+// App routes: show header only when logged in and on these paths
+const APP_ROUTES = ['/dashboard', '/profile', '/inbox', '/vip', '/compose-email', '/complete-profile'];
+
+function isAppRoute(pathname) {
+  return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
+}
+
 function App() {
   const AppShell = () => {
     const location = useLocation();
-    const hideHeader = location.pathname === '/';
+    const { user } = useAuth();
+    const showHeader = user && isAppRoute(location.pathname);
 
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ScrollToTop />
-        {!hideHeader && <Header />}
+        {showHeader && <Header />}
         <div className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/privacy" element={<></>} />
-            <Route path="/refund" element={<></>} />
-            <Route path="/safety" element={<></>} />
-            <Route path="/terms" element={<></>} />
+            <Route path="/terms" element={<TermsOfUseModal asPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyModal asPage />} />
+            <Route path="/refund" element={<RefundPolicyModal asPage />} />
+            <Route path="/safety" element={<SafetyPolicyModal asPage />} />
+            <Route path="/about" element={<AboutModal asPage />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/online-dating-advice" element={<OnlineDatingAdvice />} />
             <Route path="/register" element={<Register />} />
             <Route path="/signup-email" element={<SignupEmail />} />
             <Route path="/auth/check-email" element={<CheckEmail />} />
@@ -141,6 +162,7 @@ function App() {
     <AuthProvider>
       <RefillModalProvider>
         <UpgradeModalProvider>
+        <LanguageProvider>
         <Router
           future={{
             v7_startTransition: true,
@@ -149,6 +171,7 @@ function App() {
         >
           <AppShell />
         </Router>
+        </LanguageProvider>
         </UpgradeModalProvider>
       </RefillModalProvider>
     </AuthProvider>
