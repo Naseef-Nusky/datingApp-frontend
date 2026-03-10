@@ -514,11 +514,11 @@ const Home = () => {
             >
               <FaChevronLeft className="text-sm" />
             </button>
-            <article className="flex-1 min-w-0 bg-white rounded-2xl p-5 sm:p-6 min-h-[200px] sm:min-h-[240px] flex flex-col justify-center text-center shadow-xl">
-              <h4 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+            <article className="flex-1 min-w-0 bg-white rounded-2xl p-4 sm:p-6 min-h-[180px] sm:min-h-[220px] flex flex-col justify-center text-center shadow-xl">
+              <h4 className="text-lg sm:text-2xl font-bold text-gray-800 mb-1 break-words">
                 {journeySlides[activeJourneyIndex].heading}
               </h4>
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-xs sm:text-base text-gray-600">
                 {journeySlides[activeJourneyIndex].sub}
               </p>
             </article>
@@ -555,11 +555,11 @@ const Home = () => {
             </button>
 
             {/* Center prominent card */}
-            <article className="flex-[1.4] min-w-0 bg-white rounded-2xl p-7 lg:p-12 min-h-[260px] lg:min-h-[320px] flex flex-col justify-center text-center shadow-xl">
-              <h4 className="text-3xl lg:text-5xl font-bold text-gray-800 mb-2">
+            <article className="flex-[1.4] min-w-0 bg-white rounded-2xl p-6 lg:p-10 min-h-[240px] lg:min-h-[300px] flex flex-col justify-center text-center shadow-xl">
+              <h4 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-2 break-words">
                 {journeySlides[activeJourneyIndex].heading}
               </h4>
-              <p className="text-base lg:text-2xl text-gray-600">
+              <p className="text-sm md:text-base lg:text-xl text-gray-600">
                 {journeySlides[activeJourneyIndex].sub}
               </p>
             </article>

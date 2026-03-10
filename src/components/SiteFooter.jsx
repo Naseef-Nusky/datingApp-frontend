@@ -1,12 +1,35 @@
 import { Link } from 'react-router-dom';
 import { FaFacebookF, FaInstagram, FaTwitter, FaMusic } from 'react-icons/fa';
 import Logo from './Logo';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SiteFooter() {
+  const { language, changeLanguage, languages } = useLanguage();
+
+  const flagUrlFor = (lang) => {
+    switch (lang) {
+      case 'es':
+        return 'https://flagcdn.com/w40/es.png';
+      case 'zh':
+        return 'https://flagcdn.com/w40/cn.png';
+      case 'it':
+        return 'https://flagcdn.com/w40/it.png';
+      case 'fr':
+        return 'https://flagcdn.com/w40/fr.png';
+      case 'de':
+        return 'https://flagcdn.com/w40/de.png';
+      case 'ja':
+        return 'https://flagcdn.com/w40/jp.png';
+      case 'en':
+      default:
+        return 'https://flagcdn.com/w40/us.png';
+    }
+  };
+
   return (
     <footer className="bg-[#2f3136] text-white py-10 border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-2">
+      <div className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div>
           <div className="mb-4">
             <Logo className="h-10 sm:h-12 w-auto object-contain" />
           </div>
@@ -15,10 +38,36 @@ export default function SiteFooter() {
           </p>
           <Link
             to="/signup-email"
-            className="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-md transition"
+            className="inline-block text-white font-semibold px-8 py-3 rounded-md transition hover:opacity-90"
+            style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
           >
             Join us
           </Link>
+          <div className="mt-8 ml-3 inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-black/40 text-white text-sm font-medium border border-white/20">
+            <img
+              src={flagUrlFor(language || 'en')}
+              alt={languages.find((l) => l.value === language)?.label || 'English'}
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <select
+              className="bg-transparent outline-none cursor-pointer text-sm"
+              value={language || 'en'}
+              onChange={(e) => changeLanguage(e.target.value)}
+            >
+              {languages.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-[#2f3136] text-white">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-lg font-semibold mb-4">Company</h4>
+          <ul className="space-y-3 text-white/70 text-base">
+            <li><Link to="/about" className="hover:text-white">About</Link></li>
+          </ul>
           <div className="flex items-center gap-3 mt-6">
             {[FaFacebookF, FaInstagram, FaTwitter, FaMusic].map((Icon, idx) => (
               <a
@@ -31,13 +80,16 @@ export default function SiteFooter() {
               </a>
             ))}
           </div>
-        </div>
-
-        <div>
-          <h4 className="text-lg font-semibold mb-4">Company</h4>
-          <ul className="space-y-3 text-white/70 text-base">
-            <li><Link to="/about" className="hover:text-white">About</Link></li>
-          </ul>
+          <div className="mt-6">
+            <img
+              src="/payment.png"
+              alt="Accepted payment methods"
+              className="h-6 w-auto opacity-90"
+            />
+          </div>
+          <p className="mt-4 text-xs text-white/60">
+            © 2026 Vantage Dating. All rights reserved.
+          </p>
         </div>
 
         <div>

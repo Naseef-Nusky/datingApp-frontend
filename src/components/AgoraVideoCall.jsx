@@ -52,7 +52,7 @@ const AgoraVideoCall = ({
   };
 
   // Helper component to render profile image
-  const ProfileImage = ({ animate = false, size = 'w-48 h-48' }) => {
+  const ProfileImage = ({ animate = false, size = 'w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48' }) => {
     const { profileImage, firstName } = getProfileData();
     const animateClass = animate ? 'animate-pulse' : '';
     
@@ -575,9 +575,9 @@ const AgoraVideoCall = ({
                 const { firstName, lastName } = getProfileData();
                 return (
                   <>
-                    <h2 className="text-4xl font-bold mb-2 text-white">{firstName}</h2>
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white">{firstName}</h2>
                     {lastName && (
-                      <h3 className="text-3xl text-gray-200 mb-6 font-semibold">{lastName}</h3>
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl text-gray-200 mb-6 font-semibold">{lastName}</h3>
                     )}
                   </>
                 );
@@ -658,7 +658,7 @@ const AgoraVideoCall = ({
         
         {/* Local Video Container (Picture-in-Picture) - Only show when remote is connected */}
         {callType === 'video' && localVideoTrack && isRemoteConnected && (
-          <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
+          <div className="absolute top-3 right-3 w-28 h-20 sm:top-4 sm:right-4 sm:w-40 sm:h-28 lg:w-48 lg:h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
             <div ref={localVideoContainerRef} className="w-full h-full" />
           </div>
         )}

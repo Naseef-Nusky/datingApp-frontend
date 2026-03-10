@@ -7,7 +7,7 @@ const sectionClass = 'max-w-5xl mx-auto px-4 sm:px-6';
 export default function SinglesOnlineDating() {
   return (
     <div className="bg-white text-gray-900">
-      <LandingHero />
+      <LandingHero backgroundImage="/online_dating.png" />
 
       <main className="py-10 sm:py-12 lg:py-16">
         {/* Article header */}

@@ -69,6 +69,7 @@ function App() {
     const location = useLocation();
     const { user } = useAuth();
     const showHeader = user && isAppRoute(location.pathname);
+    const showFooter = !showHeader;
 
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -153,7 +154,7 @@ function App() {
             <Route path="/online-dating-singles" element={<SinglesOnlineDating />} />
           </Routes>
         </div>
-        <SiteFooter />
+        {showFooter && <SiteFooter />}
       </div>
     );
   };

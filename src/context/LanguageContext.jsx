@@ -6,11 +6,13 @@ import i18n from '../i18n';
 const LanguageContext = createContext(null);
 
 const SUPPORTED_LANGUAGES = [
-  { value: 'en', label: 'English (US)' },
-  { value: 'en-uk', label: 'English (UK)' },
+  { value: 'en', label: 'English' },
   { value: 'es', label: 'Español' },
-  { value: 'de', label: 'Deutsch' },
+  { value: 'zh', label: '中文' },
+  { value: 'it', label: 'Italiano' },
   { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'ja', label: '日本語' },
 ];
 
 export function LanguageProvider({ children }) {
@@ -20,7 +22,7 @@ export function LanguageProvider({ children }) {
   const changeLanguage = useCallback(async (lang) => {
     if (!SUPPORTED_LANGUAGES.some((l) => l.value === lang)) return;
     const apiUrl = import.meta.env.VITE_API_URL || '';
-    if (lang !== 'en' && lang !== 'en-uk') {
+    if (lang !== 'en') {
       if (!i18n.hasResourceBundle(lang, 'translation')) {
         setLoadingLang(true);
         try {
@@ -55,7 +57,7 @@ export function LanguageProvider({ children }) {
         const { data } = await axios.get(`${apiUrl}/api/settings`);
         const saved = data?.language;
         if (!saved || saved === i18n.language) return;
-        if (saved !== 'en' && saved !== 'en-uk' && !i18n.hasResourceBundle(saved, 'translation')) {
+        if (saved !== 'en' && !i18n.hasResourceBundle(saved, 'translation')) {
           setLoadingLang(true);
           try {
             const locRes = await axios.get(`${apiUrl}/api/translate/locale?target=${encodeURIComponent(saved)}`);
