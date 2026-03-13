@@ -894,118 +894,101 @@ const Dashboard = () => {
               }).length;
               
               const isOnline = profile.isOnline || false;
-              
+              const mainPhoto =
+                profile.photos && profile.photos.length > 0
+                  ? (typeof profile.photos[0] === 'string'
+                      ? profile.photos[0]
+                      : profile.photos[0]?.url || '')
+                  : null;
+
               return (
                 <div
                   key={profile.id || profile.userId}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition relative cursor-pointer isolate"
-                  style={{
-                    minHeight: '400px',
-                    backgroundImage: profile.photos && profile.photos.length > 0 
-                      ? `url(${typeof profile.photos[0] === 'string' ? profile.photos[0] : profile.photos[0]?.url || ''})` 
-                      : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                  }}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition cursor-pointer isolate flex flex-col h-full"
                   onClick={() => navigate(`/profile/${profile.userId}`)}
                 >
-                  {/* Fallback background if no image */}
-                  {(!profile.photos || profile.photos.length === 0) && (
-                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center z-0">
-                      <FaHeart className="text-3xl sm:text-4xl lg:text-6xl text-gray-400" />
-                    </div>
-                  )}
-
-                  {/* Gradient overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent z-[5]"></div>
-
-                  {/* Top-left: Free User badge (flame) – only if user is Free User */}
-                  {profile.user?.isFreeUser !== false && (
-                    <div className="absolute top-1 left-1 sm:top-3 sm:left-3 z-[20]" onClick={(e) => e.stopPropagation()}>
-                      <FreeUserBadge size="sm" />
-                    </div>
-                  )}
-                  {/* Top-right: Verified badge – only if user is verified */}
-                  {profile.user?.isVerified && (
-                    <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-[20]" onClick={(e) => e.stopPropagation()}>
-                      <VerifiedBadge size="sm" />
-                    </div>
-                  )}
-                  
-                  {/* Bottom-left photo/video count */}
-                  <div className="absolute bottom-20 left-1 sm:bottom-24 sm:left-3 flex items-center space-x-1 sm:space-x-3 z-[20]">
-                    {photoCount > 0 && (
-                      <span 
-                        className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${profile.userId}`, { state: { showPhotos: true } });
-                        }}
-                        title={`${photoCount} photo${photoCount !== 1 ? 's' : ''}`}
-                      >
-                        <FaCamera className="text-[10px] sm:text-xs" />
-                        <span className="font-semibold">{photoCount}</span>
-                      </span>
+                  {/* Image section */}
+                  <div className="relative w-full h-36 sm:h-44 lg:h-52 overflow-hidden bg-gray-200">
+                    {mainPhoto ? (
+                      <img
+                        src={mainPhoto}
+                        alt={profile.firstName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FaHeart className="text-3xl sm:text-4xl lg:text-5xl text-gray-400" />
+                      </div>
                     )}
-                    {videoCount > 0 && (
-                      <span 
-                        className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${profile.userId}`, { state: { showVideos: true } });
-                        }}
-                        title={`${videoCount} video${videoCount !== 1 ? 's' : ''}`}
+
+                    {/* Top-left badges: Free User + Verified (side-by-side) */}
+                    {(profile.user?.isFreeUser !== false || profile.user?.isVerified) && (
+                      <div
+                        className="absolute top-1 left-1 sm:top-2 sm:left-2 z-[20] flex items-center space-x-1"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <FaVideo className="text-[10px] sm:text-xs" />
-                        <span className="font-semibold">{videoCount}</span>
-                      </span>
+                        {profile.user?.isFreeUser !== false && <FreeUserBadge size="sm" />}
+                        {profile.user?.isVerified && <VerifiedBadge size="sm" />}
+                      </div>
                     )}
+
+                    {/* Bottom-left photo/video count */}
+                    <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center space-x-1 sm:space-x-2 z-[20]">
+                      {photoCount > 0 && (
+                        <span
+                          className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${profile.userId}`, { state: { showPhotos: true } });
+                          }}
+                          title={`${photoCount} photo${photoCount !== 1 ? 's' : ''}`}
+                        >
+                          <FaCamera className="text-[10px] sm:text-xs" />
+                          <span className="font-semibold">{photoCount}</span>
+                        </span>
+                      )}
+                      {videoCount > 0 && (
+                        <span
+                          className="flex items-center space-x-0.5 sm:space-x-1 text-white text-[10px] sm:text-xs bg-black bg-opacity-60 rounded px-1 sm:px-2 py-0.5 sm:py-1 cursor-pointer hover:bg-opacity-80 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${profile.userId}`, { state: { showVideos: true } });
+                          }}
+                          title={`${videoCount} video${videoCount !== 1 ? 's' : ''}`}
+                        >
+                          <FaVideo className="text-[10px] sm:text-xs" />
+                          <span className="font-semibold">{videoCount}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Profile Info - Overlaid at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 z-[30] bg-gradient-to-t from-black/70 via-black/50 to-transparent">
-                    <div className="flex items-center space-x-1 sm:space-x-2 mb-2 relative z-[35]">
-                      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-white truncate drop-shadow-lg">
+                  {/* Text/content section */}
+                  <div className="flex-1 flex flex-col p-2 sm:p-3 lg:p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">
                         {profile.firstName} {profile.lastName ? profile.lastName : ''}, {profile.age}
                       </h3>
-                      {/* Online/Offline Status Indicator */}
-                      <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                      {profile.user?.userType === 'streamer' && (
-                        <FaVideo className="text-white text-xs sm:text-sm flex-shrink-0 drop-shadow-lg" />
-                      )}
+                      <div className="flex items-center space-x-1">
+                        {profile.user?.userType === 'streamer' && (
+                          <FaVideo className="text-teal-500 text-xs sm:text-sm flex-shrink-0" />
+                        )}
+                        <div
+                          className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${
+                            isOnline ? 'bg-green-500' : 'bg-gray-400'
+                          }`}
+                        ></div>
+                      </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="relative z-[40]">
-                      {isOnline ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/profile/${profile.userId}`, {
-                              state: { openChat: true },
-                            });
-                          }}
-                          className="w-full bg-teal-500 hover:bg-teal-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg relative z-[40]"
-                        >
-                          <FaComment className="text-xs" />
-                          <span>CHAT NOW</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/profile/${profile.userId}`, {
-                              state: { openEmailComposer: true },
-                            });
-                          }}
-                          className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg relative z-[40]"
-                        >
-                          <FaEnvelope className="text-xs" />
-                          <span>SEND EMAIL</span>
-                        </button>
-                      )}
-                    </div>
+                    {(() => {
+                      const description = profile.bio || profile.aboutMe;
+                      return description ? (
+                        <p className="text-xs sm:text-sm text-gray-700 mt-0.5 line-clamp-3">
+                          {description}
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );
