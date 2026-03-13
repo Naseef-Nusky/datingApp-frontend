@@ -675,7 +675,7 @@ export default function SettingsModal({ isOpen, onClose, onOpen }) {
                       manageAccountOption,
                     });
 
-                    if (manageAccountOption === 'logout') {
+                    if (manageAccountOption === 'logout' || manageAccountOption === 'delete-profile') {
                       logout();
                       setShowManageAccountModal(false);
                       onClose?.();
