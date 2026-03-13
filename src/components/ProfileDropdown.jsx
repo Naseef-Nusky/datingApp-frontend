@@ -11,7 +11,7 @@ function formatVipDeadline(isoDate) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
+const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHelp }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [termsSubmenuOpen, setTermsSubmenuOpen] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -81,12 +81,10 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
   const menuItems = [
     { id: 'profile', labelKey: 'nav.myProfile', icon: FaUser, path: '/profile/me', active: true, color: 'text-red-600' },
     { id: 'mingle', labelKey: 'nav.letsMingle', icon: FaHeart, path: null, color: 'text-gray-800', action: 'openMingleModal' },
-    { id: 'media', labelKey: 'nav.myMedia', icon: FaPhotoVideo, path: '/my-media', color: 'text-gray-800', disabled: true },
-    { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-800' },
+    { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-500', disabled: true },
     { id: 'presents', labelKey: 'nav.presents', icon: FaGift, path: null, color: 'text-gray-800', action: 'openPresents' },
     { id: 'settings', labelKey: 'nav.settings', icon: FaCog, path: null, color: 'text-gray-800', action: 'openSettings' },
-    { id: 'help', labelKey: 'home.helpCenter', icon: FaQuestionCircle, path: '/help', color: 'text-gray-500', disabled: true },
-    { id: 'promo', labelKey: 'dropdown.promoCode', icon: FaTag, path: '/promo-code', color: 'text-gray-500', disabled: true },
+    { id: 'help', labelKey: 'home.helpCenter', icon: FaQuestionCircle, path: null, color: 'text-gray-800', action: 'openHelp' },
     { 
       id: 'terms-parent', 
       labelKey: 'dropdown.termsPrivacy', 
@@ -283,6 +281,32 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                       if (!onOpenPresents) return;
                       setIsOpen(false);
                       onOpenPresents();
+                    }}
+                    className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
+                      isActive ? 'bg-red-50' : ''
+                    }`}
+                  >
+                    <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
+                    <span
+                      className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
+                        item.underline ? 'underline' : ''
+                      }`}
+                    >
+                      {item.labelKey ? t(item.labelKey) : item.label}
+                    </span>
+                  </button>
+                );
+              }
+
+              if (item.action === 'openHelp') {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (!onOpenHelp) return;
+                      setIsOpen(false);
+                      onOpenHelp();
                     }}
                     className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
                       isActive ? 'bg-red-50' : ''

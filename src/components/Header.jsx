@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
-import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins } from 'react-icons/fa';
+import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins, FaBars } from 'react-icons/fa';
 import { Heart as LucideHeart, Users, Rose, CheckCircle, Smile } from 'lucide-react';
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
@@ -19,6 +19,7 @@ import PrivacyPolicyModal from './PrivacyPolicyModal';
 import RefundPolicyModal from './RefundPolicyModal';
 import SafetyPolicyModal from './SafetyPolicyModal';
 import TermsOfUseModal from './TermsOfUseModal';
+import HelpCenterModal from './HelpCenterModal';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -45,6 +46,8 @@ const Header = () => {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showHelpCenterModal, setShowHelpCenterModal] = useState(false);
+  const [showGuestMenu, setShowGuestMenu] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [chatRequests, setChatRequests] = useState([]);
   const [showChatRequestTeaser, setShowChatRequestTeaser] = useState(false);
@@ -551,6 +554,7 @@ const Header = () => {
                   onOpenSettings={() => setShowSettingsModal(true)}
                   onOpenPresents={handleOpenPresents}
                   onOpenAbout={() => setShowAboutModal(true)}
+                  onOpenHelp={() => setShowHelpCenterModal(true)}
                 />
               </div>
 
@@ -560,19 +564,36 @@ const Header = () => {
                   onOpenSettings={() => setShowSettingsModal(true)}
                   onOpenPresents={handleOpenPresents}
                   onOpenAbout={() => setShowAboutModal(true)}
+                  onOpenHelp={() => setShowHelpCenterModal(true)}
                 />
               </div>
             </nav>
           )}
 
           {!user && (
-            <nav className="flex items-center space-x-4">
-              <Link to="/login" className="text-white hover:text-nex-orange transition">
-                {t('home.login')}
-              </Link>
-              <Link to="/register" className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition">
-                {t('home.getStarted')}
-              </Link>
+            <nav className="flex items-center">
+              {/* Mobile: hamburger menu */}
+              <button
+                type="button"
+                onClick={() => setShowGuestMenu(true)}
+                className="sm:hidden text-white hover:text-nex-orange transition p-1.5"
+                aria-label="Open menu"
+              >
+                <FaBars className="text-2xl" />
+              </button>
+
+              {/* Desktop: inline links */}
+              <div className="hidden sm:flex items-center space-x-4">
+                <Link to="/login" className="text-white hover:text-nex-orange transition">
+                  {t('home.login')}
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
+                >
+                  {t('home.getStarted')}
+                </Link>
+              </div>
             </nav>
           )}
         </div>
@@ -741,6 +762,74 @@ const Header = () => {
           if (location.pathname === '/safety') navigate('/');
         }}
       />
+
+      <HelpCenterModal
+        isOpen={showHelpCenterModal}
+        onClose={() => {
+          setShowHelpCenterModal(false);
+          if (location.pathname === '/help') navigate('/');
+        }}
+      />
+
+      {/* Guest mobile full-screen menu */}
+      {!user && showGuestMenu && (
+        <div className="fixed inset-0 z-[120] bg-black/90 text-white flex flex-col px-6 py-6">
+          <div className="flex items-center justify-between mb-8">
+            <Logo />
+            <button
+              type="button"
+              onClick={() => setShowGuestMenu(false)}
+              className="p-2 text-gray-300 hover:text-white"
+              aria-label="Close menu"
+            >
+              <FaTimes className="text-2xl" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowGuestMenu(false);
+                navigate('/login');
+              }}
+              className="w-full rounded-lg bg-[#2b2b2b] text-white py-3 text-center text-sm font-semibold hover:bg-[#3a3a3a] transition"
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowGuestMenu(false);
+                navigate('/online-dating-advice');
+              }}
+              className="w-full rounded-lg bg-[#2b2b2b] text-white py-3 text-center text-sm font-semibold hover:bg-[#3a3a3a] transition"
+            >
+              Online Dating Advice
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowGuestMenu(false);
+                navigate('/online-dating-singles');
+              }}
+              className="w-full rounded-lg bg-[#2b2b2b] text-white py-3 text-center text-sm font-semibold hover:bg-[#3a3a3a] transition"
+            >
+              Singles Online
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowGuestMenu(false);
+                navigate('/about');
+              }}
+              className="w-full rounded-lg bg-[#2b2b2b] text-white py-3 text-center text-sm font-semibold hover:bg-[#3a3a3a] transition"
+            >
+              About
+            </button>
+          </div>
+        </div>
+      )}
 
       <TermsOfUseModal
         isOpen={showTermsModal}

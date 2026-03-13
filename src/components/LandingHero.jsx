@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars, FaTimes, FaInstagram, FaFacebookF, FaTwitter } from 'react-icons/fa';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,6 +23,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   const { login } = useAuth();
   const { language, changeLanguage, languages, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showMobileLangMenu, setShowMobileLangMenu] = useState(false);
 
   useEffect(() => {
     if (!showLoginPopup) return;
@@ -569,22 +570,126 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
       {/* Mobile menu overlay */}
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 sm:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowMobileMenu(false)} aria-hidden="true" />
-          <div className="absolute top-0 right-0 bottom-0 w-full max-w-[280px] bg-gray-900 shadow-xl flex flex-col py-6 px-4">
-            <div className="flex justify-between items-center mb-6">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowMobileMenu(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-[#0b1120] shadow-xl flex flex-col py-6 px-6">
+            <div className="flex justify-between items-center mb-10">
               <Logo className="h-8 text-white" />
-              <button type="button" onClick={() => setShowMobileMenu(false)} className="p-2 text-white hover:bg-white/10 rounded">
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2 text-white hover:bg-white/10 rounded"
+              >
                 <FaTimes className="w-5 h-5" />
               </button>
             </div>
-            <button
-              type="button"
-              className="py-3 px-4 rounded-xl text-white font-semibold text-center mb-4"
-              style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
-              onClick={() => { setShowMobileMenu(false); openLoginPopup(); }}
-            >
-              Log In
-            </button>
+            <div className="space-y-3 max-w-xs">
+              <button
+                type="button"
+                className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center"
+                style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  openLoginPopup();
+                }}
+              >
+                Log In
+              </button>
+              <button
+                type="button"
+                className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  navigate('/online-dating-advice');
+                }}
+              >
+                Online Dating Advice
+              </button>
+              <button
+                type="button"
+                className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  navigate('/online-dating-singles');
+                }}
+              >
+                Singles Online
+              </button>
+              <button
+                type="button"
+                className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  navigate('/about');
+                }}
+              >
+                About
+              </button>
+            </div>
+            <div className="mt-auto pt-10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="w-9 h-9 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition"
+                >
+                  <FaInstagram className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  className="w-9 h-9 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition"
+                >
+                  <FaFacebookF className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  className="w-9 h-9 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition"
+                >
+                  <FaTwitter className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowMobileLangMenu((v) => !v)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white text-xs font-medium"
+                >
+                  <img
+                    src={flagUrlFor(language || 'en')}
+                    alt="Language"
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span className="uppercase">{language || 'en'}</span>
+                  <span className="text-[10px]">▾</span>
+                </button>
+                {showMobileLangMenu && (
+                  <div className="absolute bottom-10 right-0 w-40 rounded-xl bg-black/90 text-white shadow-xl py-2 border border-white/10 z-10">
+                    {languages.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={async () => {
+                          await changeLanguage(opt.value);
+                          setShowMobileLangMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-white/10 ${
+                          opt.value === language ? 'bg-white/15 font-semibold' : ''
+                        }`}
+                      >
+                        <img
+                          src={flagUrlFor(opt.value)}
+                          alt={opt.label}
+                          className="w-4 h-4 rounded-full object-cover"
+                        />
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -798,7 +903,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
       )}
 
       {/* Main content: centered headline, subheadline, CTAs — over the image (mobile-first) */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-20 pb-32 sm:pb-24 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-8 pb-32 sm:pt-24 sm:pb-24 text-center">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 drop-shadow-md">
           Global Online Dating
         </h1>
