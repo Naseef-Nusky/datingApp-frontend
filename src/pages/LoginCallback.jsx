@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * Handles magic link click from email: ?token=xxx → verify with API, store token, redirect to dashboard.
@@ -10,6 +11,7 @@ export default function LoginCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { loginWithToken } = useAuth();
+  const { t } = useLanguage();
   const [status, setStatus] = useState('verifying');
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function LoginCallback() {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-gray-600">Logging you in...</p>
+        <p className="text-gray-600">{t('loginCallback.loggingYouIn')}</p>
       </div>
     );
   }
@@ -56,9 +58,9 @@ export default function LoginCallback() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Invalid link</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('loginCallback.invalidLink')}</h1>
           <p className="text-gray-600 text-sm mb-6">
-            This login link is invalid or was already used. Please request a new one.
+            {t('loginCallback.invalidLinkDescription')}
           </p>
           <a
             href="/signup-email"
@@ -67,7 +69,7 @@ export default function LoginCallback() {
               background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)',
             }}
           >
-            Get a new link
+            {t('loginCallback.getNewLink')}
           </a>
         </div>
       </div>

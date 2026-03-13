@@ -13,6 +13,7 @@ import {
   FaChevronUp,
 } from 'react-icons/fa';
 import { useRefillModal } from '../context/RefillModalContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const benefits = [
   { id: 'badge', title: 'VIP badge', icon: FaCrown },
@@ -66,6 +67,7 @@ function formatDeadline(isoDate) {
 
 export default function VipPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { openRefillModal } = useRefillModal();
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function VipPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-gray-600">{t('common.loading')}</div>
       </div>
     );
   }
@@ -119,13 +121,13 @@ export default function VipPage() {
       <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center p-4">
         <div className="max-w-md text-center bg-white rounded-xl shadow-md p-8">
           <p className="text-lg mb-4">VIP is for Premium members and users who have used credits.</p>
-          <p className="text-gray-500 text-sm mb-6">Upgrade to Premium or use credits to unlock VIP progress and see this page.</p>
+          <p className="text-gray-500 text-sm mb-6">{t('vip.upgradeToSeeVip')}</p>
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
             className="px-6 py-3 bg-gradient-nex text-white font-medium rounded-lg hover:opacity-90 transition"
           >
-            Go to Dashboard
+            {t('nav.dashboard')}
           </button>
         </div>
       </div>
@@ -168,10 +170,10 @@ export default function VipPage() {
             </>
           )}
           {isVip && (
-            <p className="text-nex-orange font-medium">You have VIP status.</p>
+            <p className="text-nex-orange font-medium">{t('vip.youHaveVip')}</p>
           )}
           {!premiumActive && (
-            <p className="text-nex-orange">Upgrade to Premium to work toward VIP.</p>
+            <p className="text-nex-orange">{t('vip.upgradeForVip')}</p>
           )}
         </div>
 
@@ -200,7 +202,7 @@ export default function VipPage() {
         */}
 
         {/* How to unlock */}
-        <h2 className="text-lg font-semibold mb-2 text-gray-900">How to unlock VIP status</h2>
+        <h2 className="text-lg font-semibold mb-2 text-gray-900">{t('vip.howToUnlockVip')}</h2>
         <p className="text-gray-600 text-sm mb-4">
           Spend credits on exclusive interactions with free users
         </p>
@@ -238,12 +240,12 @@ export default function VipPage() {
               </Link>
             ))
           ) : (
-            <p className="text-gray-500 text-sm">No free user profiles to show right now.</p>
+            <p className="text-gray-500 text-sm">{t('vip.noFreeProfiles')}</p>
           )}
         </div>
 
         {/* FAQ */}
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">Frequently asked questions</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">{t('vip.faq')}</h2>
         <div className="space-y-2">
           {faqs.map((faq, idx) => (
             <div

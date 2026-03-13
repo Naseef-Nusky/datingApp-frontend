@@ -5,9 +5,9 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function SettingsModal({ isOpen, onClose }) {
+export default function SettingsModal({ isOpen, onClose, onOpen }) {
   const { user, logout, fetchUser } = useAuth();
-  const { language: i18nLanguage, changeLanguage, languages } = useLanguage();
+  const { language: i18nLanguage, languages, t } = useLanguage();
   const navigate = useNavigate();
   const [soundMyContacts, setSoundMyContacts] = useState(true);
   const [soundChatRequests, setSoundChatRequests] = useState(true);
@@ -86,6 +86,10 @@ export default function SettingsModal({ isOpen, onClose }) {
     if (isOpen && i18nLanguage) setLanguage(i18nLanguage);
   }, [isOpen, i18nLanguage]);
 
+  useEffect(() => {
+    if (isOpen && typeof onOpen === 'function') onOpen();
+  }, [isOpen, onOpen]);
+
   if (!isOpen) return null;
 
   const saveAllSettings = async (extra = {}) => {
@@ -125,7 +129,13 @@ export default function SettingsModal({ isOpen, onClose }) {
   const handleSave = async (e) => {
     e.preventDefault();
     await saveAllSettings();
+    // Apply saved language site-wide so the whole site uses the new language
+    try {
+      localStorage.setItem('app_language', language);
+      localStorage.setItem('selectedLanguage', language);
+    } catch (e) {}
     onClose?.();
+    window.location.reload();
   };
 
   const handleChangePassword = async () => {
@@ -220,20 +230,16 @@ export default function SettingsModal({ isOpen, onClose }) {
           {/* Language */}
           <section>
             <h3 className="text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">
-              Language
+              {t('settings.language')}
             </h3>
             <p className="text-xs text-slate-500 mb-2">
-              Your option will be used on all platforms.
+              {t('settings.languageOptionNote')}
             </p>
             <div className="relative inline-block w-full max-w-xs">
               <select
                 className="block w-full rounded-md border border-slate-300 bg-white py-2 px-3 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-nex-pink focus:border-nex-pink"
                 value={language}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setLanguage(val);
-                  changeLanguage(val);
-                }}
+                onChange={(e) => setLanguage(e.target.value)}
               >
                 {languages.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -247,10 +253,10 @@ export default function SettingsModal({ isOpen, onClose }) {
           {/* Email */}
           <section>
             <h3 className="text-sm font-semibold text-slate-700 mb-1 uppercase tracking-wide">
-              Your Email
+              {t('settings.yourEmail')}
             </h3>
             <p className="text-xs text-slate-500 mb-2">
-              Used for login and safety alerts to users.
+              {t('settings.yourEmailNote')}
             </p>
             <input
               type="email"
@@ -326,7 +332,7 @@ export default function SettingsModal({ isOpen, onClose }) {
               <input
                 type="password"
                 className="flex-1 rounded-md border border-slate-300 bg-white py-2 px-3 text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-nex-pink focus:border-nex-pink"
-                placeholder="New password"
+                placeholder={t('settingsModal.newPassword')}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
@@ -607,7 +613,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                       onChange={() => setManageAccountOption('hide-profile')}
                     />
                     <span>
-                      <span className="block">Hide profile</span>
+                      <span className="block">{t('settingsModal.hideProfile')}</span>
                       <span className="block text-xs text-slate-500">
                         Other members will no longer see you in the Search list.
                       </span>

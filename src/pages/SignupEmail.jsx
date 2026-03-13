@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * First registration page: email-based signup.
@@ -9,6 +10,7 @@ import Logo from '../components/Logo';
  */
 export default function SignupEmail() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,11 +20,11 @@ export default function SignupEmail() {
     setError('');
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) {
-      setError('Please enter your email');
+      setError(t('auth.pleaseEnterEmail'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError('Please enter a valid email address');
+      setError(t('auth.pleaseEnterValidEmail'));
       return;
     }
     setLoading(true);
@@ -35,7 +37,7 @@ export default function SignupEmail() {
         },
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send login link. Please try again.');
+      setError(err.response?.data?.message || t('auth.failedSendLoginLink'));
     } finally {
       setLoading(false);
     }
@@ -57,10 +59,10 @@ export default function SignupEmail() {
           </div>
 
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 text-center mb-1">
-            Sign up to start meeting people!
+            {t('pages.signup.title')}
           </h1>
           <p className="text-gray-500 text-sm text-center mb-6">
-            Create an account with just one click!
+            {t('pages.signup.subtitle')}
           </p>
 
           {/* Continue with Google */}
@@ -74,12 +76,12 @@ export default function SignupEmail() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Continue with Google
+            {t('pages.signup.continueWithGoogle')}
           </a>
 
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-gray-400 text-sm">or</span>
+            <span className="text-gray-400 text-sm">{t('pages.signup.or')}</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
@@ -87,7 +89,7 @@ export default function SignupEmail() {
           <form onSubmit={handleContinueWithEmail} className="space-y-4">
             <input
               type="email"
-              placeholder="Your email"
+              placeholder={t('pages.signup.yourEmail')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none"
@@ -104,14 +106,14 @@ export default function SignupEmail() {
                 background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)',
               }}
             >
-              {loading ? 'Sending...' : 'Continue'}
+              {loading ? t('pages.signup.sending') : t('pages.signup.continue')}
             </button>
           </form>
 
           <p className="text-center mt-4 text-gray-600 text-sm">
-            Already have an account? Enter your email above and we&apos;ll send you a login link, or{' '}
+            {t('pages.signup.alreadyHaveAccount')}{' '}
             <Link to="/login" className="text-vantage-purple font-medium hover:underline">
-              continue with password
+              {t('pages.signup.continueWithPassword')}
             </Link>
           </p>
         </div>
@@ -119,12 +121,7 @@ export default function SignupEmail() {
         {/* Terms */}
         <div className="px-6 pb-6 pt-0">
           <p className="text-gray-500 text-xs leading-relaxed text-center">
-            By clicking &quot;Continue with Google&quot; or &quot;Continue&quot; you agree to our{' '}
-            <Link to="/terms" className="text-vantage-purple underline">Terms</Link>,{' '}
-            <Link to="/terms#privacy" className="text-vantage-purple underline">Privacy Policy</Link>{' '}
-            and{' '}
-            <Link to="/refund" className="text-vantage-purple underline">Refund and Cancellation Policy</Link>.
-            You can terminate your account or opt out of any or part of the services (including linked ones) any time.
+            {t('pages.signup.agreeTerms')}
           </p>
         </div>
       </div>

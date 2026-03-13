@@ -1,4 +1,5 @@
 import { FaEnvelope, FaGift, FaSearch, FaVolumeUp, FaVideo } from 'react-icons/fa';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * Single sidebar component for the whole website: My Contacts + Chat Requests.
@@ -41,6 +42,7 @@ const ContactsSidebar = ({
   compact = false,
   chatRequestLimit = 5,
 }) => {
+  const { t } = useLanguage();
   const pendingRequests = chatRequests.filter((r) => !r.status || r.status === 'pending');
   const displayedRequests =
     showLessChatRequests && pendingRequests.length > chatRequestLimit
@@ -59,7 +61,7 @@ const ContactsSidebar = ({
       {/* My Contacts header stays visible at top while scrolling */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0 sticky top-0 bg-white z-10">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`font-semibold text-gray-800 ${titleClass}`}>My Contacts</h3>
+          <h3 className={`font-semibold text-gray-800 ${titleClass}`}>{t('sidebar.myContacts')}</h3>
           {contacts.length > 0 && (
             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
               {contacts.filter((c) => c.unreadCount > 0).reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
@@ -72,8 +74,8 @@ const ContactsSidebar = ({
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
               <FaEnvelope className="text-gray-400 text-2xl" />
             </div>
-            <p className="text-sm text-gray-500">No contacts yet</p>
-            <p className="text-xs text-gray-400 mt-1">Start chatting to see your contacts here</p>
+            <p className="text-sm text-gray-500">{t('sidebar.noContactsYet')}</p>
+            <p className="text-xs text-gray-400 mt-1">{t('sidebar.startChattingHint')}</p>
           </div>
         ) : (
           <div className={`space-y-2 mb-4 ${contactsMaxHeight} overflow-y-auto`}>
@@ -139,14 +141,14 @@ const ContactsSidebar = ({
                     </div>
                     <p className={`text-sm truncate ${isCallMessage ? 'text-gray-500 italic' : 'text-gray-600'}`}>
                       {typingUsers.has(String(contact.id)) ? (
-                        <span className="text-gray-500 italic">Typing...</span>
+                        <span className="text-gray-500 italic">{t('sidebar.typing')}</span>
                       ) : contact.giftFromThem ? (
                         <span className="inline-flex items-center gap-1.5 text-gray-500">
                           <FaGift className="text-gray-400 flex-shrink-0" />
-                          Received a gift
+                          {t('sidebar.receivedGift')}
                         </span>
                       ) : (
-                        contact.message || 'No messages yet'
+                        contact.message || t('sidebar.noMessagesYet')
                       )}
                     </p>
                     {contact.lastMessageAt && (
@@ -171,7 +173,7 @@ const ContactsSidebar = ({
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
             <input
               type="text"
-              placeholder="Search contact"
+              placeholder={t('sidebar.searchContact')}
               value={searchValue}
               onChange={(e) => onSearchChange?.(e.target.value)}
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-nex-orange focus:border-transparent text-sm bg-white"
@@ -185,7 +187,7 @@ const ContactsSidebar = ({
       <div className="p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <h3 className={`font-semibold text-gray-800 ${titleClass}`}>Chat Requests</h3>
+            <h3 className={`font-semibold text-gray-800 ${titleClass}`}>{t('sidebar.chatRequests')}</h3>
             {pendingRequests.length > 0 && (
               <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
                 {pendingRequests.length}
@@ -198,14 +200,14 @@ const ContactsSidebar = ({
               onClick={onToggleShowMoreChatRequests}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium transition"
             >
-              {showLessChatRequests ? 'SHOW MORE' : 'SHOW LESS'}
+              {showLessChatRequests ? t('sidebar.showMore') : t('sidebar.showLess')}
             </button>
           )}
         </div>
 
         <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 ${chatRequestsMaxHeight}`}>
           {displayedRequests.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No chat requests</p>
+            <p className="text-sm text-gray-500 text-center py-4">{t('sidebar.noChatRequests')}</p>
           ) : (
             displayedRequests.map((request) => {
               const openProfileWithChat = () => onAcceptChatRequest(request);
@@ -252,7 +254,7 @@ const ContactsSidebar = ({
                             }}
                             className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1 rounded transition"
                           >
-                            Accept
+                            {t('sidebar.accept')}
                           </button>
                           <button
                             type="button"
@@ -262,7 +264,7 @@ const ContactsSidebar = ({
                             }}
                             className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded transition"
                           >
-                            Reject
+                            {t('sidebar.reject')}
                           </button>
                         </div>
                       ) : (
@@ -274,7 +276,7 @@ const ContactsSidebar = ({
                           }}
                           className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded-full transition"
                         >
-                          REPLY
+                          {t('common.reply')}
                         </button>
                       )}
                     </div>
@@ -289,7 +291,7 @@ const ContactsSidebar = ({
                           onAcceptChatRequest(request);
                         }}
                       >
-                        {request.message || 'New chat request'}
+                        {request.message || t('sidebar.newChatRequest')}
                       </p>
                     </div>
                     {request.createdAt && (

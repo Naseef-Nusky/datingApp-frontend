@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import Logo from '../components/Logo';
 
 const Login = () => {
@@ -10,14 +11,15 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
     const err = searchParams.get('error');
     if (err) {
-      setError(err === 'google_not_configured' ? 'Google sign-in is not configured.' : decodeURIComponent(err));
+      setError(err === 'google_not_configured' ? t('pages.login.googleNotConfigured') : decodeURIComponent(err));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +43,7 @@ const Login = () => {
         <div className="flex justify-center mb-6">
           <Logo />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">Log in</h1>
+        <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">{t('pages.login.title')}</h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -60,7 +62,7 @@ const Login = () => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Sign in with Google
+            {t('pages.login.signInWithGoogle')}
           </a>
         </div>
 
@@ -69,13 +71,13 @@ const Login = () => {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or</span>
+            <span className="px-2 bg-white text-gray-500">{t('pages.login.or')}</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 mb-2">Email</label>
+            <label className="block text-gray-700 mb-2">{t('pages.login.email')}</label>
             <input
               type="email"
               value={email}
@@ -86,7 +88,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">Password</label>
+            <label className="block text-gray-700 mb-2">{t('pages.login.password')}</label>
             <input
               type="password"
               value={password}
@@ -101,21 +103,21 @@ const Login = () => {
             disabled={loading}
             className="w-full bg-gradient-nex text-white py-3 rounded-lg hover:opacity-90 transition disabled:opacity-50 font-semibold"
           >
-            {loading ? 'Logging in...' : 'Log in'}
+            {loading ? t('pages.login.loggingIn') : t('pages.login.submit')}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <Link to="/password-reset" className="text-nex-orange hover:underline">
-            Forgot password?
+            {t('pages.login.forgotPassword')}
           </Link>
         </div>
 
         <div className="mt-4 text-center">
           <p className="text-gray-600">
-            Don't have an account?{' '}
+            {t('pages.login.noAccount')}{' '}
             <Link to="/register" className="text-nex-orange hover:underline">
-              Register
+              {t('pages.login.register')}
             </Link>
           </p>
         </div>

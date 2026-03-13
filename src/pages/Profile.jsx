@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { 
@@ -24,6 +25,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [similarProfiles, setSimilarProfiles] = useState([]);
@@ -440,13 +442,13 @@ const Profile = () => {
           }
           
           // Get last message content
-          let lastMessage = 'No messages yet';
+          let lastMessage = t('sidebar.noMessagesYet');
           let lastMessageAt = conv.lastMessage?.createdAt || conv.lastMessage?.created_at;
           
           // Transform special last-message types (call history, add-to-contacts)
           const rawLastMsg = conv.lastMessage;
           const rawLastMsgSender = rawLastMsg?.sender ?? rawLastMsg?.sender_id;
-          if (rawLastMsg && lastMessage === 'No messages yet') {
+          if (rawLastMsg && lastMessage === t('sidebar.noMessagesYet')) {
             lastMessage = rawLastMsg.content || rawLastMsg.message || lastMessage;
           }
           const lowerLastMessage =
@@ -462,7 +464,7 @@ const Profile = () => {
             lowerLastMessage.includes('added you to my contacts') &&
             rawLastMsgSender === user?.id
           ) {
-            lastMessage = 'Added to my contacts';
+            lastMessage = t('sidebar.addedToContacts');
           }
 
           // Check for call history (missed or ended calls)
@@ -523,7 +525,7 @@ const Profile = () => {
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = !recentCall && lastMsg?.messageType === 'gift' && lastMsgSender === userId;
           if (lastMsg?.messageType === 'gift') {
-            lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
+            lastMessage = giftFromThem ? t('sidebar.receivedGift') : t('sidebar.youSentGift');
           }
           
           // Determine if contact has call history (for icon overlay)
@@ -641,7 +643,7 @@ const Profile = () => {
               return {
                 id: request.id,
                 name: senderName,
-                message: request.firstMessage || request.content || request.message || 'New message',
+                message: request.firstMessage || request.content || request.message || t('sidebar.newMessage'),
                 avatar: senderAvatar,
                 createdAt: request.createdAt,
                 status: request.status || 'pending',
@@ -652,7 +654,7 @@ const Profile = () => {
               return {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                message: request.firstMessage || request.content || 'New message',
+                message: request.firstMessage || request.content || t('sidebar.newMessage'),
                 avatar: null,
                 createdAt: request.createdAt,
                 status: request.status || 'pending',
@@ -769,7 +771,7 @@ const Profile = () => {
         await axios.post('/api/notifications', {
           receiverId: id,
           type: 'call_request',
-          title: 'Video Chat Request',
+          title: t('profilePage.videoChatRequest'),
           message: `${user?.email || 'Someone'} wants to video chat with you`,
           relatedId: id,
           relatedType: 'video_call',
@@ -826,7 +828,7 @@ const Profile = () => {
         await axios.post('/api/notifications', {
           receiverId: id,
           type: 'call_request',
-          title: 'Voice Call Request',
+          title: t('profilePage.voiceCallRequest'),
           message: `${user?.email || 'Someone'} wants to voice call you`,
           relatedId: id,
           relatedType: 'voice_call',
@@ -933,7 +935,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">Loading profile...</div>
+        <div className="text-xl text-gray-600">{t('profilePage.loadingProfile')}</div>
       </div>
     );
   }
@@ -941,7 +943,7 @@ const Profile = () => {
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-red-500">Profile not found</div>
+        <div className="text-xl text-red-500">{t('profilePage.profileNotFound')}</div>
       </div>
     );
   }
@@ -1009,12 +1011,12 @@ const Profile = () => {
                     }`}
                     title={
                       !user
-                        ? 'Log in to add contacts'
+                        ? t('profilePage.logInToAddContacts')
                         : user?.id === profileOwnerId
-                        ? 'Your profile'
+                        ? t('profilePage.yourProfile')
                         : isInContacts
-                        ? 'Already in your contacts'
-                        : 'Add to contacts'
+                        ? t('profilePage.alreadyInContacts')
+                        : t('profilePage.addToContacts')
                     }
                   >
                     <FaStar
@@ -1093,7 +1095,7 @@ const Profile = () => {
                       onClick={() => setShowFullBio(!showFullBio)}
                       className="text-teal-600 hover:text-teal-800 ml-2"
                     >
-                      {showFullBio ? 'Show Less' : 'Continue Reading'}
+                      {showFullBio ? t('profilePage.showLess') : t('profilePage.continueReading')}
                     </button>
                   )}
                 </p>
@@ -1175,7 +1177,7 @@ const Profile = () => {
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <FaVideo className="text-2xl sm:text-3xl md:text-4xl text-gray-400 mx-auto mb-1 sm:mb-2" />
-                        <p className="text-gray-500 text-xs sm:text-sm">No videos yet</p>
+                        <p className="text-gray-500 text-xs sm:text-sm">{t('profilePage.noVideosYet')}</p>
                       </div>
                     </div>
                   )}
@@ -1214,7 +1216,7 @@ const Profile = () => {
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <FaCamera className="text-2xl sm:text-3xl md:text-4xl text-gray-400 mx-auto mb-1 sm:mb-2" />
-                        <p className="text-gray-500 text-xs sm:text-sm">No photos yet</p>
+                        <p className="text-gray-500 text-xs sm:text-sm">{t('profilePage.noPhotosYet')}</p>
                       </div>
                     </div>
                   )}
@@ -1249,7 +1251,7 @@ const Profile = () => {
                       );
                     })
                   ) : (
-                    <p className="text-gray-600 col-span-2 text-sm">No interests added yet</p>
+                    <p className="text-gray-600 col-span-2 text-sm">{t('profilePage.noInterestsYet')}</p>
                   )}
                 </div>
               </div>
@@ -1301,7 +1303,7 @@ const Profile = () => {
             {/* See more people like Sam */}
             {similarProfiles.length > 0 && (
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">See more people like {profile.firstName}</h2>
+                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">{t('profilePage.seeMorePeopleLike')} {profile.firstName}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                   {similarProfiles.map((similar) => (
                     <div
@@ -1460,7 +1462,7 @@ const Profile = () => {
               
               {/* Caller Name */}
               <h3 className="text-2xl font-bold text-gray-800 mb-1">
-                {callerProfile?.firstName || 'Incoming Call'}
+                {callerProfile?.firstName || t('profilePage.incomingCall')}
               </h3>
               
               {/* Call Type */}
@@ -1535,7 +1537,7 @@ const Profile = () => {
               <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
               <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
             </div>
-            <p className="text-gray-500 mb-6">Waiting for {profile?.firstName || 'user'} to accept...</p>
+            <p className="text-gray-500 mb-6">{t('profilePage.waitingForAccept')} {profile?.firstName || 'user'} {t('profilePage.toAccept')}</p>
             <button
               onClick={() => {
                 console.log('❌ [CALLER] Canceling call');

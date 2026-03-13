@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * Shown after user enters email and clicks Continue: "Check your email", login link sent to [email].
@@ -6,6 +7,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 export default function CheckEmail() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const email = location.state?.email || '';
   const devLoginLink = location.state?.devLoginLink;
 
@@ -22,17 +24,17 @@ export default function CheckEmail() {
 
       <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-gray-100 p-8 md:p-10 text-center">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-          Check your email
+          {t('pages.checkEmail.title')}
         </h1>
         <p className="text-gray-500 text-sm mb-6">
           {devLoginLink
-            ? 'SMTP is not configured (dev mode). Use the link below to log in:'
-            : <>An email with a login link has been sent to <strong className="text-gray-700">{email || 'your email address'}</strong>.</>}
+            ? t('pages.checkEmail.devMode')
+            : <>{t('pages.checkEmail.sentTo')} <strong className="text-gray-700">{email || t('pages.checkEmail.yourEmailAddress')}</strong>.</>}
         </p>
 
         {devLoginLink ? (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-left">
-            <p className="text-amber-800 text-xs font-medium mb-2">Development login link (expires in 1 hour):</p>
+            <p className="text-amber-800 text-xs font-medium mb-2">{t('pages.checkEmail.devLinkLabel')}</p>
             <a href={devLoginLink} className="block text-blue-600 text-sm break-all hover:underline">
               {devLoginLink}
             </a>
@@ -42,7 +44,7 @@ export default function CheckEmail() {
               className="mt-3 w-full py-2.5 px-4 rounded-lg font-semibold text-white text-sm hover:opacity-90"
               style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
             >
-              Open login link
+              {t('pages.checkEmail.openLoginLink')}
             </button>
           </div>
         ) : (
@@ -52,7 +54,7 @@ export default function CheckEmail() {
             className="w-full py-3.5 px-6 rounded-xl font-semibold text-white uppercase text-sm tracking-wide mb-3 transition hover:opacity-90"
             style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
           >
-            Check your Gmail account
+            {t('pages.checkEmail.checkGmail')}
           </button>
         )}
 
@@ -60,7 +62,7 @@ export default function CheckEmail() {
           to="/signup-email"
           className="block w-full py-3.5 px-6 rounded-xl font-semibold text-gray-700 uppercase text-sm tracking-wide border border-gray-300 hover:bg-gray-50 transition"
         >
-          Back to sign in
+          {t('pages.checkEmail.backToSignIn')}
         </Link>
       </div>
     </div>

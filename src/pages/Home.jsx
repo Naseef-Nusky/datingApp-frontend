@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FaArrowRight,
@@ -7,68 +7,54 @@ import {
 } from 'react-icons/fa';
 import Logo from '../components/Logo';
 import LandingHero from '../components/LandingHero';
+import { useLanguage } from '../context/LanguageContext';
 
 const Home = () => {
+  const { t } = useLanguage();
   const [activeReviewIndex, setActiveReviewIndex] = useState(1);
   const [activeJourneyIndex, setActiveJourneyIndex] = useState(1);
 
-  const featureCards = [
-    {
-      title: 'Secure Experience',
-      text: 'Your safety is maintained through advanced anti-scam protection systems.',
-      image: '/SecureExperience.png',
-    },
-    {
-      title: 'Meaningful Matches',
-      text: 'Create genuine connections by discovering shared interests and common passions.',
-      image: '/MeaningfulMatches.png',
-    },
-    {
-      title: 'Verified Members',
-      text: 'Members with verification badges have confirmed their identity using government-issued identification.',
-      image: '/VerifiedMembers.png',
-    },
-    {
-      title: 'Diverse Community',
-      text: 'Our platform includes both premium subscribers and free users.',
-      image: '/DiverseCommunity.png',
-    },
-  ];
+  const featureCards = useMemo(() => [
+    { titleKey: 'home.secureExperience', textKey: 'home.secureExperienceText', image: '/SecureExperience.png' },
+    { titleKey: 'home.meaningfulMatches', textKey: 'home.meaningfulMatchesText', image: '/MeaningfulMatches.png' },
+    { titleKey: 'home.verifiedMembers', textKey: 'home.verifiedMembersText', image: '/VerifiedMembers.png' },
+    { titleKey: 'home.diverseCommunity', textKey: 'home.diverseCommunityText', image: '/DiverseCommunity.png' },
+  ], []);
 
   const reviewCards = [
     {
       name: 'Lena R.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: 'What stands out to me is the variety of people you can connect with here. Meeting individuals from different cultures and places really expands your dating experience.',
       muted: true,
     },
     {
       name: 'Marcus T.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: "When I joined online dating at 35, I didn't know what to expect. I was pleasantly surprised to form a meaningful connection with someone from another part of the world. It felt genuine and refreshing.",
       muted: false,
     },
     {
       name: 'Robert K.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: "At my age, I wasn't expecting much from online dating, but this platform changed my perspective. I found someone I truly connected with, both emotionally and intellectually.",
       muted: true,
     },
     {
       name: 'Emily W.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: 'So far, my experience has been very positive. The messaging tools are easy to use, conversations feel natural, and the strong focus on safety really gives peace of mind.',
       muted: true,
     },
     {
       name: 'Daniel M.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: 'I appreciate how smooth and engaging the communication features are. It is easy to start real conversations, and knowing the platform values user safety makes the experience even better.',
       muted: true,
     },
     {
       name: 'Sofia L.',
-      source: 'User review',
+      sourceKey: 'home.userReview',
       text: 'I really enjoy how easy it is to meet people from different backgrounds here. The platform makes conversations feel natural, and connecting with someone from another country has been a great experience.',
       muted: true,
     },
@@ -129,16 +115,16 @@ const Home = () => {
       <section>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {featureCards.map((item) => (
-            <div key={item.title} className="overflow-hidden bg-transparent">
+            <div key={item.titleKey} className="overflow-hidden bg-transparent">
               <img
                 src={item.image}
-                alt={item.title}
+                alt={t(item.titleKey)}
                 className="w-full h-28 object-contain rounded-lg"
                 loading="lazy"
               />
               <div className="p-4">
-                <h3 className="font-semibold text-base mb-2 text-center">{item.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed text-center">{item.text}</p>
+                <h3 className="font-semibold text-base mb-2 text-center">{t(item.titleKey)}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed text-center">{t(item.textKey)}</p>
               </div>
             </div>
           ))}
@@ -149,14 +135,14 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
           <div className="grid md:grid-cols-2 gap-10 items-center mb-10">
             <div>
-              <h2 className="text-2xl font-bold mb-3">Connect online and chat with singles</h2>
+              <h2 className="text-2xl font-bold mb-3">{t('home.connectOnlineTitle')}</h2>
               <p className="text-gray-600 mb-5">
-                Join a premium social platform where authentic conversations thrive and diverse connections come together.
+                {t('home.connectOnlineText')}
               </p>
             </div>
             <img
               src="/onlineChat.png"
-              alt="Connect online and chat with singles"
+              alt={t('home.connectOnlineTitle')}
               className="object-contain w-full h-80 sm:h-96"
             />
           </div>
@@ -168,15 +154,15 @@ const Home = () => {
               className="object-contain w-full h-80 sm:h-96 order-2 md:order-1"
             />
             <div className="order-1 md:order-2">
-              <h2 className="text-2xl font-bold mb-3">Interactive virtual dating tools</h2>
+              <h2 className="text-2xl font-bold mb-3">{t('home.virtualDatingTitle')}</h2>
               <p className="text-gray-600 mb-4">
-                Explore features that simplify connection, including video calls, voice messaging, and virtual gifts. Our platform is built to deliver smooth, engaging, and enjoyable conversations.
+                {t('home.virtualDatingText')}
               </p>
               <Link
                 to="/signup-email"
                 className="inline-flex items-center gap-2 bg-red-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-red-700 transition"
               >
-                Start Now <FaArrowRight />
+                {t('home.startNow')} <FaArrowRight />
               </Link>
             </div>
           </div>
@@ -187,16 +173,14 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div>
-              <h2 className="text-2xl font-bold mb-3">Explore diverse profiles</h2>
+              <h2 className="text-2xl font-bold mb-3">{t('home.exploreProfilesTitle')}</h2>
               <p className="text-gray-600 leading-relaxed">
-                Connect with singles worldwide, discover shared interests, and build meaningful virtual connections.
-                Chat and date online, exchange experiences, and communicate effortlessly with instant translation tools.
-                Make your dating experience more exciting with Vantage Dating!
+                {t('home.exploreProfilesText')}
               </p>
             </div>
             <img
               src="/diverseprofiles.png"
-              alt="Explore diverse profiles"
+              alt={t('home.exploreProfilesTitle')}
               className="object-contain w-full h-80 sm:h-96"
             />
           </div>
@@ -206,10 +190,9 @@ const Home = () => {
       <section className="bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
           <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-black">Find singles online</h2>
+            <h2 className="text-2xl font-bold text-black">{t('home.findSinglesTitle')}</h2>
             <p className="text-black mt-4 max-w-4xl mx-auto leading-relaxed text-center">
-              Join a diverse community of men and women and discover matches based on your interests, values, and relationship goals.
-              Use smart profile filters and virtual discovery tools to connect with the right people.
+              {t('home.findSinglesText')}
             </p>
           </div>
 
@@ -217,36 +200,36 @@ const Home = () => {
             <div>
               <img
                 src="/mature%20singles.png"
-                alt="Dating for mature singles online"
+                alt={t('home.matureSinglesTitle')}
                 className="w-full h-56 object-cover rounded-xl mb-4"
               />
-              <h3 className="font-semibold text-lg text-black mb-2">Dating for mature singles online</h3>
+              <h3 className="font-semibold text-lg text-black mb-2">{t('home.matureSinglesTitle')}</h3>
               <p className="text-sm text-black leading-relaxed">
-                Meet like-minded mature singles looking for meaningful connections.
+                {t('home.matureSinglesText')}
               </p>
             </div>
 
             <div>
               <img
                 src="/Asian%20singles.png"
-                alt="Asian singles dating online"
+                alt={t('home.asianSinglesTitle')}
                 className="w-full h-56 object-cover object-top rounded-xl mb-4"
               />
-              <h3 className="font-semibold text-lg text-black mb-2">Asian singles dating online</h3>
+              <h3 className="font-semibold text-lg text-black mb-2">{t('home.asianSinglesTitle')}</h3>
               <p className="text-sm text-black leading-relaxed">
-                Connect with Asian singles and explore genuine relationships online.
+                {t('home.asianSinglesText')}
               </p>
             </div>
 
             <div>
               <img
                 src="/Gay%20singles.png"
-                alt="Gay singles dating online"
+                alt={t('home.gaySinglesTitle')}
                 className="w-full h-56 object-cover object-top rounded-xl mb-4"
               />
-              <h3 className="font-semibold text-lg text-black mb-2">Gay singles dating online</h3>
+              <h3 className="font-semibold text-lg text-black mb-2">{t('home.gaySinglesTitle')}</h3>
               <p className="text-sm text-black leading-relaxed">
-                Discover inclusive dating experiences and connect with gay singles worldwide.
+                {t('home.gaySinglesText')}
               </p>
             </div>
           </div>
@@ -255,9 +238,9 @@ const Home = () => {
 
       <section className="bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-          <h3 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-2 px-2">Vantage Dating User Reviews</h3>
+          <h3 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-2 px-2">{t('home.userReviewsTitle')}</h3>
           <p className="text-center text-gray-500 mb-6 sm:mb-8 px-2 text-sm sm:text-base">
-            Hear directly from genuine users who found success on our platform.
+            {t('home.userReviewsSub')}
           </p>
 
           {/* Mobile: single card with arrows */}
@@ -278,7 +261,7 @@ const Home = () => {
                 <img src="/profile.png" alt={centerReview.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-800 truncate">{centerReview.name}</p>
-                  <p className="text-xs text-gray-500">{centerReview.source}</p>
+                  <p className="text-xs text-gray-500">{t(centerReview.sourceKey)}</p>
                 </div>
               </div>
             </article>
@@ -302,7 +285,7 @@ const Home = () => {
                 <img src="/profile.png" alt={leftReview.name} className="w-8 h-8 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold text-gray-600">{leftReview.name}</p>
-                  <p className="text-xs text-gray-400">{leftReview.source}</p>
+                  <p className="text-xs text-gray-400">{t(leftReview.sourceKey)}</p>
                 </div>
               </div>
             </article>
@@ -324,7 +307,7 @@ const Home = () => {
                 <img src="/profile.png" alt={centerReview.name} className="w-8 h-8 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold text-gray-800">{centerReview.name}</p>
-                  <p className="text-xs text-gray-500">{centerReview.source}</p>
+                  <p className="text-xs text-gray-500">{t(centerReview.sourceKey)}</p>
                 </div>
               </div>
             </article>
@@ -346,7 +329,7 @@ const Home = () => {
                 <img src="/profile.png" alt={rightReview.name} className="w-8 h-8 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold text-gray-600">{rightReview.name}</p>
-                  <p className="text-xs text-gray-400">{rightReview.source}</p>
+                  <p className="text-xs text-gray-400">{t(rightReview.sourceKey)}</p>
                 </div>
               </div>
             </article>

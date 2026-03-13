@@ -4,6 +4,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import MingleIntroModal from '../components/MingleIntroModal';
 import LetsMingleModal from '../components/LetsMingleModal';
 import MingleSuccessModal from '../components/MingleSuccessModal';
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, fetchUser } = useAuth();
+  const { t } = useLanguage();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
@@ -61,7 +63,7 @@ const Dashboard = () => {
       axios.post(`${apiUrl}/api/credits/confirm-payment`, { session_id: sessionId })
         .then(() => {
           fetchUser();
-          alert('Payment successful! Your subscription is now active.');
+          alert(t('dashboard.paymentSuccess'));
         })
         .catch((err) => {
           paymentSuccessHandledRef.current = null;
@@ -79,7 +81,7 @@ const Dashboard = () => {
         .then((res) => {
           fetchUser();
           const added = res.data?.creditsAdded ?? '';
-          alert(added ? `Payment successful! ${added} credits added to your balance.` : 'Payment successful! Credits added to your balance.');
+          alert(added ? t('dashboard.paymentCreditsAddedWithNumber').replace('{{count}}', added) : t('dashboard.paymentCreditsAdded'));
         })
         .catch((err) => {
           paymentSuccessHandledRef.current = null;
@@ -504,9 +506,9 @@ const Dashboard = () => {
           const lastMsg = conv.lastMessage;
           const senderId = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && senderId === conv.userId;
-          let message = conv.lastMessage?.content || 'No messages yet';
+          let message = conv.lastMessage?.content || t('sidebar.noMessagesYet');
           if (lastMsg?.messageType === 'gift') {
-            message = giftFromThem ? 'Received a gift' : 'You sent a gift';
+            message = giftFromThem ? t('sidebar.receivedGift') : t('sidebar.youSentGift');
           }
           const lowerMessage = typeof message === 'string' ? message.toLowerCase().trim() : '';
           if (
@@ -520,7 +522,7 @@ const Dashboard = () => {
             lowerMessage.includes('added you to my contacts') &&
             senderId === user?.id
           ) {
-            message = 'Added to my contacts';
+            message = t('sidebar.addedToContacts');
           }
           return {
             id: conv.userId,
@@ -535,7 +537,7 @@ const Dashboard = () => {
         }).filter(Boolean);
         // Remove contacts with no activity (\"No messages yet\" and no timestamp)
         const filtered = contactsList.filter(
-          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+          (c) => c.lastMessageAt || (c.message && c.message !== t('sidebar.noMessagesYet'))
         );
         // Sort by latest activity (newest first)
         filtered.sort((a, b) => {
@@ -584,7 +586,7 @@ const Dashboard = () => {
               }
               
               // Check if it's a video/audio call request or regular message
-              const messageText = request.firstMessage || request.content || request.message || 'New message';
+              const messageText = request.firstMessage || request.content || request.message || t('sidebar.newMessage');
               const isVideoChat = messageText.toLowerCase().includes('video chat') || messageText.toLowerCase().includes('inviting you to video');
               const isAudioChat = messageText.toLowerCase().includes('audio chat') || messageText.toLowerCase().includes('voice chat');
               const hasEmail = messageText.toLowerCase().includes('email') || request.messageType === 'email';
@@ -609,7 +611,7 @@ const Dashboard = () => {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
                 age: null,
-                message: request.firstMessage || request.content || 'New message',
+                message: request.firstMessage || request.content || t('sidebar.newMessage'),
                 avatar: null,
                 createdAt: request.createdAt,
                 updatedAt: request.updatedAt,
@@ -752,7 +754,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">Loading profiles...</div>
+        <div className="text-xl text-gray-600">{t('dashboardPage.loadingProfiles')}</div>
       </div>
     );
   }
@@ -788,7 +790,7 @@ const Dashboard = () => {
               
               {/* Caller Name */}
               <h3 className="text-2xl font-bold text-gray-800 mb-1">
-                {callerProfile?.firstName || 'Incoming Call'}
+                {callerProfile?.firstName || t('profilePage.incomingCall')}
               </h3>
               
               {/* Call Type */}
@@ -1012,8 +1014,8 @@ const Dashboard = () => {
 
               {profiles.length === 0 && !loading && (
                 <div className="text-center py-12 col-span-full">
-                  <p className="text-gray-600 text-lg mb-2">No profiles found</p>
-                  <p className="text-gray-500 text-sm">Try refreshing the page or check back later</p>
+                  <p className="text-gray-600 text-lg mb-2">{t('dashboard.noProfilesFound')}</p>
+                  <p className="text-gray-500 text-sm">{t('dashboard.tryRefresh')}</p>
                 </div>
               )}
             </div>

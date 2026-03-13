@@ -2,9 +2,11 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useLanguage } from './context/LanguageContext';
 import { RefillModalProvider } from './context/RefillModalContext';
 import { UpgradeModalProvider } from './context/UpgradeModalContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { translatePage } from './utils/translatePage';
 import Header from './components/Header';
 import SiteFooter from './components/SiteFooter';
 import Home from './pages/Home';
@@ -37,11 +39,12 @@ import OnlineDatingAdvice from './pages/OnlineDatingAdvice';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <div className="text-xl">{t('pages.loading')}</div>
       </div>
     );
   }
@@ -68,6 +71,24 @@ function App() {
   const AppShell = () => {
     const location = useLocation();
     const { user } = useAuth();
+
+    // Whole-page translation: when language is not English, translate all visible text via API.
+    // Run on route change and when user logs in so all post-login content (dashboard, profile, inbox, etc.) is translated.
+    useEffect(() => {
+      const lang = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || 'en';
+      if (lang === 'en' || lang === 'en-uk') return;
+      const t1 = setTimeout(() => translatePage(lang), 300);
+      const t2 = setTimeout(() => translatePage(lang), 1200);
+      const t3 = setTimeout(() => translatePage(lang), 2800);
+      const t4 = setTimeout(() => translatePage(lang), 5000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        clearTimeout(t4);
+      };
+    }, [location.pathname, user?.id]);
+
     const showHeader = user && isAppRoute(location.pathname);
     const showFooter = !showHeader;
 

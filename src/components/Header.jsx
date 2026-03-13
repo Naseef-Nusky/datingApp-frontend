@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRefillModal } from '../context/RefillModalContext';
 import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, FaGift, FaCoins } from 'react-icons/fa';
@@ -20,13 +20,13 @@ import RefundPolicyModal from './RefundPolicyModal';
 import SafetyPolicyModal from './SafetyPolicyModal';
 import TermsOfUseModal from './TermsOfUseModal';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 
 const Header = () => {
   const { user } = useAuth();
   const { openRefillModal } = useRefillModal();
   const { openUpgradeModal } = useUpgradeModal();
-  const { t } = useTranslation();
+  const { t, translatePageNow } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [todayStatus, setTodayStatus] = useState(null);
@@ -54,6 +54,10 @@ const Header = () => {
   // Popup only for requests that arrive after load (socket). Not for requests already present on refresh.
   const seenRequestKeysRef = useRef(new Set());
   const initialLoadDoneRef = useRef(false);
+
+  const handleSettingsModalOpen = useCallback(() => {
+    setTimeout(translatePageNow, 150);
+  }, [translatePageNow]);
 
   useEffect(() => {
     if (user) {
@@ -96,9 +100,9 @@ const Header = () => {
           const lastMsg = conv.lastMessage;
           const lastMsgSender = lastMsg?.sender ?? lastMsg?.sender_id;
           const giftFromThem = lastMsg?.messageType === 'gift' && lastMsgSender === conv.userId;
-          let message = conv.lastMessage?.content || 'No messages yet';
+          let message = conv.lastMessage?.content || t('sidebar.noMessagesYet');
           if (lastMsg?.messageType === 'gift') {
-            message = giftFromThem ? 'Received a gift' : 'You sent a gift';
+            message = giftFromThem ? t('sidebar.receivedGift') : t('sidebar.youSentGift');
           }
           return {
             id: conv.userId,
@@ -111,7 +115,7 @@ const Header = () => {
           };
         });
         const filtered = contactsList.filter(
-          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+          (c) => c.lastMessageAt || (c.message && c.message !== t('sidebar.noMessagesYet'))
         );
         filtered.sort((a, b) => {
           const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
@@ -151,7 +155,7 @@ const Header = () => {
                 id: request.id,
                 name: senderName,
                 age: senderAge,
-                message: request.firstMessage || request.content || 'New message',
+                message: request.firstMessage || request.content || t('sidebar.newMessage'),
                 avatar: senderAvatar,
                 senderId: request.senderData?.id || request.senderId,
                 createdAt: request.createdAt,
@@ -162,7 +166,7 @@ const Header = () => {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
                 age: null,
-                message: request.firstMessage || request.content || 'New message',
+                message: request.firstMessage || request.content || t('sidebar.newMessage'),
                 avatar: null,
                 senderId: request.senderData?.id || request.senderId,
                 createdAt: request.createdAt,
@@ -536,7 +540,7 @@ const Header = () => {
                     type="button"
                     onClick={handleRefillOrUpgrade}
                     className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
-                    title={hasSubscription ? 'Refill Account' : 'Upgrade Account'}
+                    title={hasSubscription ? t('common.refillAccount') : t('common.upgradeAccount')}
                   >
                     <FaCoins className="text-lg sm:text-xl" />
                   </button>
@@ -650,7 +654,7 @@ const Header = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-xl font-semibold text-gray-800">Contacts</h2>
+              <h2 className="text-xl font-semibold text-gray-800">{t('common.contacts')}</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -694,6 +698,7 @@ const Header = () => {
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+        onOpen={handleSettingsModalOpen}
       />
 
       <QuickPresentsModal

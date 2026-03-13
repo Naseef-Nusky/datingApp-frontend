@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaReply, FaCamera, FaVideo, FaSpinner, FaSearch, FaVolumeUp, FaEllipsisV, FaPhone, FaGift } from 'react-icons/fa';
 import EmailDetailModal from '../components/EmailDetailModal';
 import InboxEmailComposer from '../components/InboxEmailComposer';
@@ -13,6 +14,7 @@ const Inbox = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const { t, translatePageNow } = useLanguage();
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'read'
@@ -26,6 +28,14 @@ const Inbox = () => {
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
   const socketRef = useRef(null);
+
+  // Translate page when Inbox loads (for non-English: Settings, dropdown, Inbox, all)
+  useEffect(() => {
+    const lang = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || 'en';
+    if (lang === 'en' || lang === 'en-uk') return;
+    const id = setTimeout(() => translatePageNow?.(), 600);
+    return () => clearTimeout(id);
+  }, [translatePageNow]);
 
   // Socket.IO setup for real-time email updates
   useEffect(() => {
@@ -254,7 +264,7 @@ const Inbox = () => {
             avatar = profile.photos[0]?.url || null;
           }
           
-          let lastMessage = 'No messages yet';
+          let lastMessage = t('sidebar.noMessagesYet');
           if (conv.lastMessage) {
             if (typeof conv.lastMessage === 'object') {
               lastMessage = conv.lastMessage.content || conv.lastMessage.message || lastMessage;
@@ -269,7 +279,7 @@ const Inbox = () => {
           const lowerLastMessage =
             typeof lastMessage === 'string' ? lastMessage.toLowerCase().trim() : '';
           if (lastMsg?.messageType === 'gift') {
-            lastMessage = giftFromThem ? 'Received a gift' : 'You sent a gift';
+            lastMessage = giftFromThem ? t('sidebar.receivedGift') : t('sidebar.youSentGift');
           }
           if (
             lowerLastMessage.includes('removed you from my contacts') &&
@@ -282,7 +292,7 @@ const Inbox = () => {
             lowerLastMessage.includes('added you to my contacts') &&
             lastMsgSender === user?.id
           ) {
-            lastMessage = 'Added to my contacts';
+            lastMessage = t('sidebar.addedToContacts');
           }
           
           return {
@@ -298,7 +308,7 @@ const Inbox = () => {
         }).filter(Boolean);
         
         const filtered = contactsList.filter(
-          (c) => c.lastMessageAt || (c.message && c.message !== 'No messages yet')
+          (c) => c.lastMessageAt || (c.message && c.message !== t('sidebar.noMessagesYet'))
         );
         
         filtered.sort((a, b) => {
@@ -340,7 +350,7 @@ const Inbox = () => {
               return {
                 id: request.id,
                 name: senderName,
-                message: request.firstMessage || request.content || request.message || 'New message',
+                message: request.firstMessage || request.content || request.message || t('sidebar.newMessage'),
                 avatar: senderAvatar,
                 createdAt: request.createdAt,
                 status: request.status || 'pending',
@@ -350,7 +360,7 @@ const Inbox = () => {
               return {
                 id: request.id,
                 name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                message: request.firstMessage || request.content || 'New message',
+                message: request.firstMessage || request.content || t('sidebar.newMessage'),
                 avatar: null,
                 createdAt: request.createdAt,
                 status: request.status || 'pending',
@@ -522,7 +532,7 @@ const Inbox = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              All
+              {t('inbox.all')}
             </button>
             <button
               onClick={() => setFilter('unread')}
@@ -532,7 +542,7 @@ const Inbox = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Unread
+              {t('inbox.unread')}
             </button>
             <button
               onClick={() => setFilter('read')}
@@ -542,7 +552,7 @@ const Inbox = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Read & Unanswered
+              {t('inbox.readUnanswered')}
             </button>
           </div>
 
@@ -555,7 +565,7 @@ const Inbox = () => {
             ) : emails.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <FaEnvelope className="text-4xl mx-auto mb-4 opacity-50" />
-                <p>No emails found</p>
+                <p>{t('inbox.noEmailsFound')}</p>
               </div>
             ) : (
               <div>
@@ -649,7 +659,7 @@ const Inbox = () => {
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50" onClick={() => setShowMobileSidebar(false)}>
           <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-              <h2 className="font-semibold text-gray-800">Contacts</h2>
+              <h2 className="font-semibold text-gray-800">{t('common.contacts')}</h2>
               <button
                 type="button"
                 onClick={() => setShowMobileSidebar(false)}

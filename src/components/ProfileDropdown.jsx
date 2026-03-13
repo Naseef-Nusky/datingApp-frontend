@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
@@ -17,6 +18,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
   const [vipProgress, setVipProgress] = useState(null);
   const dropdownRef = useRef(null);
   const { user, logout } = useAuth();
+  const { t, translatePageNow } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +34,13 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
       setVipProgress(null);
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    if (isOpen && typeof translatePageNow === 'function') {
+      const id = setTimeout(translatePageNow, 150);
+      return () => clearTimeout(id);
+    }
+  }, [isOpen, translatePageNow]);
 
   const fetchProfile = async () => {
     try {
@@ -70,82 +79,27 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
   };
 
   const menuItems = [
-    { 
-      id: 'profile', 
-      label: 'My Profile', 
-      icon: FaUser, 
-      path: '/profile/me',
-      active: true,
-      color: 'text-red-600'
-    },
-    { 
-      id: 'mingle', 
-      label: "Let's mingle", 
-      icon: FaHeart, 
-      path: null, // No navigation, will open modal
-      color: 'text-gray-800',
-      action: 'openMingleModal'
-    },
-    { 
-      id: 'media', 
-      label: 'My Media', 
-      icon: FaPhotoVideo, 
-      path: '/my-media',
-      color: 'text-gray-800',
-      disabled: true
-    },
-    { 
-      id: 'network', 
-      label: 'Our Dating Network', 
-      icon: FaGlobe, 
-      path: '/network',
-      color: 'text-gray-800'
-    },
-    { 
-      id: 'presents', 
-      label: 'Presents', 
-      icon: FaGift, 
-      path: null,
-      color: 'text-gray-800',
-      action: 'openPresents'
-    },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: FaCog, 
-      path: null,
-      color: 'text-gray-800',
-      action: 'openSettings'
-    },
-    { 
-      id: 'help', 
-      label: 'Help Center', 
-      icon: FaQuestionCircle, 
-      path: '/help',
-      color: 'text-gray-500',
-      disabled: true
-    },
-    { 
-      id: 'promo', 
-      label: 'Promotional Code', 
-      icon: FaTag, 
-      path: '/promo-code',
-      color: 'text-gray-500',
-      disabled: true
-    },
+    { id: 'profile', labelKey: 'nav.myProfile', icon: FaUser, path: '/profile/me', active: true, color: 'text-red-600' },
+    { id: 'mingle', labelKey: 'nav.letsMingle', icon: FaHeart, path: null, color: 'text-gray-800', action: 'openMingleModal' },
+    { id: 'media', labelKey: 'nav.myMedia', icon: FaPhotoVideo, path: '/my-media', color: 'text-gray-800', disabled: true },
+    { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-800' },
+    { id: 'presents', labelKey: 'nav.presents', icon: FaGift, path: null, color: 'text-gray-800', action: 'openPresents' },
+    { id: 'settings', labelKey: 'nav.settings', icon: FaCog, path: null, color: 'text-gray-800', action: 'openSettings' },
+    { id: 'help', labelKey: 'home.helpCenter', icon: FaQuestionCircle, path: '/help', color: 'text-gray-500', disabled: true },
+    { id: 'promo', labelKey: 'dropdown.promoCode', icon: FaTag, path: '/promo-code', color: 'text-gray-500', disabled: true },
     { 
       id: 'terms-parent', 
-      label: 'Terms & Privacy', 
+      labelKey: 'dropdown.termsPrivacy', 
       icon: FaFileContract, 
       path: null,
       color: 'text-gray-500',
       hasSubmenu: true,
       submenu: [
-        { id: 'about', label: 'About Vantage Dating', action: 'openAbout' },
-        { id: 'terms', label: 'Terms of Use', action: 'openTermsOfUse' },
-        { id: 'privacy', label: 'Privacy Policy', action: 'openPrivacyPolicy' },
-        { id: 'refund', label: 'Refund & Cancellation Policy', action: 'openRefundPolicy' },
-        { id: 'safety', label: 'Safety & Security Policy', action: 'openSafetyPolicy' },
+        { id: 'about', labelKey: 'dropdown.aboutVantage', action: 'openAbout' },
+        { id: 'terms', labelKey: 'dropdown.termsOfUse', action: 'openTermsOfUse' },
+        { id: 'privacy', labelKey: 'dropdown.privacyPolicy', action: 'openPrivacyPolicy' },
+        { id: 'refund', labelKey: 'dropdown.refundPolicy', action: 'openRefundPolicy' },
+        { id: 'safety', labelKey: 'dropdown.safetyPolicy', action: 'openSafetyPolicy' },
       ]
     },
   ];
@@ -286,7 +240,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                         item.underline ? 'underline' : ''
                       }`}
                     >
-                      {item.label}
+                      {item.labelKey ? t(item.labelKey) : item.label}
                     </span>
                   </button>
                 );
@@ -314,7 +268,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                         item.underline ? 'underline' : ''
                       }`}
                     >
-                      {item.label}
+                      {item.labelKey ? t(item.labelKey) : item.label}
                     </span>
                   </button>
                 );
@@ -340,7 +294,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                         item.underline ? 'underline' : ''
                       }`}
                     >
-                      {item.label}
+                      {item.labelKey ? t(item.labelKey) : item.label}
                     </span>
                   </button>
                 );
@@ -356,7 +310,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                     >
                       <div className="flex items-center">
                         <Icon className={`mr-3 ${item.color}`} />
-                        <span className={item.color}>{item.label}</span>
+                        <span className={item.color}>{item.labelKey ? t(item.labelKey) : item.label}</span>
                       </div>
                       {termsSubmenuOpen ? (
                         <FaChevronDown className="w-4 h-4 text-gray-400" />
@@ -377,7 +331,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                               }}
                               className="block px-6 py-3 min-h-[44px] pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition break-words"
                             >
-                              {sub.label}
+                              {sub.labelKey ? t(sub.labelKey) : sub.label}
                             </Link>
                           ) : (
                             <button
@@ -394,7 +348,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                               }}
                               className="block w-full text-left px-6 py-3 min-h-[44px] pl-10 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition break-words"
                             >
-                              {sub.label}
+                              {sub.labelKey ? t(sub.labelKey) : sub.label}
                             </button>
                           )
                         ))}
@@ -427,7 +381,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
                       item.underline ? 'underline' : ''
                     }`}
                   >
-                    {item.label}
+                    {item.labelKey ? t(item.labelKey) : item.label}
                   </span>
                 </Link>
               );
@@ -439,7 +393,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout }) => {
               className="w-full flex items-center px-6 py-3 text-gray-500 hover:bg-gray-50 transition cursor-pointer"
             >
               <FaSignOutAlt className="mr-3" />
-              <span>Sign out</span>
+              <span>{t('nav.logout')}</span>
             </button>
           </div>
           </div>

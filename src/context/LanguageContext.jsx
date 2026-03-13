@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useCallback, useState } from 'react';
+import { createContext, useContext, useEffect, useCallback, useState, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import axios from 'axios';
-import i18n from '../i18n';
+import en from '../locales/en.json';
 
 const LanguageContext = createContext(null);
 
@@ -15,76 +15,120 @@ const SUPPORTED_LANGUAGES = [
   { value: 'ja', label: '日本語' },
 ];
 
+// Use relative URL in dev so Vite proxy forwards to backend (avoids CORS when backend has PROXY_HANDLES_CORS=1)
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+/** Get nested value by dot path, e.g. 'nav.inbox' -> obj.nav.inbox */
+function getNested(obj, path) {
+  if (!obj || !path) return path || '';
+  return path.split('.').reduce((o, k) => (o != null ? o[k] : undefined), obj) ?? path;
+}
+
 export function LanguageProvider({ children }) {
   const { user } = useAuth();
   const [loadingLang, setLoadingLang] = useState(false);
+  const [language, setLanguageState] = useState(() => {
+    try {
+      return localStorage.getItem('app_language') || 'en';
+    } catch {
+      return 'en';
+    }
+  });
+  const [translationCache, setTranslationCache] = useState(() => ({ en }));
 
-  const changeLanguage = useCallback(async (lang) => {
-    if (!SUPPORTED_LANGUAGES.some((l) => l.value === lang)) return;
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    if (lang !== 'en') {
-      if (!i18n.hasResourceBundle(lang, 'translation')) {
-        setLoadingLang(true);
+  const translations = translationCache[language] ?? translationCache.en ?? en;
+
+  const t = useCallback(
+    (key) => {
+      return getNested(translations, key) || key;
+    },
+    [translations]
+  );
+
+  const changeLanguage = useCallback(
+    async (lang) => {
+      if (!SUPPORTED_LANGUAGES.some((l) => l.value === lang)) return;
+
+      try {
+        localStorage.setItem('app_language', lang);
+        localStorage.setItem('selectedLanguage', lang);
+      } catch (e) {}
+
+      if (user) {
         try {
-          const { data } = await axios.get(`${apiUrl}/api/translate/locale?target=${encodeURIComponent(lang)}`);
-          i18n.addResourceBundle(lang, 'translation', data);
+          await axios.put(`${API_URL}/api/settings`, { language: lang });
         } catch (err) {
-          console.warn('Could not load translation, using English:', err?.message);
-          lang = 'en';
-        } finally {
-          setLoadingLang(false);
+          console.warn('Could not save language to server:', err?.message);
         }
       }
-    }
-    i18n.changeLanguage(lang);
-    try {
-      localStorage.setItem('app_language', lang);
-    } catch (e) {}
-    if (user) {
-      try {
-        await axios.put(`${apiUrl}/api/settings`, { language: lang });
-      } catch (err) {
-        console.warn('Could not save language to server:', err?.message);
-      }
-    }
-  }, [user]);
+
+      // Reload so the whole website updates: on load, translatePage() will run for non-English
+      window.location.reload();
+    },
+    [user]
+  );
 
   useEffect(() => {
     if (!user) return;
     const loadSavedLanguage = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        const { data } = await axios.get(`${apiUrl}/api/settings`);
+        const currentStored = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || '';
+        const { data } = await axios.get(`${API_URL}/api/settings`);
         const saved = data?.language;
-        if (!saved || saved === i18n.language) return;
-        if (saved !== 'en' && !i18n.hasResourceBundle(saved, 'translation')) {
+        if (!saved || saved === language) return;
+        // On refresh: do not overwrite with server 'en' if user already has a non-English choice in localStorage
+        const serverIsDefaultEn = (saved === 'en' || saved === 'en-uk');
+        const hasNonEnglishStored = currentStored && currentStored !== 'en' && currentStored !== 'en-uk';
+        if (serverIsDefaultEn && hasNonEnglishStored) return;
+
+        if (saved !== 'en' && saved !== 'en-uk' && !translationCache[saved]) {
           setLoadingLang(true);
           try {
-            const locRes = await axios.get(`${apiUrl}/api/translate/locale?target=${encodeURIComponent(saved)}`);
-            i18n.addResourceBundle(saved, 'translation', locRes.data);
+            const { data: locData } = await axios.get(`${API_URL}/api/translate/locale?target=${encodeURIComponent(saved)}`);
+            setTranslationCache((prev) => ({ ...prev, [saved]: locData }));
           } catch (e) {
             return;
           } finally {
             setLoadingLang(false);
           }
         }
-        i18n.changeLanguage(saved);
+        setLanguageState(saved);
         try {
           localStorage.setItem('app_language', saved);
+          localStorage.setItem('selectedLanguage', saved);
         } catch (e) {}
+        // After login: translate current page so UI matches DB-saved language
+        if (saved !== 'en' && saved !== 'en-uk') {
+          import('../utils/translatePage').then(({ translatePage }) => {
+            translatePage(saved);
+            setTimeout(() => translatePage(saved), 800);
+            setTimeout(() => translatePage(saved), 2000);
+          });
+        }
       } catch (err) {
-        // use existing i18n.language (from localStorage or default)
+        // use existing language from state/localStorage
       }
     };
     loadSavedLanguage();
   }, [user?.id]);
 
-  const value = {
-    language: i18n.language,
-    changeLanguage,
-    languages: SUPPORTED_LANGUAGES,
-    loadingLang,
-  };
+  const translatePageNow = useCallback(() => {
+    const lang = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || language || 'en';
+    if (lang === 'en' || lang === 'en-uk') return;
+    import('../utils/translatePage').then(({ translatePage }) => translatePage(lang));
+  }, [language]);
+
+  const value = useMemo(
+    () => ({
+      language,
+      changeLanguage,
+      languages: SUPPORTED_LANGUAGES,
+      loadingLang,
+      t,
+      translatePageNow,
+    }),
+    [language, changeLanguage, loadingLang, t, translatePageNow]
+  );
 
   return (
     <LanguageContext.Provider value={value}>

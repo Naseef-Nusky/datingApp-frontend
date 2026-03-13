@@ -21,7 +21,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   const loginPopupRef = useRef(null);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { language, changeLanguage, languages } = useLanguage();
+  const { language, changeLanguage, languages, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   useEffect(() => {
@@ -54,11 +54,11 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     setMagicSentEmail('');
     const trimmed = loginEmail.trim().toLowerCase();
     if (!trimmed) {
-      setLoginError('Please enter your email');
+      setLoginError(t('auth.pleaseEnterEmail'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setLoginError('Please enter a valid email address');
+      setLoginError(t('auth.pleaseEnterValidEmail'));
       return;
     }
     setLoginLoading(true);
@@ -83,19 +83,19 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     const nameTrimmed = signupName.trim();
     const emailTrimmed = loginEmail.trim().toLowerCase();
     if (!nameTrimmed) {
-      setLoginError('Please enter your name or nickname');
+      setLoginError(t('auth.pleaseEnterName'));
       return;
     }
     if (!emailTrimmed) {
-      setLoginError('Please enter your email');
+      setLoginError(t('auth.pleaseEnterEmail'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
-      setLoginError('Please enter a valid email address');
+      setLoginError(t('auth.pleaseEnterValidEmail'));
       return;
     }
     if (!acceptedTerms) {
-      setLoginError('Please accept the terms to continue');
+      setLoginError(t('auth.pleaseAcceptTerms'));
       return;
     }
     setLoginLoading(true);
@@ -121,15 +121,15 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     setLoginError('');
     const emailTrimmed = loginEmail.trim().toLowerCase();
     if (!emailTrimmed) {
-      setLoginError('Please enter your email');
+      setLoginError(t('auth.pleaseEnterEmail'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
-      setLoginError('Please enter a valid email address');
+      setLoginError(t('auth.pleaseEnterValidEmail'));
       return;
     }
     if (!loginPassword) {
-      setLoginError('Please enter your password');
+      setLoginError(t('auth.pleaseEnterPassword'));
       return;
     }
     setLoginLoading(true);
@@ -139,7 +139,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
         setShowLoginPopup(false);
         navigate('/dashboard');
       } else {
-        setLoginError(result.message || 'Login failed');
+        setLoginError(result.message || t('auth.loginFailed'));
       }
     } finally {
       setLoginLoading(false);
@@ -151,11 +151,11 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     setLoginError('');
     const emailTrimmed = loginEmail.trim().toLowerCase();
     if (!emailTrimmed) {
-      setLoginError('Please enter your email');
+      setLoginError(t('auth.pleaseEnterEmail'));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
-      setLoginError('Please enter a valid email address');
+      setLoginError(t('auth.pleaseEnterValidEmail'));
       return;
     }
     setLoginLoading(true);
@@ -172,21 +172,14 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
 
   const flagUrlFor = (lang) => {
     switch (lang) {
-      case 'es':
-        return 'https://flagcdn.com/w40/es.png';
-      case 'zh':
-        return 'https://flagcdn.com/w40/cn.png';
-      case 'it':
-        return 'https://flagcdn.com/w40/it.png';
-      case 'fr':
-        return 'https://flagcdn.com/w40/fr.png';
-      case 'de':
-        return 'https://flagcdn.com/w40/de.png';
-      case 'ja':
-        return 'https://flagcdn.com/w40/jp.png';
+      case 'es': return 'https://flagcdn.com/w40/es.png';
+      case 'zh': return 'https://flagcdn.com/w40/cn.png';
+      case 'it': return 'https://flagcdn.com/w40/it.png';
+      case 'fr': return 'https://flagcdn.com/w40/fr.png';
+      case 'de': return 'https://flagcdn.com/w40/de.png';
+      case 'ja': return 'https://flagcdn.com/w40/jp.png';
       case 'en':
-      default:
-        return 'https://flagcdn.com/w40/us.png';
+      default: return 'https://flagcdn.com/w40/us.png';
     }
   };
 
@@ -309,7 +302,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         type="text"
                         value={signupName}
                         onChange={(e) => setSignupName(e.target.value)}
-                        placeholder="Name or nickname"
+                        placeholder={t('landing.nameOrNicknamePlaceholder')}
                         className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
                         disabled={loginLoading}
                       />
@@ -333,7 +326,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         className="w-full py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50 transition hover:opacity-90"
                         style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
                       >
-                        {loginLoading ? 'Creating…' : 'CREATE ACCOUNT'}
+                        {loginLoading ? t('landing.creating') : t('landing.createAccount')}
                       </button>
 
                       <button
@@ -355,7 +348,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                           By clicking “Create Account” you agree with the{' '}
                           <Link to="/terms" className="underline hover:text-gray-800" onClick={() => setShowLoginPopup(false)}>Terms &amp; Conditions</Link>,{' '}
                           <Link to="/privacy" className="underline hover:text-gray-800" onClick={() => setShowLoginPopup(false)}>Privacy Policy</Link>,{' '}
-                          <Link to="/refund" className="underline hover:text-gray-800" onClick={() => setShowLoginPopup(false)}>Refund and Cancellation Policy</Link> and{' '}
+                          <Link to="/refund" className="underline hover:text-gray-800" onClick={() => setShowLoginPopup(false)}>{t('landing.refundPolicyLink')}</Link> and{' '}
                           <Link to="/terms#content" className="underline hover:text-gray-800" onClick={() => setShowLoginPopup(false)}>Content Policy</Link>.
                           You can terminate your account or opt out of any or part of the services (including linked-one) any time.
                         </span>
@@ -506,10 +499,10 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
             <div className="w-full max-w-[420px] lg:max-w-[460px] bg-white rounded-2xl shadow-xl p-8 lg:p-10">
           <Logo className="h-8 w-auto mb-6 text-gray-900" />
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-            Global Online Dating
+            {t('landing.globalDating')}
           </h1>
           <p className="text-gray-500 text-base lg:text-lg leading-relaxed mb-8">
-            Enjoy virtual connections with like-minded people around the world.
+            {t('landing.globalDatingSub')}
           </p>
           <div className="space-y-3">
             <Link
@@ -517,7 +510,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
               className="block w-full text-center py-4 rounded-xl text-white text-lg font-semibold transition hover:opacity-95"
               style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
             >
-              Take a chance!
+              {t('landing.takeAChance')}
             </Link>
             <a
               href={`${import.meta.env.VITE_API_URL || ''}/api/auth/google`}
@@ -529,14 +522,14 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              Sign in with Google
+              {t('landing.signInWithGoogle')}
             </a>
           </div>
           <p className="text-xs text-gray-400 leading-relaxed mt-8">
             By clicking &quot;Take a chance!&quot; you agree with the{' '}
             <Link to="/terms" className="underline hover:text-gray-600">Terms &amp; Conditions</Link>,{' '}
             <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>,{' '}
-            <Link to="/refund" className="underline hover:text-gray-600">Refund and Cancellation Policy</Link> and{' '}
+            <Link to="/refund" className="underline hover:text-gray-600">{t('landing.refundPolicyLink')}</Link> and{' '}
             <Link to="/terms#content" className="underline hover:text-gray-600">Content Policy</Link>.
             You can terminate your account or opt out of any or part of the services.
           </p>
@@ -602,7 +595,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowLoginPopup(false)} aria-hidden="true" />
           <div className="absolute left-4 right-4 top-24 bg-white rounded-2xl shadow-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-gray-900">Log in</p>
+              <p className="text-sm font-semibold text-gray-900">{t('landing.logIn')}</p>
               <button type="button" onClick={() => setShowLoginPopup(false)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-700">
                 <FaTimes className="w-4 h-4" />
               </button>
@@ -678,7 +671,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   type="text"
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
-                  placeholder="Name or nickname"
+                  placeholder={t('landing.nameOrNicknamePlaceholder')}
                   className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
                   disabled={loginLoading}
                 />
@@ -697,7 +690,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition hover:opacity-90"
                   style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
                 >
-                  {loginLoading ? 'Creating…' : 'CREATE ACCOUNT'}
+                  {loginLoading ? t('landing.creating') : t('landing.createAccount')}
                 </button>
                 <button
                   type="button"
@@ -717,7 +710,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                     By clicking “Create Account” you agree with the{' '}
                     <Link to="/terms" className="underline" onClick={() => setShowLoginPopup(false)}>Terms</Link>,{' '}
                     <Link to="/privacy" className="underline" onClick={() => setShowLoginPopup(false)}>Privacy Policy</Link> and{' '}
-                    <Link to="/refund" className="underline" onClick={() => setShowLoginPopup(false)}>Refund and Cancellation Policy</Link>.
+                    <Link to="/refund" className="underline" onClick={() => setShowLoginPopup(false)}>{t('landing.refundPolicyLink')}</Link>.
                   </span>
                 </label>
               </form>
@@ -842,7 +835,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
           By clicking &quot;Take a chance!&quot; you agree with the{' '}
           <Link to="/terms" className="underline hover:text-white">Terms &amp; Conditions</Link>,{' '}
           <Link to="/privacy" className="underline hover:text-white">Privacy Policy</Link>,{' '}
-          <Link to="/refund" className="underline hover:text-white">Refund and Cancellation Policy</Link> and{' '}
+          <Link to="/refund" className="underline hover:text-white">{t('landing.refundPolicyLink')}</Link> and{' '}
           <Link to="/terms#content" className="underline hover:text-white">Content Policy</Link>.
           You can terminate your account or opt out of any or part of the services.
         </p>
