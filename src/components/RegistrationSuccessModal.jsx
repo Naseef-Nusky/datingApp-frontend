@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { openEmailInbox } from '../utils/emailInbox';
 
 const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
     }
   };
 
-  const handleCheckGmail = () => {
-    window.open('https://mail.google.com', '_blank');
+  const handleCheckEmail = () => {
+    openEmailInbox(email);
   };
 
   return (
@@ -74,12 +75,12 @@ const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
           ))}
         </div>
 
-        {/* Check Gmail button */}
+        {/* Check email button - opens the correct inbox (Gmail, Yahoo, Outlook, etc.) */}
         <button
-          onClick={handleCheckGmail}
+          onClick={handleCheckEmail}
           className="w-full bg-red-500 text-white py-4 rounded-lg font-semibold text-lg hover:bg-red-600 transition mb-4"
         >
-          CHECK YOUR GMAIL ACCOUNT
+          CHECK YOUR EMAIL
         </button>
 
         {/* Troubleshooting text */}

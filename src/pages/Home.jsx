@@ -372,7 +372,7 @@ const Home = () => {
             className="inline-block text-white font-semibold px-10 py-3 rounded-md hover:opacity-90 transition"
             style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
           >
-            Take a chance!
+            Give it a try!
           </Link>
         </div>
       </section>

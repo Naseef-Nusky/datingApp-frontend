@@ -905,10 +905,10 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
       {/* Main content: centered headline, subheadline, CTAs — over the image (mobile-first) */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pt-8 pb-32 sm:pt-24 sm:pb-24 text-center">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 drop-shadow-md">
-          Global Online Dating
+          Worldwide Online Dating
         </h1>
         <p className="text-white/95 text-base sm:text-lg md:text-xl max-w-md mb-8 sm:mb-10 drop-shadow-sm">
-          Enjoy virtual connections with like-minded people around the world.
+          Connect virtually with like-minded people across the globe.
         </p>
 
         <div className="w-full max-w-[320px] sm:max-w-[340px] space-y-3">
@@ -917,7 +917,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
             className="block w-full text-center py-4 rounded-xl text-white text-lg font-semibold transition hover:opacity-95 active:opacity-90 shadow-lg"
             style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
           >
-            Take a chance!
+            Give it a try!
           </Link>
           <a
             href={`${import.meta.env.VITE_API_URL || ''}/api/auth/google`}

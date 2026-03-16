@@ -16,12 +16,12 @@ export default function WelcomeAuthCard() {
 
           {/* Main heading */}
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-            Global Online Dating
+            Worldwide Online Dating
           </h2>
 
           {/* Subtitle */}
           <p className="text-gray-500 text-sm md:text-base mb-8">
-            Enjoy virtual connections with like-minded people around the world.
+            Connect virtually with like-minded people across the globe.
           </p>
 
           {/* Primary CTA – logo theme gradient (email-based signup first) */}
@@ -33,7 +33,7 @@ export default function WelcomeAuthCard() {
               color: '#ffffff',
             }}
           >
-            Take a chance!
+            Give it a try!
           </Link>
 
           {/* Sign in with Google */}
@@ -66,7 +66,7 @@ export default function WelcomeAuthCard() {
         {/* Legal disclaimer */}
         <div className="px-6 pb-6 pt-0">
           <p className="text-gray-500 text-xs leading-relaxed text-center">
-            By clicking &quot;Take a chance!&quot; you agree with the{' '}
+            By clicking &quot;Give it a try!&quot; you agree with the{' '}
             <Link to="/terms" className="text-vantage-purple underline hover:opacity-80">Terms &amp; Conditions</Link>
             ,{' '}
             <Link to="/terms#privacy" className="text-vantage-purple underline hover:opacity-80">Privacy Policy</Link>

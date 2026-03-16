@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { openEmailInbox } from '../utils/emailInbox';
 
 /**
  * Shown after user enters email and clicks Continue: "Check your email", login link sent to [email].
@@ -11,8 +12,8 @@ export default function CheckEmail() {
   const email = location.state?.email || '';
   const devLoginLink = location.state?.devLoginLink;
 
-  const openGmail = () => {
-    window.open('https://mail.google.com', '_blank');
+  const handleOpenEmail = () => {
+    openEmailInbox(email);
   };
 
   return (
@@ -50,7 +51,7 @@ export default function CheckEmail() {
         ) : (
           <button
             type="button"
-            onClick={openGmail}
+            onClick={handleOpenEmail}
             className="w-full py-3.5 px-6 rounded-xl font-semibold text-white uppercase text-sm tracking-wide mb-3 transition hover:opacity-90"
             style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
           >

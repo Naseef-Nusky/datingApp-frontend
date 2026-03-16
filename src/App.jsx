@@ -32,6 +32,8 @@ import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import RefundPolicyModal from './components/RefundPolicyModal';
 import SafetyPolicyModal from './components/SafetyPolicyModal';
 import AboutModal from './components/AboutModal';
+import InactivityModal from './components/InactivityModal';
+import { useInactivity } from './hooks/useInactivity';
 import Contact from './pages/Contact';
 import HelpCenter from './pages/HelpCenter';
 import OnlineDatingAdvice from './pages/OnlineDatingAdvice';
@@ -91,11 +93,15 @@ function App() {
 
     const showHeader = user && isAppRoute(location.pathname);
     const showFooter = !showHeader;
+    const [showInactivityModal, resetInactivity] = useInactivity(showHeader);
 
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ScrollToTop />
         {showHeader && <Header />}
+        {showInactivityModal && (
+          <InactivityModal onContinue={resetInactivity} />
+        )}
         <div className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
