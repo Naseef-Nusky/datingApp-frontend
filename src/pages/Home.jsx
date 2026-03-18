@@ -393,7 +393,7 @@ const Home = () => {
             <article className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full">
               <div className="w-full aspect-[4/3] overflow-hidden">
                 <img
-                  src="/profile.png"
+                  src="/1.png"
                   alt="Jaime Bronstein"
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -417,7 +417,7 @@ const Home = () => {
             <article className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full">
               <div className="w-full aspect-[4/3] overflow-hidden">
                 <img
-                  src="/profile.png"
+                  src="/2.png"
                   alt="Sabrina Bendory"
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -442,7 +442,7 @@ const Home = () => {
             <article className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full">
               <div className="w-full aspect-[4/3] overflow-hidden">
                 <img
-                  src="/profile.png"
+                  src="/3.png"
                   alt="Bela Gandhi"
                   className="w-full h-full object-cover"
                   loading="lazy"
