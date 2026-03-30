@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaPaperPlane, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 
 const StoryViewer = ({ isOpen, onClose, userId, stories = [] }) => {
   const { user } = useAuth();
@@ -110,6 +111,11 @@ const StoryViewer = ({ isOpen, onClose, userId, stories = [] }) => {
 
   const handleSendMessage = async () => {
     if (!message.trim() || !userId) return;
+
+    if (hasBlockedContactInfo(message.trim())) {
+      alert(CONTACT_INFO_WARNING);
+      return;
+    }
 
     try {
       const response = await axios.post('/api/messages', {

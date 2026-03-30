@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SearchFilterModal from '../components/SearchFilterModal';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo } from 'react-icons/fa';
+import { appendBrowseGenderQuery } from '../utils/browseGenderFilter';
 
 const Search = () => {
   const navigate = useNavigate();
@@ -35,15 +36,7 @@ const Search = () => {
       }
 
       const params = new URLSearchParams();
-      
-      // Gender filter - lookingFor is what gender we're looking for
-      if (filters.lookingFor) {
-        if (filters.lookingFor === 'both') {
-          // Don't filter by gender if "both" is selected
-        } else {
-          params.append('gender', filters.lookingFor);
-        }
-      }
+      appendBrowseGenderQuery(params, filters.lookingFor);
       
       // Age range filters
       if (filters.ageMin) params.append('minAge', filters.ageMin.toString());

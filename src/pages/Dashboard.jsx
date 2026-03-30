@@ -12,6 +12,7 @@ import StoriesCarousel from '../components/StoriesCarousel';
 import ContactsSidebar from '../components/ContactsSidebar';
 import FreeUserBadge from '../components/FreeUserBadge';
 import VerifiedBadge from '../components/VerifiedBadge';
+import { appendBrowseGenderQuery } from '../utils/browseGenderFilter';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -300,39 +301,55 @@ const Dashboard = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchProfiles();
+    if (!user) return;
     fetchContacts();
     fetchChatRequests();
-    fetchOnlineUsers();
-    
-    // Refresh contacts and chat requests periodically
+
     const contactsInterval = setInterval(() => {
       fetchContacts();
-    }, 10000); // Every 10 seconds
-    
+    }, 10000);
+
     const chatRequestsInterval = setInterval(() => {
       fetchChatRequests();
-    }, 10000); // Every 10 seconds
-    
+    }, 10000);
+
     return () => {
       clearInterval(contactsInterval);
       clearInterval(chatRequestsInterval);
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    fetchProfiles();
+    fetchOnlineUsers();
+  }, [user, filters]);
+
   // Check if we should open search modal, mingle intro, or redirect to complete profile
   useEffect(() => {
+    let shouldClearState = false;
+
+    if (location.state?.applySearchFilters) {
+      handleApplyFilters(location.state.applySearchFilters);
+      shouldClearState = true;
+    }
+
     if (location.state?.openSearchModal) {
       setShowSearchModal(true);
-      navigate(location.pathname, { replace: true, state: {} });
+      shouldClearState = true;
     }
     if (location.state?.openMingleIntro) {
       setShowMingleIntro(true);
-      navigate(location.pathname, { replace: true, state: {} });
+      shouldClearState = true;
     }
     // Login link with incomplete registration: open dashboard first, then redirect to complete profile
     if (location.state?.openCompleteProfile) {
       navigate('/complete-profile', { replace: true, state: {} });
+      return;
+    }
+
+    if (shouldClearState) {
+      navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate, location.pathname]);
 
@@ -363,15 +380,6 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Refetch profiles when filters change
-  useEffect(() => {
-    if (user) {
-      fetchProfiles();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
-
-
   // Handle filter modal apply
   const handleApplyFilters = (appliedFilters) => {
     setFilters({
@@ -386,8 +394,10 @@ const Dashboard = () => {
 
   const fetchOnlineUsers = async () => {
     try {
-      // Fetch online users for the top row
-      const response = await axios.get('/api/profiles?limit=20');
+      const params = new URLSearchParams();
+      appendBrowseGenderQuery(params, filters.lookingFor);
+      params.append('limit', '20');
+      const response = await axios.get(`/api/profiles?${params.toString()}`);
       if (response.data && response.data.profiles) {
         const online = response.data.profiles.filter(p => p.isOnline).slice(0, 15);
         setOnlineUsers(online);
@@ -411,17 +421,8 @@ const Dashboard = () => {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       }
       
-      // Build query parameters
       const params = new URLSearchParams();
-      
-      // Gender filter - lookingFor is what gender we're looking for
-      if (filters.lookingFor) {
-        if (filters.lookingFor === 'both') {
-          // Don't filter by gender if "both" is selected
-        } else {
-          params.append('gender', filters.lookingFor);
-        }
-      }
+      appendBrowseGenderQuery(params, filters.lookingFor);
       
       // Age range filters
       if (filters.ageMin) params.append('minAge', filters.ageMin.toString());
@@ -443,8 +444,10 @@ const Dashboard = () => {
         params.append('videoChat', 'true');
       }
       
+      // Ask backend for a very high limit so dashboard effectively sees "all" profiles.
+      params.append('limit', '1000');
       const queryString = params.toString();
-      const url = queryString ? `/api/profiles?${queryString}` : '/api/profiles';
+      const url = `/api/profiles?${queryString}`;
       
       console.log('Fetching profiles with URL:', url);
       const response = await axios.get(url);

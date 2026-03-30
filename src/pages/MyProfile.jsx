@@ -9,6 +9,7 @@ import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, F
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
+import { interestIcons } from '../utils/interestIcons';
 
 const MyProfile = () => {
   const { user, fetchUser } = useAuth();
@@ -808,39 +809,6 @@ const MyProfile = () => {
       </div>
     );
   }
-
-  // Interest icon + color map (styled like circular icon chips)
-  const interestIcons = {
-    'Lying on the beach': { icon: FaUmbrellaBeach, color: 'bg-lime-500' },
-    Biking: { icon: FaBicycle, color: 'bg-orange-500' },
-    'Reading books': { icon: FaBook, color: 'bg-fuchsia-900' },
-    Camping: { icon: FaCampground, color: 'bg-emerald-500' },
-    Cars: { icon: FaCar, color: 'bg-red-500' },
-    Cooking: { icon: FaUtensils, color: 'bg-amber-400' },
-    Dancing: { icon: FaCompactDisc, color: 'bg-violet-900' },
-    Diving: { icon: FaSwimmer, color: 'bg-blue-500' },
-    Fashion: { icon: FaGift, color: 'bg-purple-400' },
-    'Fishing & Hunting': { icon: FaFish, color: 'bg-indigo-700' },
-    Games: { icon: FaGamepad, color: 'bg-lime-600' },
-    'Hobbies & Crafts': { icon: FaPalette, color: 'bg-rose-400' },
-    Hockey: { icon: FaHockeyPuck, color: 'bg-teal-500' },
-    Movies: { icon: FaFilm, color: 'bg-cyan-800' },
-    'Museums & Art': { icon: FaLandmark, color: 'bg-amber-400' },
-    'Music & Concerts': { icon: FaMusic, color: 'bg-sky-500' },
-    Nature: { icon: FaLeaf, color: 'bg-emerald-500' },
-    'Party & Night Clubs': { icon: FaGlassMartiniAlt, color: 'bg-red-500' },
-    Sailing: { icon: FaShip, color: 'bg-orange-300' },
-    Shopping: { icon: FaShoppingCart, color: 'bg-sky-300' },
-    Sports: { icon: FaHeart, color: 'bg-lime-400' },
-    Travelling: { icon: FaMapMarkerAlt, color: 'bg-blue-600' },
-    'Watching TV': { icon: FaTv, color: 'bg-orange-500' },
-    'Meditation & Yoga': { icon: FaPrayingHands, color: 'bg-slate-300' },
-    // Backward-compatible aliases
-    Reading: { icon: FaBook, color: 'bg-fuchsia-900' },
-    Music: { icon: FaMusic, color: 'bg-sky-500' },
-    Photography: { icon: FaCamera, color: 'bg-gray-500' },
-    Fitness: { icon: FaHeart, color: 'bg-teal-500' },
-  };
 
   // Available interests list
   const availableInterests = Object.keys(interestIcons);
@@ -1698,8 +1666,8 @@ const MyProfile = () => {
                   onChange={(e) => setLookingForGender(e.target.value)}
                   className="w-full p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
                 >
-                  <option value="female">Man Looking for a Woman</option>
                   <option value="male">Woman Looking for a Man</option>
+                  <option value="female">Man Looking for a Woman</option>
                   <option value="both">Looking for Both</option>
                 </select>
               </div>

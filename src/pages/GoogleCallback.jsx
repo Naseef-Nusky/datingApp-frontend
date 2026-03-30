@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 /**
  * Handles redirect from backend after Google OAuth:
  * - If token present: apply token, wait for user, then navigate to dashboard (legacy/direct login).
- * - If email + login_link_sent: backend sent a login link to email; show "Check your email" and offer link to login page.
+ * - If email + login_link_sent: backend sent a login link to email; show "Check your email" and offer link to home page.
  */
 export default function GoogleCallback() {
   const [searchParams] = useSearchParams();
@@ -28,13 +28,13 @@ export default function GoogleCallback() {
             We sent a login link to <strong>{email}</strong>. Click the link in that email to sign in.
           </p>
           <a
-            href="/login"
+            href="/"
             className="inline-block py-3 px-6 rounded-xl font-semibold text-white"
             style={{
               background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)',
             }}
           >
-            Back to login
+            Back to home
           </a>
         </div>
       </div>

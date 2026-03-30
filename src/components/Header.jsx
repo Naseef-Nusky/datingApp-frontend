@@ -53,6 +53,19 @@ const Header = () => {
   const [showChatRequestTeaser, setShowChatRequestTeaser] = useState(false);
   const [chatRequestTeaserProgress, setChatRequestTeaserProgress] = useState(0);
   const [dismissedChatRequestKey, setDismissedChatRequestKey] = useState(null);
+
+  const applySearchFilters = (filters) => {
+    if (location.pathname === '/dashboard') {
+      window.dispatchEvent(new CustomEvent('applySearchFilters', { detail: filters }));
+      setShowSearchModal(false);
+      return;
+    }
+
+    navigate('/dashboard', {
+      state: { applySearchFilters: filters },
+    });
+    setShowSearchModal(false);
+  };
   const socketRef = useRef(null);
   // Popup only for requests that arrive after load (socket). Not for requests already present on refresh.
   const seenRequestKeysRef = useRef(new Set());
@@ -447,11 +460,7 @@ const Header = () => {
                   <SearchFilterModal
                     isOpen={showSearchModal}
                     onClose={() => setShowSearchModal(false)}
-                    onApplyFilters={(filters) => {
-                      // Dispatch event to Dashboard to apply filters
-                      window.dispatchEvent(new CustomEvent('applySearchFilters', { detail: filters }));
-                      setShowSearchModal(false);
-                    }}
+                    onApplyFilters={applySearchFilters}
                   />
                 </div>
                 <Link
@@ -488,11 +497,7 @@ const Header = () => {
                   <SearchFilterModal
                     isOpen={showSearchModal}
                     onClose={() => setShowSearchModal(false)}
-                    onApplyFilters={(filters) => {
-                      // Dispatch event to Dashboard to apply filters
-                      window.dispatchEvent(new CustomEvent('applySearchFilters', { detail: filters }));
-                      setShowSearchModal(false);
-                    }}
+                    onApplyFilters={applySearchFilters}
                   />
                 </div>
 

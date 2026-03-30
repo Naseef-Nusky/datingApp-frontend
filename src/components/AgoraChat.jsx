@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AgoraChat from 'agora-chat';
 import axios from 'axios';
+import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 import TypingIndicator from './TypingIndicator';
@@ -707,6 +708,10 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
 
     try {
       const messageText = message.trim();
+      if (hasBlockedContactInfo(messageText)) {
+        alert(CONTACT_INFO_WARNING);
+        return;
+      }
       console.log('📤 Sending message to:', remoteUserId, 'Message:', messageText);
       
       // Create message options
@@ -782,6 +787,17 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         }, 1000);
       } catch (dbError) {
         console.error('❌ Failed to save message to database:', dbError.response?.data || dbError.message);
+
+        if (dbError.response?.status === 400 && dbError.response?.data?.code === 'CONTACT_INFO_BLOCKED') {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated.pop();
+            return updated;
+          });
+          setMessage(messageText);
+          alert(CONTACT_INFO_WARNING);
+          return;
+        }
 
         const msg = dbError.response?.data?.message || dbError.message || 'Failed to send message';
         if (dbError.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
@@ -1006,6 +1022,10 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     if (!content && !message.trim()) return;
 
     const messageContent = content || message.trim();
+    if (messageType === 'text' && hasBlockedContactInfo(messageContent)) {
+      alert(CONTACT_INFO_WARNING);
+      return;
+    }
     const isMediaMessage = messageType !== 'text' && content && (content.startsWith('http') || content.startsWith('https'));
     
     // Optimistically add message to UI immediately (for sender)
@@ -1123,6 +1143,13 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
       }, 500);
     } catch (error) {
       console.error('Send message error:', error);
+
+      if (error.response?.status === 400 && error.response?.data?.code === 'CONTACT_INFO_BLOCKED') {
+        const tempId = optimisticMessage.id;
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        alert(CONTACT_INFO_WARNING);
+        return;
+      }
 
       const msg = error.response?.data?.message || error.message || 'Failed to send message';
       if (error.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {

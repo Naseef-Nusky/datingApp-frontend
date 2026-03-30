@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaEdit } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 
 const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
@@ -56,6 +57,11 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
     
     if (!message.trim()) {
       setError('Please enter a message');
+      return;
+    }
+
+    if (hasBlockedContactInfo(message.trim())) {
+      setError(CONTACT_INFO_WARNING);
       return;
     }
 

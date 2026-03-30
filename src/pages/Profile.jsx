@@ -19,6 +19,8 @@ import ContactsSidebar from '../components/ContactsSidebar';
 import FreeUserBadge from '../components/FreeUserBadge';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { createSafeChannelName } from '../utils/agoraUtils';
+import { interestIcons, defaultInterestIcon } from '../utils/interestIcons';
+import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 
 const Profile = () => {
   const { id } = useParams();
@@ -718,17 +720,25 @@ const Profile = () => {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    
+
+    if (hasBlockedContactInfo(message.trim())) {
+      alert(CONTACT_INFO_WARNING);
+      return;
+    }
+
     try {
       await axios.post('/api/messages', {
-        receiver: id,
-        content: message,
-        type: 'text',
+        receiverId: id,
+        content: message.trim(),
+        messageType: 'text',
       });
       setMessage('');
       // Show success message or notification
     } catch (error) {
       console.error('Send message error:', error);
+      if (error.response?.status === 400 && error.response?.data?.code === 'CONTACT_INFO_BLOCKED') {
+        alert(CONTACT_INFO_WARNING);
+      }
     }
   };
 
@@ -955,14 +965,6 @@ const Profile = () => {
 
   const profileOwnerId = profile.userId || id;
   const isInContacts = contacts.some((c) => String(c.id) === String(profileOwnerId));
-
-  // Interest icons mapping
-  const interestIcons = {
-    'Nature': { icon: FaLeaf, color: 'bg-green-500' },
-    'Sports': { icon: FaMedal, color: 'bg-blue-500' },
-    'Travelling': { icon: FaMapMarkerAlt, color: 'bg-purple-500' },
-    'Watching TV': { icon: FaPlay, color: 'bg-red-500' },
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1239,7 +1241,7 @@ const Profile = () => {
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {profile.interests && profile.interests.length > 0 ? (
                     profile.interests.slice(0, 4).map((interest, index) => {
-                      const interestData = interestIcons[interest] || { icon: FaHeart, color: 'bg-teal-500' };
+                      const interestData = interestIcons[interest] || defaultInterestIcon;
                       const Icon = interestData.icon;
                       return (
                         <div key={index} className="flex flex-col items-center">
