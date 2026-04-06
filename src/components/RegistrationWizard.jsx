@@ -340,7 +340,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
           const photoFormData = new FormData();
           photoFormData.append('photo', formData.photo);
           try {
-            await axios.post(`${apiUrl}/api/profiles/me/photos`, photoFormData);
+            await axios.post('/api/profiles/me/photos', photoFormData);
           } catch (photoError) {
             console.error('Photo upload error:', photoError);
           }
