@@ -183,11 +183,7 @@ const MyProfile = () => {
       formData.append('isPublic', isPublic);
 
       // This updates/replaces the main profile photo
-      const response = await axios.post('/api/profiles/me/photos', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/api/profiles/me/photos', formData);
 
       // Update profile with new photos
       setProfile((prev) => ({
@@ -216,11 +212,7 @@ const MyProfile = () => {
       formData.append('isPublic', isPublic);
 
       // This adds a new photo to the gallery (doesn't replace first)
-      const response = await axios.post('/api/profiles/me/photos/add', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/api/profiles/me/photos/add', formData);
 
       // Update profile with new photos
       setProfile((prev) => ({
@@ -304,11 +296,7 @@ const MyProfile = () => {
       const formData = new FormData();
       formData.append('coverPhoto', file);
 
-      const response = await axios.post('/api/profiles/me/cover-photo', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/api/profiles/me/cover-photo', formData);
 
       // Update profile with new cover photo
       setProfile((prev) => ({
