@@ -179,6 +179,16 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
     return null;
   };
 
+  const buildBirthDateIso = () => {
+    const { year, month, day } = formData.birthday;
+    if (!year || !month || !day) return null;
+
+    const yearPart = String(year).padStart(4, '0');
+    const monthPart = String(month).padStart(2, '0');
+    const dayPart = String(day).padStart(2, '0');
+    return `${yearPart}-${monthPart}-${dayPart}`;
+  };
+
   const checkEmailExists = async (email) => {
     if (!email || !email.includes('@')) {
       return false; // Invalid email format, let validation handle it
@@ -282,6 +292,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
 
     try {
       const age = calculateAge();
+      const birthDateIso = buildBirthDateIso();
       const apiUrl = import.meta.env.VITE_API_URL || '';
 
       if (completeProfileOnly) {
@@ -296,6 +307,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
             description: formData.idealPartner || '',
           },
           interests: formData.interests,
+          lifestyle: birthDateIso ? { birthDate: birthDateIso } : {},
           location: {
             city: formData.hometown.split(',')[0]?.trim() || '',
             country: formData.hometown.split(',')[1]?.trim() || '',
@@ -327,6 +339,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
           description: formData.idealPartner,
         },
         interests: formData.interests,
+        lifestyle: birthDateIso ? { birthDate: birthDateIso } : {},
         location: {
           city: formData.hometown.split(',')[0] || formData.hometown,
           country: formData.hometown.split(',')[1]?.trim() || '',
