@@ -1454,28 +1454,31 @@ const MyProfile = () => {
                 </div>
 
                 {/* What languages do you know? */}
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700 w-1/3">What languages do you know?</label>
-                  <select
-                    multiple
-                    value={aboutMeData.languages}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setAboutMeData({ ...aboutMeData, languages: selected });
-                    }}
-                    className="w-2/3 p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="English">English</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="French">French</option>
-                    <option value="German">German</option>
-                    <option value="Italian">Italian</option>
-                    <option value="Portuguese">Portuguese</option>
-                    <option value="Chinese">Chinese</option>
-                    <option value="Japanese">Japanese</option>
-                    <option value="Russian">Russian</option>
-                    <option value="Arabic">Arabic</option>
-                  </select>
+                <div className="flex items-start justify-between">
+                  <label className="text-sm font-medium text-gray-700 w-1/3 pt-2">What languages do you know?</label>
+                  <div className="w-2/3 p-3 border-2 border-blue-300 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Russian', 'Arabic'].map((language) => (
+                      <label key={language} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={aboutMeData.languages.includes(language)}
+                          onChange={(e) => {
+                            setAboutMeData((prev) => {
+                              const current = Array.isArray(prev.languages) ? prev.languages : [];
+                              return {
+                                ...prev,
+                                languages: e.target.checked
+                                  ? [...current, language]
+                                  : current.filter((lang) => lang !== language),
+                              };
+                            });
+                          }}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span>{language}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 {/* What's your relationship status? */}
