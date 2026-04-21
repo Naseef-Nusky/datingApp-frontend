@@ -69,17 +69,22 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
     'Meditation & Yoga',
   ];
 
-  const educationOptions = ['Associate\'s degree', 'Bachelor\'s degree', 'College', 'Graduate degree', 'PhD', 'High school'];
-  const languageOptions = ['Afar', 'Afrikaans', 'Amharic', 'Arabic', 'Armenian', 'Azerbaijani', 'Basque', 'Belarusian', 'Bengali', 'Bosnian', 'Bulgarian', 'Catalan', 'Cebuano', 'Chinese', 'Croatian', 'Czech', 'Danish', 'Dutch', 'English', 'Esperanto', 'Estonian', 'Filipino', 'Finnish', 'French', 'Galician', 'Georgian', 'German', 'Greek', 'Gujarati', 'Haitian Creole', 'Hebrew', 'Hindi', 'Hungarian', 'Icelandic', 'Indonesian', 'Irish', 'Italian', 'Japanese', 'Javanese', 'Kannada', 'Kazakh', 'Khmer', 'Korean', 'Kurdish', 'Kyrgyz', 'Lao', 'Latin', 'Latvian', 'Lithuanian', 'Macedonian', 'Malagasy', 'Malay', 'Malayalam', 'Maltese', 'Maori', 'Marathi', 'Mongolian', 'Myanmar', 'Nepali', 'Norwegian', 'Pashto', 'Persian', 'Polish', 'Portuguese', 'Punjabi', 'Romanian', 'Russian', 'Samoan', 'Scottish Gaelic', 'Serbian', 'Sesotho', 'Shona', 'Sindhi', 'Sinhala', 'Slovak', 'Slovenian', 'Somali', 'Spanish', 'Sundanese', 'Swahili', 'Swedish', 'Tajik', 'Tamil', 'Telugu', 'Thai', 'Turkish', 'Ukrainian', 'Urdu', 'Uzbek', 'Vietnamese', 'Welsh', 'Xhosa', 'Yiddish', 'Yoruba', 'Zulu'];
-  const relationshipOptions = ['Single', 'Divorced', 'Widowed', 'Separated', 'In a relationship', 'Married', 'It\'s complicated'];
+  const educationOptions = ['High School', 'Collage', 'Bachelor\'s Degree', 'Master\'s Degree', 'PhD', 'Doctorate'];
+  const languageOptions = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Chinese', 'Japanese', 'Russian', 'Arabic'];
+  const relationshipOptions = ['Single', 'Divorced', 'Widowed', 'Separated'];
   const kidsOptions = ['No kids', 'Have kids'];
-  const smokeOptions = ['Never', 'Occasionally', 'Regularly'];
-  const drinkOptions = ['Never', 'Occasionally', 'Regularly'];
-  // Height options: 90 cm to 240 cm
-  const heightOptions = Array.from({ length: 151 }, (_, i) => `${90 + i} cm`);
-  const bodyTypeOptions = ['Athletic', 'Average', 'Full figured', 'Toned', 'Slim'];
-  const eyesOptions = ['Blue eyes', 'Brown eyes', 'Gray eyes', 'Green eyes', 'Hazel eyes'];
-  const hairOptions = ['Bald hair', 'Black hair', 'Blond hair', 'Brown hair', 'Chestnut hair', 'Fair hair', 'Red hair'];
+  const smokeOptions = ['Yes', 'No', 'Sometimes'];
+  const drinkOptions = ['Yes', 'No', 'Sometimes'];
+  // Height options: match profile format 4'0" to 7'0"
+  const heightOptions = Array.from({ length: 37 }, (_, i) => {
+    const feet = Math.floor((i + 48) / 12);
+    const inches = (i + 48) % 12;
+    const cm = Math.round((feet * 30.48) + (inches * 2.54));
+    return `${feet}'${inches}" (${cm}cm)`;
+  });
+  const bodyTypeOptions = ['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'];
+  const eyesOptions = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Other'];
+  const hairOptions = ['Black', 'Brown', 'Blonde', 'Red', 'Gray', 'White', 'Other'];
 
   const handleChange = (field, value) => {
     setFilters(prev => ({

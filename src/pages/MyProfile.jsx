@@ -1446,9 +1446,10 @@ const MyProfile = () => {
                   >
                     <option value="">Select...</option>
                     <option value="High School">High School</option>
-                    <option value="Some College">Some College</option>
+                    <option value="Collage">Collage</option>
                     <option value="Bachelor's Degree">Bachelor's Degree</option>
                     <option value="Master's Degree">Master's Degree</option>
+                    <option value="PhD">PhD</option>
                     <option value="Doctorate">Doctorate</option>
                   </select>
                 </div>
@@ -1550,7 +1551,7 @@ const MyProfile = () => {
                     className="w-2/3 p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
                   >
                     <option value="">Select...</option>
-                    {Array.from({ length: 24 }, (_, i) => {
+                    {Array.from({ length: 37 }, (_, i) => {
                       const feet = Math.floor((i + 48) / 12);
                       const inches = (i + 48) % 12;
                       const cm = Math.round((feet * 30.48) + (inches * 2.54));
