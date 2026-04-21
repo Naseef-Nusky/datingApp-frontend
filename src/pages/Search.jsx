@@ -44,12 +44,18 @@ const Search = () => {
       
       // Location filter
       if (filters.location && filters.location.trim()) {
-        const locationParts = filters.location.split(',');
-        if (locationParts[0] && locationParts[0].trim()) {
-          params.append('city', locationParts[0].trim());
-        }
-        if (locationParts[1] && locationParts[1].trim()) {
-          params.append('country', locationParts[1].trim());
+        const normalizedLocation = filters.location.trim().replace(/\s+/g, ' ');
+        const locationParts = normalizedLocation.split(',');
+        if (locationParts.length > 1) {
+          if (locationParts[0] && locationParts[0].trim()) {
+            params.append('city', locationParts[0].trim());
+          }
+          if (locationParts[1] && locationParts[1].trim()) {
+            params.append('country', locationParts[1].trim());
+          }
+        } else {
+          // Single term (e.g. "USA"): backend will match city OR country.
+          params.append('location', normalizedLocation);
         }
       }
       
@@ -126,7 +132,9 @@ const Search = () => {
         params.append('compatibleZodiacOnly', 'true');
       }
 
-      console.log('Fetching profiles with filters:', params.toString());
+      console.log('[Search] Applied filters object:', filters);
+      console.log('[Search] Query params string:', params.toString());
+      console.log('[Search] Query params entries:', Object.fromEntries(params.entries()));
       const response = await axios.get(`/api/profiles?${params.toString()}`);
       console.log('Profiles response:', response.data);
       setProfiles(response.data.profiles || []);
@@ -142,6 +150,7 @@ const Search = () => {
   };
 
   const handleApplyFilters = (appliedFilters) => {
+    console.log('[Search] Filters selected in modal:', appliedFilters);
     setFilters(appliedFilters);
     setShowFilterModal(false);
   };

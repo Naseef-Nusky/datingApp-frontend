@@ -453,23 +453,19 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
 
                     {selectedCategory === 'languages' && (
                       <div className="max-h-96 overflow-y-auto">
-                        <select
-                          multiple
-                          value={filters.languages}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            handleChange('languages', selected);
-                          }}
-                          className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                          size={10}
-                        >
+                        <div className="grid grid-cols-2 gap-2">
                           {languageOptions.map((language) => (
-                            <option key={language} value={language}>
-                              {language}
-                            </option>
+                            <label key={language} className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded border border-gray-200">
+                              <input
+                                type="checkbox"
+                                checked={filters.languages.includes(language)}
+                                onChange={() => toggleLanguage(language)}
+                                className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
+                              />
+                              <span className="text-sm text-gray-700">{language}</span>
+                            </label>
                           ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-2">Hold Ctrl (or Cmd on Mac) to select multiple languages</p>
+                        </div>
                       </div>
                     )}
 

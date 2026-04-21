@@ -40,6 +40,20 @@ const Dashboard = () => {
     ageMax: '',
     location: '',
     availableForVideoChat: false,
+    compatibleZodiacOnly: false,
+    zodiacSigns: [],
+    interests: [],
+    education: '',
+    languages: [],
+    relationship: '',
+    kids: '',
+    smoke: '',
+    drink: '',
+    heightMin: '',
+    heightMax: '',
+    bodyType: '',
+    eyes: '',
+    hair: '',
   });
 
   // Mingle states
@@ -382,14 +396,14 @@ const Dashboard = () => {
 
   // Handle filter modal apply
   const handleApplyFilters = (appliedFilters) => {
-    setFilters({
-      gender: appliedFilters.gender || '',
-      lookingFor: appliedFilters.lookingFor || '',
-      ageMin: appliedFilters.ageMin || '',
-      ageMax: appliedFilters.ageMax || '',
-      location: appliedFilters.location || '',
-      availableForVideoChat: appliedFilters.availableForVideoChat || false,
-    });
+    console.log('[Dashboard] Filters selected in modal:', appliedFilters);
+    setFilters((prev) => ({
+      ...prev,
+      ...appliedFilters,
+      zodiacSigns: Array.isArray(appliedFilters.zodiacSigns) ? appliedFilters.zodiacSigns : [],
+      interests: Array.isArray(appliedFilters.interests) ? appliedFilters.interests : [],
+      languages: Array.isArray(appliedFilters.languages) ? appliedFilters.languages : [],
+    }));
   };
 
   const fetchOnlineUsers = async () => {
@@ -430,12 +444,17 @@ const Dashboard = () => {
       
       // Location filter
       if (filters.location && filters.location.trim()) {
-        const locationParts = filters.location.split(',');
-        if (locationParts[0] && locationParts[0].trim()) {
-          params.append('city', locationParts[0].trim());
-        }
-        if (locationParts[1] && locationParts[1].trim()) {
-          params.append('country', locationParts[1].trim());
+        const normalizedLocation = filters.location.trim().replace(/\s+/g, ' ');
+        const locationParts = normalizedLocation.split(',');
+        if (locationParts.length > 1) {
+          if (locationParts[0] && locationParts[0].trim()) {
+            params.append('city', locationParts[0].trim());
+          }
+          if (locationParts[1] && locationParts[1].trim()) {
+            params.append('country', locationParts[1].trim());
+          }
+        } else {
+          params.append('location', normalizedLocation);
         }
       }
       
@@ -443,12 +462,83 @@ const Dashboard = () => {
       if (filters.availableForVideoChat) {
         params.append('videoChat', 'true');
       }
+
+      // Zodiac signs
+      if (filters.zodiacSigns && filters.zodiacSigns.length > 0) {
+        params.append('zodiacSigns', filters.zodiacSigns.join(','));
+      }
+
+      // Interests
+      if (filters.interests && filters.interests.length > 0) {
+        params.append('interests', filters.interests.join(','));
+      }
+
+      // Education
+      if (filters.education) {
+        params.append('education', filters.education);
+      }
+
+      // Languages
+      if (filters.languages && filters.languages.length > 0) {
+        params.append('languages', filters.languages.join(','));
+      }
+
+      // Relationship
+      if (filters.relationship) {
+        params.append('relationship', filters.relationship);
+      }
+
+      // Kids
+      if (filters.kids) {
+        params.append('kids', filters.kids);
+      }
+
+      // Smoke
+      if (filters.smoke) {
+        params.append('smoke', filters.smoke);
+      }
+
+      // Drink
+      if (filters.drink) {
+        params.append('drink', filters.drink);
+      }
+
+      // Height range
+      if (filters.heightMin) {
+        params.append('minHeight', filters.heightMin);
+      }
+      if (filters.heightMax) {
+        params.append('maxHeight', filters.heightMax);
+      }
+
+      // Body type
+      if (filters.bodyType) {
+        params.append('bodyType', filters.bodyType);
+      }
+
+      // Eyes
+      if (filters.eyes) {
+        params.append('eyes', filters.eyes);
+      }
+
+      // Hair
+      if (filters.hair) {
+        params.append('hair', filters.hair);
+      }
+
+      // Compatible zodiac only flag
+      if (filters.compatibleZodiacOnly) {
+        params.append('compatibleZodiacOnly', 'true');
+      }
       
       // Ask backend for a very high limit so dashboard effectively sees "all" profiles.
       params.append('limit', '1000');
       const queryString = params.toString();
       const url = `/api/profiles?${queryString}`;
       
+      console.log('[Dashboard] Applied filters object:', filters);
+      console.log('[Dashboard] Query params string:', queryString);
+      console.log('[Dashboard] Query params entries:', Object.fromEntries(params.entries()));
       console.log('Fetching profiles with URL:', url);
       const response = await axios.get(url);
       console.log('Profiles response:', response.data);
