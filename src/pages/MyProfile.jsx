@@ -58,6 +58,14 @@ const MyProfile = () => {
     hair: '',
   });
   const [savingAboutMe, setSavingAboutMe] = useState(false);
+  const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
+  const [basicInfoData, setBasicInfoData] = useState({
+    firstName: '',
+    gender: '',
+    seeking: '',
+    birthday: { month: '', day: '', year: '' },
+  });
+  const [savingBasicInfo, setSavingBasicInfo] = useState(false);
   const [showWishlistEdit, setShowWishlistEdit] = useState(false);
   const [wishlistCatalog, setWishlistCatalog] = useState({ categories: [], products: [] });
   const [draftWishlist, setDraftWishlist] = useState([]);
@@ -67,6 +75,12 @@ const MyProfile = () => {
   const [streamerLocationCountry, setStreamerLocationCountry] = useState('');
   const [savingStreamerLocation, setSavingStreamerLocation] = useState(false);
   const socketRef = useRef(null);
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1));
+  const years = Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - 18 - i));
 
   const isStreamer = user?.userType === 'streamer' || user?.userType === 'talent';
 
@@ -341,6 +355,98 @@ const MyProfile = () => {
     setShowBioModal(true);
   };
 
+  const handleOpenBasicInfoModal = () => {
+    const birthDate = profile?.lifestyle?.birthDate ? new Date(profile.lifestyle.birthDate) : null;
+    const currentYear = new Date().getFullYear();
+    const fallbackYear = profile?.age ? String(currentYear - profile.age) : '';
+    setBasicInfoData({
+      firstName: profile?.firstName || '',
+      gender: profile?.gender || '',
+      seeking: profile?.preferences?.lookingFor || '',
+      birthday: {
+        month: birthDate && !Number.isNaN(birthDate.getTime()) ? String(birthDate.getMonth() + 1) : '1',
+        day: birthDate && !Number.isNaN(birthDate.getTime()) ? String(birthDate.getDate()) : '1',
+        year: birthDate && !Number.isNaN(birthDate.getTime()) ? String(birthDate.getFullYear()) : fallbackYear,
+      },
+    });
+    setShowBasicInfoModal(true);
+  };
+
+  const handleCloseBasicInfoModal = () => {
+    setShowBasicInfoModal(false);
+    setBasicInfoData({
+      firstName: '',
+      gender: '',
+      seeking: '',
+      birthday: { month: '', day: '', year: '' },
+    });
+  };
+
+  const calculateAgeFromBirthday = (birthday) => {
+    if (!birthday?.year || !birthday?.month || !birthday?.day) return null;
+    const birthDate = new Date(
+      Number.parseInt(birthday.year, 10),
+      Number.parseInt(birthday.month, 10) - 1,
+      Number.parseInt(birthday.day, 10)
+    );
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+
+  const handleSaveBasicInfo = async () => {
+    setSavingBasicInfo(true);
+    try {
+      const age = calculateAgeFromBirthday(basicInfoData.birthday);
+      if (!basicInfoData.firstName?.trim()) {
+        alert('Please enter name or nickname');
+        setSavingBasicInfo(false);
+        return;
+      }
+      if (!basicInfoData.gender || !basicInfoData.seeking) {
+        alert('Please select gender and seeking');
+        setSavingBasicInfo(false);
+        return;
+      }
+      if (!age || age < 18) {
+        alert('Age must be 18+');
+        setSavingBasicInfo(false);
+        return;
+      }
+
+      const birthDateIso = `${basicInfoData.birthday.year}-${String(basicInfoData.birthday.month).padStart(2, '0')}-${String(basicInfoData.birthday.day).padStart(2, '0')}`;
+      const response = await axios.put('/api/profiles/me', {
+        firstName: basicInfoData.firstName.trim(),
+        age,
+        gender: basicInfoData.gender,
+        preferences: {
+          ...(profile?.preferences || {}),
+          lookingFor: basicInfoData.seeking,
+        },
+        lifestyle: {
+          ...(profile?.lifestyle || {}),
+          birthDate: birthDateIso,
+        },
+      });
+
+      setProfile((prev) => ({
+        ...prev,
+        ...response.data,
+      }));
+      setShowBasicInfoModal(false);
+      alert('Basic info updated successfully!');
+    } catch (error) {
+      console.error('Update basic info error:', error);
+      alert(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSavingBasicInfo(false);
+    }
+  };
+
   const handleCloseBioModal = () => {
     setShowBioModal(false);
     setBioText('');
@@ -515,41 +621,36 @@ const MyProfile = () => {
         city: locationParts[0] || '',
         country: locationParts[1] || '',
       };
+      const normalizedLanguages = Array.isArray(aboutMeData.languages)
+        ? aboutMeData.languages
+        : [aboutMeData.languages].filter(Boolean);
+      const nextLifestyle = {
+        work: aboutMeData.work,
+        education: aboutMeData.education,
+        languages: normalizedLanguages,
+        relationship: aboutMeData.relationship,
+        smoke: aboutMeData.smoke,
+        drink: aboutMeData.drink,
+        height: aboutMeData.height,
+        bodyType: aboutMeData.bodyType,
+        eyes: aboutMeData.eyes,
+        hair: aboutMeData.hair,
+      };
+      if (aboutMeData.haveKids === 'Yes') {
+        nextLifestyle.haveKids = true;
+      } else if (aboutMeData.haveKids === 'No') {
+        nextLifestyle.haveKids = false;
+      }
 
       const response = await axios.put('/api/profiles/me', {
         location,
-        lifestyle: {
-          work: aboutMeData.work,
-          education: aboutMeData.education,
-          languages: Array.isArray(aboutMeData.languages) ? aboutMeData.languages : [aboutMeData.languages].filter(Boolean),
-          relationship: aboutMeData.relationship,
-          haveKids: aboutMeData.haveKids === 'Yes',
-          smoke: aboutMeData.smoke,
-          drink: aboutMeData.drink,
-          height: aboutMeData.height,
-          bodyType: aboutMeData.bodyType,
-          eyes: aboutMeData.eyes,
-          hair: aboutMeData.hair,
-        },
+        lifestyle: nextLifestyle,
       });
 
-      // Update profile with new data
+      // Sync local state with backend result so UI reflects actual persisted data.
       setProfile((prev) => ({
         ...prev,
-        location,
-        lifestyle: {
-          work: aboutMeData.work,
-          education: aboutMeData.education,
-          languages: Array.isArray(aboutMeData.languages) ? aboutMeData.languages : [aboutMeData.languages].filter(Boolean),
-          relationship: aboutMeData.relationship,
-          haveKids: aboutMeData.haveKids === 'Yes',
-          smoke: aboutMeData.smoke,
-          drink: aboutMeData.drink,
-          height: aboutMeData.height,
-          bodyType: aboutMeData.bodyType,
-          eyes: aboutMeData.eyes,
-          hair: aboutMeData.hair,
-        },
+        ...response.data,
       }));
 
       setShowAboutMeModal(false);
@@ -928,7 +1029,10 @@ const MyProfile = () => {
                     <h1 className="text-base sm:text-lg md:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>
-                    <button className="text-white hover:text-gray-200 flex-shrink-0">
+                    <button
+                      onClick={handleOpenBasicInfoModal}
+                      className="text-white hover:text-gray-200 flex-shrink-0"
+                    >
                       <FaEdit className="text-xs sm:text-sm" />
                     </button>
                   </div>
@@ -1398,6 +1502,118 @@ const MyProfile = () => {
       </div>
 
       {/* About Me Edit Modal */}
+      {showBasicInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 relative">
+            <button
+              onClick={handleCloseBasicInfoModal}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+            >
+              <FaTimes className="text-xl" />
+            </button>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name or nickname</label>
+                <input
+                  type="text"
+                  value={basicInfoData.firstName}
+                  onChange={(e) => setBasicInfoData((prev) => ({ ...prev, firstName: e.target.value }))}
+                  className="w-full p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">I am a:</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBasicInfoData((prev) => ({ ...prev, gender: 'male' }))}
+                      className={`px-4 py-2 rounded border ${basicInfoData.gender === 'male' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700'}`}
+                    >
+                      Man
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBasicInfoData((prev) => ({ ...prev, gender: 'female' }))}
+                      className={`px-4 py-2 rounded border ${basicInfoData.gender === 'female' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700'}`}
+                    >
+                      Woman
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Seeking a:</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBasicInfoData((prev) => ({ ...prev, seeking: 'male' }))}
+                      className={`px-4 py-2 rounded border ${basicInfoData.seeking === 'male' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700'}`}
+                    >
+                      Man
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBasicInfoData((prev) => ({ ...prev, seeking: 'female' }))}
+                      className={`px-4 py-2 rounded border ${basicInfoData.seeking === 'female' ? 'bg-red-500 text-white border-red-500' : 'border-gray-300 text-gray-700'}`}
+                    >
+                      Woman
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Birthday</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <select
+                    value={basicInfoData.birthday.month}
+                    onChange={(e) => setBasicInfoData((prev) => ({ ...prev, birthday: { ...prev.birthday, month: e.target.value } }))}
+                    className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Month</option>
+                    {months.map((month, idx) => (
+                      <option key={month} value={String(idx + 1)}>{month}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={basicInfoData.birthday.day}
+                    onChange={(e) => setBasicInfoData((prev) => ({ ...prev, birthday: { ...prev.birthday, day: e.target.value } }))}
+                    className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Day</option>
+                    {days.map((day) => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={basicInfoData.birthday.year}
+                    onChange={(e) => setBasicInfoData((prev) => ({ ...prev, birthday: { ...prev.birthday, year: e.target.value } }))}
+                    className="p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">Year</option>
+                    {years.map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={handleSaveBasicInfo}
+                  disabled={savingBasicInfo}
+                  className="bg-gradient-nex hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingBasicInfo ? 'SAVING...' : 'SAVE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* About Me Edit Modal */}
       {showAboutMeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 my-8 relative">
@@ -1624,7 +1840,7 @@ const MyProfile = () => {
                 <button
                   onClick={handleSaveAboutMe}
                   disabled={savingAboutMe}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-nex hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingAboutMe ? 'SAVING...' : 'SAVE'}
                 </button>
@@ -1711,7 +1927,7 @@ const MyProfile = () => {
                 <button
                   onClick={handleSaveLookingFor}
                   disabled={savingLookingFor}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-nex hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingLookingFor ? 'SAVING...' : 'SAVE'}
                 </button>
@@ -1777,7 +1993,7 @@ const MyProfile = () => {
                 <button
                   onClick={handleSaveInterests}
                   disabled={savingInterests}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-nex hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingInterests ? 'SAVING...' : 'SAVE'}
                 </button>
@@ -1821,7 +2037,7 @@ const MyProfile = () => {
                 <button
                   onClick={handleSaveBio}
                   disabled={savingBio}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-nex hover:opacity-90 text-white font-semibold px-8 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingBio ? 'SAVING...' : 'SAVE'}
                 </button>
