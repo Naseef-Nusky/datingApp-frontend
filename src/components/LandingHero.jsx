@@ -13,7 +13,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   const [signupName, setSignupName] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginPassword, setLoginPassword] = useState('DummyPass123!');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [magicSentEmail, setMagicSentEmail] = useState('');
@@ -257,7 +257,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         <button
                           type="button"
                           className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                          onClick={() => { setLoginError(''); setLoginMode('password'); }}
+                          onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                         >
                           SIGN IN WITH PASSWORD
                         </button>
@@ -285,7 +285,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                        onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginMode('password'); }}
+                        onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                       >
                         SIGN IN
                       </button>
@@ -428,7 +428,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                        onClick={() => { setLoginError(''); setLoginMode('password'); }}
+                        onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                       >
                         SIGN IN
                       </button>
@@ -731,7 +731,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   <button
                     type="button"
                     className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                    onClick={() => { setLoginError(''); setLoginMode('password'); }}
+                    onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                   >
                     SIGN IN WITH PASSWORD
                   </button>
@@ -758,7 +758,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                  onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginMode('password'); }}
+                  onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                 >
                   SIGN IN
                 </button>
@@ -892,7 +892,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                  onClick={() => { setLoginError(''); setLoginMode('password'); }}
+                  onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
                 >
                   SIGN IN
                 </button>

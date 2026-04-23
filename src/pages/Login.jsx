@@ -7,7 +7,7 @@ import Logo from '../components/Logo';
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('DummyPass123!');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
