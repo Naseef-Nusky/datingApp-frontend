@@ -10,7 +10,7 @@ const DEFAULT_REFILL_PACKS = [
   { id: 'p1000', credits: 1000, price: 480, saveLabel: 'SAVE 16%', badge: 'BEST VALUE', imageUrl: '' },
 ];
 
-const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
+const CreditPackModal = ({ isOpen, onClose, onCreditsAdded, requiredCredits = 0, returnPath = null }) => {
   const [packs, setPacks] = useState(DEFAULT_REFILL_PACKS);
   const [selectedPackId, setSelectedPackId] = useState(DEFAULT_REFILL_PACKS[0]?.id || null);
   const [purchasing, setPurchasing] = useState(false);
@@ -33,12 +33,34 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
       });
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!Array.isArray(packs) || packs.length === 0) return;
+
+    const minimumCredits = Math.max(0, Number(requiredCredits) || 0);
+    const eligiblePacks = minimumCredits > 0
+      ? packs.filter((p) => (Number(p?.credits) || 0) >= minimumCredits)
+      : packs;
+    const packsToShow = eligiblePacks.length > 0 ? eligiblePacks : packs;
+    if (packsToShow.length === 0) return;
+
+    const selectedIsStillVisible = packsToShow.some((p) => p.id === selectedPackId);
+    if (!selectedIsStillVisible) {
+      setSelectedPackId(packsToShow[0].id);
+    }
+  }, [isOpen, packs, requiredCredits, selectedPackId]);
+
   if (!isOpen) return null;
 
-  const selectedPack = packs.find((p) => p.id === selectedPackId) || packs[0];
-  const maxStart = Math.max(0, (packs?.length || 0) - 3);
+  const minimumCredits = Math.max(0, Number(requiredCredits) || 0);
+  const eligiblePacks = minimumCredits > 0
+    ? (packs || []).filter((p) => (Number(p?.credits) || 0) >= minimumCredits)
+    : (packs || []);
+  const packsToShow = eligiblePacks.length > 0 ? eligiblePacks : (packs || []);
+  const selectedPack = packsToShow.find((p) => p.id === selectedPackId) || packsToShow[0];
+  const maxStart = Math.max(0, (packsToShow?.length || 0) - 3);
   const clampedIndex = Math.min(currentIndex, maxStart);
-  const visiblePacks = (packs || []).slice(clampedIndex, clampedIndex + 3);
+  const visiblePacks = (packsToShow || []).slice(clampedIndex, clampedIndex + 3);
 
   const handlePurchase = async () => {
     if (!selectedPack) return;
@@ -48,6 +70,7 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const { data } = await axios.post(`${apiUrl}/api/credits/refill-checkout-session`, {
         packId: selectedPack.id,
+        returnPath: returnPath || undefined,
       });
       if (data?.url) {
         onClose?.();
@@ -94,6 +117,11 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded }) => {
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
               Purchase Credits and continue communicating!
             </h2>
+            {minimumCredits > 0 && (
+              <p className="mt-2 text-sm font-semibold text-red-600">
+                You need at least {minimumCredits} credits to complete this action.
+              </p>
+            )}
             <p className="mt-2 text-xs sm:text-sm text-gray-600 max-w-xl">
               Communication with Free Users costs: Live Chat — 1 Credit per minute, Offline message — 1 Credit,
               Email — 10 Credits.&nbsp;

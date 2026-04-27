@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap: set your real origin, e.g. https://app.yourdomain.com/sitemap.xml
+# Generate a sitemap or add a static sitemap.xml when you have final URLs.

@@ -37,6 +37,7 @@ import { useInactivity } from './hooks/useInactivity';
 import Contact from './pages/Contact';
 import HelpCenter from './pages/HelpCenter';
 import OnlineDatingAdvice from './pages/OnlineDatingAdvice';
+import RouteSeoAndAnalytics from './components/RouteSeoAndAnalytics';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -98,6 +99,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ScrollToTop />
+        <RouteSeoAndAnalytics />
         {showHeader && <Header />}
         {showInactivityModal && (
           <InactivityModal onContinue={resetInactivity} />

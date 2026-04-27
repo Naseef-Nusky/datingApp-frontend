@@ -7,9 +7,17 @@ const RefillModalContext = createContext(null);
 export function RefillModalProvider({ children }) {
   const { fetchUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [modalOptions, setModalOptions] = useState({});
 
-  const openRefillModal = () => setIsOpen(true);
-  const closeRefillModal = () => setIsOpen(false);
+  const openRefillModal = (options = {}) => {
+    setModalOptions(options || {});
+    setIsOpen(true);
+  };
+
+  const closeRefillModal = () => {
+    setIsOpen(false);
+    setModalOptions({});
+  };
 
   return (
     <RefillModalContext.Provider value={{ openRefillModal, closeRefillModal }}>
@@ -18,6 +26,8 @@ export function RefillModalProvider({ children }) {
         isOpen={isOpen}
         onClose={closeRefillModal}
         onCreditsAdded={fetchUser}
+        requiredCredits={modalOptions.requiredCredits}
+        returnPath={modalOptions.returnPath}
       />
     </RefillModalContext.Provider>
   );

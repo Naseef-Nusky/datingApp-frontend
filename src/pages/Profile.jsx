@@ -26,7 +26,7 @@ const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, fetchUser } = useAuth();
   const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +43,7 @@ const Profile = () => {
   const [showChat, setShowChat] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [showPresentShop, setShowPresentShop] = useState(false);
+  const [presentCheckoutState, setPresentCheckoutState] = useState(null);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [incomingCall, setIncomingCall] = useState(null);
@@ -52,6 +53,7 @@ const Profile = () => {
   const outgoingCallRef = useRef(null); // Ref to track outgoing call (for socket handlers)
   const socketRef = useRef(null);
   const ringtoneRef = useRef(null); // Ref for ringtone audio element
+  const paymentSuccessHandledRef = useRef(null);
 
   // Open chat or email composer automatically when coming from dashboard with state
   useEffect(() => {
@@ -63,6 +65,83 @@ const Profile = () => {
       setShowEmailComposer(false);
     }
   }, [location.state]);
+
+  // Handle refill checkout return on profile pages and reopen present flow.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const refillStatus = params.get('refill');
+    const sessionId = params.get('session_id');
+    const shouldOpenPresentShop = params.get('openPresentShop') === '1';
+    const presentReceiverId = params.get('presentReceiverId');
+    const presentStep = params.get('presentStep');
+    const isTargetProfile =
+      !presentReceiverId || String(presentReceiverId) === String(id);
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+
+    const loadPendingPresentCheckout = () => {
+      const raw = sessionStorage.getItem('pendingPresentCheckout');
+      if (!raw) {
+        setPresentCheckoutState(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          (!parsed.receiverId || String(parsed.receiverId) === String(id))
+        ) {
+          setPresentCheckoutState({
+            initialStep: parsed.step === 'checkout' ? 'checkout' : 'shop',
+            initialCartItems: Array.isArray(parsed.cart) ? parsed.cart : [],
+          });
+        } else {
+          setPresentCheckoutState(null);
+        }
+      } catch {
+        setPresentCheckoutState(null);
+      }
+    };
+
+    if (shouldOpenPresentShop && isTargetProfile) {
+      if (presentStep === 'checkout') {
+        loadPendingPresentCheckout();
+      } else {
+        setPresentCheckoutState(null);
+      }
+      setShowPresentShop(true);
+    }
+
+    if (refillStatus === 'success' && sessionId) {
+      const key = `profile-refill-${sessionId}`;
+      if (paymentSuccessHandledRef.current === key) return;
+      paymentSuccessHandledRef.current = key;
+
+      axios
+        .post(`${apiUrl}/api/credits/confirm-refill-payment`, { session_id: sessionId })
+        .then((res) => {
+          fetchUser();
+          const added = res.data?.creditsAdded ?? '';
+          alert(added ? `Credits added: ${added}` : 'Credits added successfully.');
+          if (isTargetProfile) {
+            if (presentStep === 'checkout') {
+              loadPendingPresentCheckout();
+            }
+            setShowPresentShop(true);
+          }
+        })
+        .catch((err) => {
+          paymentSuccessHandledRef.current = null;
+          const msg =
+            err.response?.data?.message ||
+            'Could not confirm refill payment. Credits may still be applied.';
+          alert(msg);
+        });
+    }
+
+    if (refillStatus || shouldOpenPresentShop) {
+      navigate(location.pathname, { replace: true, state: location.state || {} });
+    }
+  }, [location.search, location.pathname, location.state, id, fetchUser, navigate]);
 
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
@@ -1433,8 +1512,14 @@ const Profile = () => {
       {showPresentShop && profile && (
         <PresentShopModal
           isOpen={showPresentShop}
-          onClose={() => setShowPresentShop(false)}
+          onClose={() => {
+            setShowPresentShop(false);
+            setPresentCheckoutState(null);
+            sessionStorage.removeItem('pendingPresentCheckout');
+          }}
           receiver={profile}
+          initialStep={presentCheckoutState?.initialStep || 'shop'}
+          initialCartItems={presentCheckoutState?.initialCartItems || []}
         />
       )}
 

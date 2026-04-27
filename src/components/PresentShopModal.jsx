@@ -4,9 +4,9 @@ import { FaTimes, FaGift } from 'react-icons/fa';
 import { useRefillModal } from '../context/RefillModalContext';
 import { useAuth } from '../context/AuthContext';
 
-const PresentShopModal = ({ isOpen, onClose, receiver }) => {
+const PresentShopModal = ({ isOpen, onClose, receiver, initialStep = 'shop', initialCartItems = [] }) => {
   const { openRefillModal } = useRefillModal();
-  const { fetchUser } = useAuth();
+  const { user, fetchUser } = useAuth();
   const [gifts, setGifts] = useState([]);
   const [presentCategories, setPresentCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,6 +14,7 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
   const [cart, setCart] = useState([]);
   const [step, setStep] = useState('shop'); // 'shop' | 'checkout'
   const [checkingOut, setCheckingOut] = useState(false);
+  const [appliedInitialState, setAppliedInitialState] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,6 +45,31 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
       cancelled = true;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAppliedInitialState(false);
+      return;
+    }
+    if (appliedInitialState) return;
+
+    if (Array.isArray(initialCartItems) && initialCartItems.length > 0) {
+      setCart(
+        initialCartItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          creditCost: Number(item.creditCost) || 0,
+        }))
+      );
+    }
+    if (initialStep === 'checkout') {
+      setStep('checkout');
+    } else {
+      setStep('shop');
+    }
+    setAppliedInitialState(true);
+  }, [isOpen, initialStep, initialCartItems, appliedInitialState]);
 
   const categoryDisplayName = (cat) => {
     if (!cat) return '';
@@ -105,6 +131,8 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
     () => cart.reduce((sum, g) => sum + (g.creditCost || 0), 0),
     [cart]
   );
+  const userCredits = Number(user?.credits) || 0;
+  const creditsShortfall = Math.max(0, totalCredits - userCredits);
 
   const extraSuggestions = useMemo(() => {
     if (!gifts.length) return [];
@@ -133,7 +161,26 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
     } catch (e) {
       const msg = e.response?.data?.message;
       if (msg === 'Insufficient credits') {
-        openRefillModal();
+        const pendingCheckout = {
+          receiverId: String(receiverUserId),
+          cart: cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            imageUrl: item.imageUrl || '',
+            creditCost: Number(item.creditCost) || 0,
+          })),
+          step: 'checkout',
+        };
+        sessionStorage.setItem('pendingPresentCheckout', JSON.stringify(pendingCheckout));
+        const currentPath = window.location.pathname + window.location.search;
+        const joiner = currentPath.includes('?') ? '&' : '?';
+        const returnPath = `${currentPath}${joiner}openPresentShop=1&presentReceiverId=${encodeURIComponent(
+          String(receiverUserId)
+        )}&presentStep=checkout`;
+        openRefillModal({
+          requiredCredits: creditsShortfall || totalCredits,
+          returnPath,
+        });
       } else {
         alert(msg || 'Failed to send presents');
       }
@@ -392,6 +439,11 @@ const PresentShopModal = ({ isOpen, onClose, receiver }) => {
                         {totalCredits} Credits
                       </span>
                     </div>
+                    {creditsShortfall > 0 && (
+                      <div className="text-xs sm:text-sm text-red-600 font-semibold mb-3">
+                        You need {creditsShortfall} more credits to send these presents.
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={handleCheckout}
