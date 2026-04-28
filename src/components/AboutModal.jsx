@@ -194,12 +194,8 @@ export default function AboutModal({ isOpen, onClose, initialSectionId, asPage }
           </section>
 
           <section className="mt-6 pt-4 border-t border-gray-200">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Company Information</h3>
-            <p className="font-semibold">VENTA SOLUTIONS PTE. LTD.</p>
-            <p>8 Eu Tong Sen Street, #22-85</p>
-            <p>The Central, Singapore 059818</p>
-            <p>Registration No: 201900379G</p>
-            <p className="mt-3 font-semibold">Customer Support: +1 888 980-9770</p>
+            <h3 className="text-base font-bold text-gray-900 mb-2">Customer Support</h3>
+            <p className="font-semibold">+1 888 980-9770</p>
           </section>
         </div>
     </>

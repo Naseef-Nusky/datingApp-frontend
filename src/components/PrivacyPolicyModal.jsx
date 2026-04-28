@@ -97,7 +97,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, asPage }) {
           <section id="section-2" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">2. Who We Are</h3>
             <p>
-              The Services are operated by VENTA SOLUTIONS PTE. LTD., acting as the Data Controller.
+              The Services are operated by Vantage Dating, acting as the Data Controller.
             </p>
             <p>
               We have appointed a Data Protection Officer (DPO) to oversee compliance with data protection laws. Any privacy-related inquiries or requests to exercise your legal rights may be directed through the Contact Us section.
@@ -246,7 +246,6 @@ export default function PrivacyPolicyModal({ isOpen, onClose, asPage }) {
           <section id="section-15" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">15. Contact Us</h3>
             <p className="mb-2"><strong>Data Controller:</strong></p>
-            <p className="mb-2">VENTA SOLUTIONS PTE. LTD.<br />8 Eu Tong Sen Street #22-85<br />The Central, Singapore 059818</p>
             <p className="mb-2"><strong>Customer Support:</strong> +1 888 980-9770</p>
             <p>Support available via Live Chat or Contact Form.</p>
           </section>

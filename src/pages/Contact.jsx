@@ -15,10 +15,7 @@ export default function Contact() {
             </p>
             <div>
               <h3 className="font-bold text-gray-900 mb-2">Company</h3>
-              <p className="font-semibold">VENTA SOLUTIONS PTE. LTD.</p>
-              <p>8 Eu Tong Sen Street, #22-85</p>
-              <p>The Central, Singapore 059818</p>
-              <p>Registration No: 201900379G</p>
+              <p className="text-gray-600">Company details available on request.</p>
             </div>
             <div>
               <h3 className="font-bold text-gray-900 mb-2">Customer Support</h3>

@@ -1374,13 +1374,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Report Violation */}
-            <div className="text-center mb-4 sm:mb-6">
-              <button className="text-gray-500 text-xs sm:text-sm hover:text-gray-700 underline">
-                Report a Violation
-              </button>
-            </div>
-
             {/* See more people like Sam */}
             {similarProfiles.length > 0 && (
               <div className="mb-4 sm:mb-6">
@@ -1430,13 +1423,13 @@ const Profile = () => {
               </div>
             )}
 
-            {/* Back to Search Results */}
+            {/* Back to Dashboard */}
             <div className="text-center mb-4 sm:mb-6">
               <button
-                onClick={() => navigate('/search')}
+                onClick={() => navigate('/dashboard')}
                 className="bg-gray-300 text-gray-700 px-4 sm:px-8 py-2 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-gray-400 transition w-full sm:w-auto"
               >
-                BACK TO SEARCH RESULTS
+                BACK TO DASHBOARD
               </button>
             </div>
           </div>
@@ -1445,9 +1438,6 @@ const Profile = () => {
             <footer className="bg-gray-800 text-white py-4 sm:py-6 mt-6 sm:mt-12">
               <div className="container mx-auto px-2 sm:px-4 text-center text-xs sm:text-sm">
                 <p className="mb-1 sm:mb-2">Copyright Vantage Dating 2025. All rights reserved.</p>
-                <p className="text-gray-400 text-[10px] sm:text-sm">
-                  This website is operated by VENTA SOLUTIONS PTE. LTD., located at 8 Eu Tong Sen Street #22-85, The Central, Singapore 059818 Registration No: 201900379G.
-                </p>
               </div>
             </footer>
           </div>
@@ -1585,14 +1575,6 @@ const Profile = () => {
           </div>
         </div>
       )}
-
-      {/* Help Center Button */}
-      <div className="fixed left-4 bottom-4 z-50">
-        <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition flex items-center space-x-2">
-          <span className="text-lg">Q</span>
-          <span>Help Center</span>
-        </button>
-      </div>
 
       {/* Outgoing Call Waiting UI (Caller side - waiting for receiver to accept) */}
       {outgoingCall && !showVideoCall && !showVoiceCall && (

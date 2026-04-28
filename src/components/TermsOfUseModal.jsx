@@ -93,7 +93,7 @@ export default function TermsOfUseModal({ isOpen, onClose, asPage }) {
 
           <section id="section-2" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">2. Who We Are</h3>
-            <p>Vantage Dating is operated by VENTA SOLUTIONS PTE. LTD. Company details are provided in the Contact Us section at the end of this Agreement.</p>
+            <p>Vantage Dating is operated by Vantage Dating. Company details are provided in the Contact Us section at the end of this Agreement.</p>
           </section>
 
           <section id="section-3" className="mb-6">
@@ -233,7 +233,6 @@ export default function TermsOfUseModal({ isOpen, onClose, asPage }) {
 
           <section id="section-23" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">23. Contact Us</h3>
-            <p className="mb-2"><strong>VENTA SOLUTIONS PTE. LTD.</strong><br />8 Eu Tong Sen Street #22-85<br />The Central, Singapore 059818</p>
             <p>Support available via Live Support or Contact Form.</p>
           </section>
         </div>
