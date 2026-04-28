@@ -4,6 +4,8 @@ import {
   FaArrowRight,
   FaChevronLeft,
   FaChevronRight,
+  FaMinus,
+  FaPlus,
 } from 'react-icons/fa';
 import Logo from '../components/Logo';
 import LandingHero from '../components/LandingHero';
@@ -13,6 +15,7 @@ const Home = () => {
   const { t } = useLanguage();
   const [activeReviewIndex, setActiveReviewIndex] = useState(1);
   const [activeJourneyIndex, setActiveJourneyIndex] = useState(1);
+  const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   const featureCards = useMemo(() => [
     { titleKey: 'home.secureExperience', textKey: 'home.secureExperienceText', image: '/SecureExperience.png' },
@@ -101,6 +104,192 @@ const Home = () => {
       image: '/Flirty%20Text%20Messages%20for%20Him.png',
     },
   ];
+
+  const homeFaqs = useMemo(
+    () => [
+      {
+        question: 'How do I set up on website',
+        answer: (
+          <>
+            <p className="mb-3">
+              To get started, register on the platform by entering your basic information and verifying your email if required. This step helps ensure your profile is visible to suitable matches and keeps your account protected.
+            </p>
+            <p className="mb-3">
+              Add a clear, high-quality photo of yourself—preferably one where your face is easily visible. This makes your profile more engaging and helps others connect with you instantly.
+            </p>
+            <p className="mb-3">
+              Include a brief introduction about yourself in a couple of sentences. Keep it natural, upbeat, and to the point so people quickly get a sense of who you are.
+            </p>
+            <p className="mb-3">
+              Once your profile is set up, you can personalise it further by adding details such as your age, interests, hobbies, languages spoken, and what you’re hoping to find. You may also have the option to display your online status.
+            </p>
+            <p>
+              When reaching out to someone, keep your first message simple and friendly. A short greeting followed by a question is often the easiest way to start a conversation.
+            </p>
+            <p>
+              If you experience any issues, such as pages not loading or changes not saving, try refreshing the app or logging in again. Should the problem continue, the support team will be able to assist you.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: 'How can I discover people I’m genuinely interested in?',
+        answer: (
+          <>
+            <p className="mb-3">
+              Begin by exploring profiles and focusing on what stands out to you. A quick look through someone’s photos and short description is often enough to decide if you’d like to know more.
+            </p>
+            <p className="mb-3">
+              To make your search more tailored, adjust the available filters. Even small tweaks can significantly improve how relevant your matches feel.
+            </p>
+            <p className="mb-3">
+              As you spend more time on the platform, don’t hesitate to refine your preferences. Updating your settings based on what you enjoy will make your experience more personalised over time.
+            </p>
+            <p className="mb-2">Most platforms allow you to filter profiles using criteria such as:</p>
+            <ul className="list-disc pl-5 mb-3 space-y-1">
+              <li>Age range</li>
+              <li>Location</li>
+              <li>Interests and hobbies</li>
+              <li>Languages spoken</li>
+              <li>Zodiac sign</li>
+              <li>Eye colour</li>
+              <li>Online availability</li>
+            </ul>
+            <p className="mb-3">
+              When viewing a profile, try to spot common interests or unique details you can mention. Referring to something specific—like a hobby or a travel photo—can make starting a conversation much easier and more natural.
+            </p>
+            <p className="mb-3">
+              If you feel like you’re seeing the same types of profiles repeatedly, gradually broaden your filters. Small changes can introduce more variety while still keeping matches relevant.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: 'How do I keep a conversation going with someone I like online?',
+        answer: (
+          <>
+            <p className="mb-3">
+              The key is to keep things relaxed and easy to reply to. You don’t need long messages—just make sure each one gives the other person something to respond to.
+            </p>
+            <p className="mb-3">
+              Instead of sending lots of questions at once, ask one thoughtful question at a time. It feels more natural, especially if it connects to something they’ve shared on their profile.
+            </p>
+            <p className="mb-3">
+              Try to stay engaged with what they’re saying. Rather than jumping between topics, pick up on small details and build on them—this helps conversations flow more naturally.
+            </p>
+            <p className="mb-2">If you’re unsure what to say next, take inspiration from their profile. You could mention:</p>
+            <ul className="list-disc pl-5 mb-3 space-y-1">
+              <li>Their hobbies or interests</li>
+              <li>Places or activities in their photos</li>
+              <li>Music, films, or food they like</li>
+              <li>Travel plans or experiences</li>
+              <li>What they’re hoping to find</li>
+            </ul>
+            <p className="mb-3">
+              It’s just as important to share a bit about yourself too. Adding a personal thought or quick story makes it easier for the other person to connect and reply.
+            </p>
+            <p className="mb-3">
+              If things go quiet, don’t worry—it happens. A simple, friendly message with a fresh question is usually enough to get things going again. Try not to send multiple messages back-to-back.
+            </p>
+            <p className="mb-3">
+              And if the conversation doesn’t quite click, that’s okay. Focus on the ones that feel natural and enjoyable—those are the connections worth your time.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: 'How does messaging work on vantage',
+        answer: (
+          <>
+            <p className="mb-3">
+              Starting a conversation is simple—just visit someone’s profile and choose the option to message them. Once you’ve connected, your conversation will be saved in your inbox so you can pick it up again whenever you like.
+            </p>
+            <p className="mb-3">
+              You can return to your messages at any time through your inbox or contacts section. If the other person isn’t online, your message will usually be delivered for them to see later, while live chat is available when they’re active.
+            </p>
+            <p className="mb-2">
+              Messaging features are designed to make conversations more engaging and interactive. Depending on the platform, you may have access to options such as:
+            </p>
+            <ul className="list-disc pl-5 mb-3 space-y-1">
+              <li>Send and receive messages</li>
+              <li>Using emojis or virtual gifts</li>
+              <li>Share photos</li>
+              <li>Sending voice messages</li>
+              <li>Starting voice or video calls (if supported)</li>
+            </ul>
+            <p className="mb-3">
+              Some of these features may require payment, depending on your account type.
+            </p>
+            <p>
+              If you’re not seeing new messages come through, try checking your notification settings or refreshing your inbox.
+            </p>
+            <p>
+              If at any point a conversation doesn’t feel right, you can use built-in safety tools like blocking or reporting a user. These features help maintain a safe and respectful environment for everyone.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: 'How can I manage my membership on the dating platform?',
+        answer: (
+          <>
+            <p className="mb-3">
+              To view or update your membership, head to your account settings and look for sections such as Profile, Subscription, or Credits. This area gives you an overview of your current plan and account details.
+            </p>
+            <p className="mb-2">From here, you can typically handle everything in one place, including:</p>
+            <ul className="list-disc pl-5 mb-3 space-y-1">
+              <li>Checking your subscription or membership status</li>
+              <li>Updating your payment details</li>
+              <li>Viewing your available credit balance</li>
+            </ul>
+            <p className="mb-3">
+              If you make any changes—like updating your payment method or switching plans—take a moment to confirm that everything has saved correctly. Refreshing the page or reopening the app can help you double-check.
+            </p>
+            <p>
+              If certain options aren’t visible, it’s worth confirming that you’re logged into the correct account, especially if you use multiple devices or email addresses.
+            </p>
+            <p>
+              For any billing concerns you can’t sort out—such as missing payments, incorrect charges, or unclear renewals—it’s best to contact support. Providing your account email and any payment confirmation or receipt will help resolve the issue more quickly.
+            </p>
+          </>
+        ),
+      },
+      {
+        question: 'What chat tools and virtual dating features are available?',
+        answer: (
+          <>
+            <p className="mb-3">
+              The platform offers a range of ways to connect, so you can interact at your own pace. Many people begin with basic messaging and then explore additional features as they feel more comfortable.
+            </p>
+            <p className="mb-3">
+              Text chat is usually the starting point, but there are several ways to make conversations more engaging without needing to exchange personal contact details.
+            </p>
+            <p className="mb-2">Within the chat area, you may have access to features such as:</p>
+            <ul className="list-disc pl-5 mb-3 space-y-1">
+              <li>Real-time messaging</li>
+              <li>Email-style messages</li>
+              <li>Sending photos or short videos</li>
+              <li>Voice messages</li>
+              <li>Virtual gifts</li>
+            </ul>
+            <p className="mb-3">
+              Some users may also have the option to start video chats, particularly if both profiles support webcam features.
+            </p>
+            <p>
+              All of these tools are built into the platform, so you can use them directly without leaving the site. If certain options aren’t visible, they may depend on your device, account type, or whether your profile is fully set up.
+            </p>
+            <p>
+              For features that require payment—such as sending media or using video—you’ll typically see the cost upfront before confirming, so you stay in control of what you use.
+            </p>
+            <p>
+              As always, share information at a level you’re comfortable with. If needed, you can step back to simple messaging or use safety options like blocking or reporting to keep your experience secure.
+            </p>
+          </>
+        ),
+      },
+    ],
+    []
+  );
 
   const totalReviews = reviewCards.length;
   const getWrappedReviewIndex = (index) => (index + totalReviews) % totalReviews;
@@ -616,6 +805,38 @@ const Home = () => {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full bg-gray-50 px-4 sm:px-6 py-12">
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-3">FAQ</h3>
+          <p className="text-center text-gray-600 text-base sm:text-lg max-w-3xl mx-auto mb-8 leading-relaxed">
+            Want advice on online dating? Need tips on polishing your profile? Match better with trusted guidance and turn your next virtual relationship into real success.
+          </p>
+
+          <div className="space-y-3">
+            {homeFaqs.map((item, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <article key={item.question} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex((prev) => (prev === idx ? -1 : idx))}
+                    className="w-full flex items-center justify-between text-left px-5 py-4"
+                  >
+                    <span className="font-medium text-base sm:text-lg text-gray-900">{item.question}</span>
+                    {isOpen ? <FaMinus className="text-gray-500" /> : <FaPlus className="text-gray-500" />}
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 text-base text-gray-700 leading-relaxed">
+                      {item.answer}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
