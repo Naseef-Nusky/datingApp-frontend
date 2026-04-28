@@ -1471,12 +1471,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            {/* Sparks Button */}
-            <div className="text-center mb-4 sm:mb-6">
-              <button className="bg-gray-300 text-gray-700 px-4 py-2 sm:px-8 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-gray-400 transition w-full sm:w-auto">
-                0 SPARKS
-              </button>
-            </div>
+
           </div>
         </div>
 
