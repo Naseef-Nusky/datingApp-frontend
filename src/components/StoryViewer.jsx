@@ -193,7 +193,7 @@ const StoryViewer = ({ isOpen, onClose, userId, stories = [] }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4">
       {/* Chat Window Modal */}
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md h-[85vh] max-h-[800px] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md h-[calc(85*var(--vh))] max-h-[800px] flex flex-col overflow-hidden">
         {/* Title Bar */}
         <div className="bg-nex-blue px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">

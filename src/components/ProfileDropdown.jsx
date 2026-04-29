@@ -126,7 +126,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 min-w-[14rem] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-64 min-w-[14rem] max-w-[calc(100vw-2rem)] max-h-[calc(100*var(--vh)-5rem)] bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col">
           {/* Profile Header + Menu Items - scrollable on mobile */}
           <div className="overflow-y-auto overscroll-contain flex-1 min-h-0 min-w-0">
           {/* Profile Header */}

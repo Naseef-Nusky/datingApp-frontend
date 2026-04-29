@@ -23,6 +23,11 @@ body {
   overflow-x: hidden;
 }
 
+/* iOS/Capacitor: fallback so `calc(…*var(--vh))` never becomes invalid on first paint */
+:root {
+  --vh: 1vh;
+}
+
 /* Prevent layout shift when modals open */
 body.modal-open {
   overflow: hidden;

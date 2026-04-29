@@ -1099,7 +1099,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Sidebar - Fixed - Hidden on mobile */}
-        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-20 shadow-lg overflow-hidden">
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 fixed right-0 top-16 h-[calc(100*var(--vh)-4rem)] flex flex-col z-20 shadow-lg overflow-hidden">
           <ContactsSidebar
             contacts={contacts}
             chatRequests={chatRequests}

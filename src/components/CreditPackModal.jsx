@@ -108,7 +108,7 @@ const CreditPackModal = ({ isOpen, onClose, onCreditsAdded, requiredCredits = 0,
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[calc(90*var(--vh))] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

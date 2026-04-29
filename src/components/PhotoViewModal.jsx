@@ -22,7 +22,7 @@ const PhotoViewModal = ({ isOpen, onClose, photo, photoIndex, onTogglePrivacy, o
         <img
           src={photoUrl}
           alt="Photo"
-          className="max-w-full max-h-[90vh] object-contain"
+          className="max-w-full max-h-[calc(90*var(--vh))] object-contain"
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/800';
           }}

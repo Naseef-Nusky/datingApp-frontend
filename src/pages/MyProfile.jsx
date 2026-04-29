@@ -1115,7 +1115,7 @@ const MyProfile = () => {
                 aria-labelledby="wishlist-modal-title"
               >
                 <div
-                  className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                  className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[calc(90*var(--vh))] overflow-hidden flex flex-col"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Modal header with X */}

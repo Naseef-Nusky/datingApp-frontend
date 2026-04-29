@@ -188,6 +188,18 @@ function App() {
     );
   };
 
+  // Fix iOS/Capacitor layout where `100vh` can be wrong when browser chrome collapses.
+  // We expose the computed viewport height as `--vh` so we can use `calc(var(--vh) * X)` in styles.
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   return (
     <AuthProvider>
       <RefillModalProvider>

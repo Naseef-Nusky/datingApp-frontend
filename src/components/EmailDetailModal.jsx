@@ -107,7 +107,7 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden relative"
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[calc(90*var(--vh))] overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(to bottom, #fff 0%, #fff 25%, #fff 100%)',
@@ -401,7 +401,7 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
                     <img
                       src={currentAtt.url}
                       alt="Attachment"
-                      className="max-w-[66vw] max-h-[90vh] w-auto h-auto object-contain"
+                      className="max-w-[66vw] max-h-[calc(90*var(--vh))] w-auto h-auto object-contain"
                     />
                   )
                 )}
@@ -492,7 +492,7 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
                   <video
                     src={currentAtt.url}
                     controls
-                    className="max-w-[90vw] max-h-[85vh] w-auto h-auto rounded-lg shadow-2xl"
+                    className="max-w-[90vw] max-h-[calc(85*var(--vh))] w-auto h-auto rounded-lg shadow-2xl"
                     playsInline
                   />
                 )

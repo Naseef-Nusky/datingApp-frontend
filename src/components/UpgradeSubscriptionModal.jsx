@@ -84,7 +84,7 @@ export default function UpgradeSubscriptionModal({ isOpen, onClose, onSubscribed
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[calc(90*var(--vh))] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-200">

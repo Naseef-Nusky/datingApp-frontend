@@ -167,7 +167,7 @@ export default function SettingsModal({ isOpen, onClose, onOpen }) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl bg-gradient-to-b from-white via-white to-sky-50 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-white via-white to-sky-50 rounded-2xl shadow-2xl overflow-hidden max-h-[calc(90*var(--vh))]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -189,7 +189,7 @@ export default function SettingsModal({ isOpen, onClose, onOpen }) {
         {/* Content */}
         <form
           onSubmit={handleSave}
-          className="px-6 sm:px-8 py-4 space-y-6 overflow-y-auto max-h-[72vh]"
+          className="px-6 sm:px-8 py-4 space-y-6 overflow-y-auto max-h-[calc(72*var(--vh))]"
         >
           {/* Sound */}
           <section>

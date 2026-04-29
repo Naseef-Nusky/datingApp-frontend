@@ -241,7 +241,7 @@ export default function HelpCenterModal({ isOpen, onClose, asPage }) {
   if (!isOpen && !asPage) return null;
 
   const content = (
-    <div className="flex flex-col bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh]">
+    <div className="flex flex-col bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[calc(90*var(--vh))]">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <h1 className="text-xl font-bold text-gray-900">Answers on the Spot</h1>
         {asPage ? (

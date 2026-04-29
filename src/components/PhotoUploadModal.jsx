@@ -249,7 +249,7 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
   // Full modal for webcam or preview
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" ref={modalRef}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[calc(90*var(--vh))] overflow-y-auto" ref={modalRef}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">

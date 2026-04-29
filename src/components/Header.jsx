@@ -39,6 +39,7 @@ const Header = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPresentsModal, setShowPresentsModal] = useState(false);
   const [presentsReceiverId, setPresentsReceiverId] = useState(null);
+  const [presentsReceiverPool, setPresentsReceiverPool] = useState([]);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [aboutSectionId, setAboutSectionId] = useState(null);
   const [showVerifyIdentityModal, setShowVerifyIdentityModal] = useState(false);
@@ -277,6 +278,19 @@ const Header = () => {
   useEffect(() => {
     if (location.pathname === '/terms') setShowTermsModal(true);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldOpenQuickPresents = params.get('openQuickPresents') === '1';
+    const presentReceiverId = params.get('presentReceiverId');
+
+    if (!shouldOpenQuickPresents || !presentReceiverId) return;
+
+    setPresentsReceiverId(String(presentReceiverId));
+    setShowPresentsModal(true);
+
+    navigate(location.pathname, { replace: true, state: location.state || {} });
+  }, [location.search, location.pathname, location.state, navigate]);
   useEffect(() => {
     const handleOpenTerms = () => setShowTermsModal(true);
     window.addEventListener('openTermsOfUse', handleOpenTerms);
@@ -314,14 +328,31 @@ const Header = () => {
     return iconMap[status] || null;
   };
 
-  const handleOpenPresents = () => {
-    // Only allow quick presents when viewing someone else's profile
+  const handleOpenPresents = async () => {
     const match = location.pathname.match(/^\/profile\/([^/]+)$/);
     if (match && match[1] !== 'me') {
       setPresentsReceiverId(match[1]);
+      setPresentsReceiverPool([String(match[1])]);
       setShowPresentsModal(true);
-    } else {
-      alert('Open a member profile first to send a present.');
+      return;
+    }
+
+    // From non-profile pages, use recent contacted people (max 3).
+    try {
+      const convRes = await axios.get('/api/messages/conversations');
+      const convIds = Array.isArray(convRes.data)
+        ? convRes.data.map((c) => c?.userId).filter(Boolean).map(String)
+        : [];
+      const receiverPool = Array.from(new Set(convIds)).slice(0, 3);
+      if (receiverPool.length > 0) {
+        setPresentsReceiverId(String(receiverPool[0]));
+        setPresentsReceiverPool(receiverPool.map(String));
+        setShowPresentsModal(true);
+        return;
+      }
+      alert('No contacted people found yet.');
+    } catch {
+      alert('No contacted people found yet.');
     }
   };
 
@@ -676,7 +707,7 @@ const Header = () => {
           }}
         >
           <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[calc(85*var(--vh))] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
@@ -729,8 +760,12 @@ const Header = () => {
 
       <QuickPresentsModal
         isOpen={showPresentsModal}
-        onClose={() => setShowPresentsModal(false)}
+        onClose={() => {
+          setShowPresentsModal(false);
+          setPresentsReceiverPool([]);
+        }}
         receiverId={presentsReceiverId}
+        receiverPool={presentsReceiverPool}
       />
 
       <AboutModal

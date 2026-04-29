@@ -230,7 +230,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden relative"
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[calc(90*var(--vh))] overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fafafa 100%)',

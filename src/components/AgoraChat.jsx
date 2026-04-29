@@ -1913,7 +1913,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
       )}
 
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ overflow: 'hidden' }}>
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md h-[80vh] max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md h-[calc(80*var(--vh))] max-h-[calc(80*var(--vh))] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-nex text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
           <div>

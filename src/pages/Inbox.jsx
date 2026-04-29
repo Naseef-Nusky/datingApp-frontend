@@ -519,7 +519,7 @@ const Inbox = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-2 sm:px-4 max-w-6xl">
-        <div className="flex h-[calc(100vh-64px)]">
+        <div className="flex h-[calc(100*var(--vh)-64px)]">
            {/* Main Inbox Area */}
            <div className="flex-1 flex flex-col overflow-hidden">
           {/* Filter Tabs */}

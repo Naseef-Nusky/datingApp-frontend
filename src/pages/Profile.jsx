@@ -126,7 +126,7 @@ const Profile = () => {
             if (presentStep === 'checkout') {
               loadPendingPresentCheckout();
             }
-            setShowPresentShop(true);
+            if (shouldOpenPresentShop) setShowPresentShop(true);
           }
         })
         .catch((err) => {
@@ -1149,12 +1149,16 @@ const Profile = () => {
                     <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>
-                    {profile.isOnline && (
-                      <div className="flex items-center space-x-1 sm:space-x-2 ml-1 sm:ml-2">
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
-                        <span className="text-white text-xs sm:text-sm">Online</span>
-                      </div>
-                    )}
+                  </div>
+                  <div className="flex items-center space-x-1.5 sm:space-x-2 mb-1">
+                    <span
+                      className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-white/70 ${
+                        profile.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                      }`}
+                    />
+                    <span className="text-white text-xs sm:text-sm font-medium drop-shadow">
+                      {profile.isOnline ? 'Online' : 'Offline'}
+                    </span>
                   </div>
                   {profile.userId && (
                     <p className="text-white text-xs sm:text-sm truncate">ID: {profile.userId.substring(0, 12)}</p>
@@ -1444,7 +1448,7 @@ const Profile = () => {
 
           {/* Chat Window - Middle Panel (when chat is open) */}
           {showChat && user?.id && (
-            <div className="w-full min-w-0 lg:w-[56%] h-[92vh] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
+            <div className="w-full min-w-0 lg:w-[56%] h-[calc(92*var(--vh))] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
               <div className="bg-white h-full rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <AgoraChat
                   userId={user.id}
@@ -1462,7 +1466,7 @@ const Profile = () => {
 
           {/* Email Composer - Middle Panel (when email composer is open) */}
           {showEmailComposer && profile && (
-            <div className="w-full min-w-0 lg:w-[56%] h-[92vh] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
+            <div className="w-full min-w-0 lg:w-[56%] h-[calc(92*var(--vh))] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
               <ProfileEmailComposer
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}

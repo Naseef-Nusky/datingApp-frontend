@@ -70,7 +70,7 @@ export default function VerifyIdentityModal({ isOpen, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[calc(90*var(--vh))] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

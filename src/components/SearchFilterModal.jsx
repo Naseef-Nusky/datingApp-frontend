@@ -170,7 +170,7 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
       ></div>
       
       {/* Dropdown - Positioned below button */}
-      <div className="fixed sm:absolute top-16 sm:top-full right-2 sm:right-0 left-2 sm:left-auto mt-0 sm:mt-2 bg-white rounded-lg shadow-2xl w-[calc(100%-1rem)] sm:w-[500px] lg:w-[600px] z-[100] overflow-hidden border border-gray-200" style={{ maxHeight: 'calc(100vh - 5rem)' }}>
+      <div className="fixed sm:absolute top-16 sm:top-full right-2 sm:right-0 left-2 sm:left-auto mt-0 sm:mt-2 bg-white rounded-lg shadow-2xl w-[calc(100%-1rem)] sm:w-[500px] lg:w-[600px] z-[100] overflow-hidden border border-gray-200" style={{ maxHeight: 'calc(100*var(--vh) - 5rem)' }}>
         {/* Header */}
         <div className="bg-white px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-gray-200">
           <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800">Search for Your Matches</h2>
@@ -191,7 +191,7 @@ const SearchFilterModal = ({ isOpen, onClose, onApplyFilters }) => {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+        <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(100*var(--vh) - 12rem)' }}>
           {/* Gender Preference and Age Range - One Line on desktop, stacked on mobile */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end space-y-4 sm:space-y-0 sm:space-x-4">
             {/* Gender Preference */}
