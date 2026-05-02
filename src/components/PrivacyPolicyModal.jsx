@@ -140,7 +140,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, asPage }) {
               <li><strong>Account Data:</strong> username, password, profile details</li>
               <li><strong>Sensitive Data (with consent):</strong> sexual preferences, biometric data for verification</li>
               <li><strong>Payment Data:</strong> transaction IDs, payment method details (processed securely)</li>
-              <li><strong>Verification Data:</strong> government ID and biometric data via our verification provider (SumSub)</li>
+              <li><strong>Verification Data:</strong> government ID and biometric data when you complete identity verification, processed by us or our verification partners as applicable</li>
             </ul>
 
             <h4 className="font-semibold text-gray-900 mt-3 mb-1">5.3 Usage Information</h4>
@@ -208,7 +208,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, asPage }) {
             <p className="mb-2">We may share data with:</p>
             <ul className="list-disc pl-6 mb-2 space-y-1">
               <li>Service providers and processors</li>
-              <li>Identity verification partners (e.g., SumSub)</li>
+              <li>Identity verification partners, when used</li>
               <li>Legal authorities when required</li>
               <li>Affiliates and auditors</li>
             </ul>

@@ -123,7 +123,7 @@ export default function TermsOfUseModal({ isOpen, onClose, asPage }) {
             <p className="mb-2">Upon registration, you become a Member. Members may: browse profiles; maintain a searchable profile; edit personal information; read messages (web version only); purchase paid features or subscriptions.</p>
             <p className="mb-3">Each person may maintain only one account. Duplicate accounts will be blocked. Profile information is visible to other users of the platform.</p>
             <h4 className="font-semibold text-gray-900 mt-3 mb-1">5.2 Verified Members</h4>
-            <p className="mb-2">Members may earn a Verified status by completing identity verification via SumSub, including: government-issued ID submission; biometric verification. Verification remains valid for six (6) months and must be renewed to remain active.</p>
+            <p className="mb-2">Members may earn a Verified status by completing identity verification when offered by the platform, including: government-issued ID submission; biometric verification where applicable. Verification remains valid for six (6) months and must be renewed to remain active.</p>
             <h4 className="font-semibold text-gray-900 mt-3 mb-1">5.3 Paying Members</h4>
             <p className="mb-2">Paying Members use the platform under a pay-per-action model with no interaction limits. They may communicate with both Free Users and other Paying Members. Paying Members do not display a special badge.</p>
             <h4 className="font-semibold text-gray-900 mt-3 mb-1">5.4 Free Users</h4>

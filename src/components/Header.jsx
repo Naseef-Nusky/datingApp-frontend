@@ -297,11 +297,8 @@ const Header = () => {
     return () => window.removeEventListener('openTermsOfUse', handleOpenTerms);
   }, []);
 
-  // Listen for "Get Verified" from VerifiedBadge – open Verify Identity modal
   useEffect(() => {
-    const handleOpenVerify = () => {
-      setShowVerifyIdentityModal(true);
-    };
+    const handleOpenVerify = () => setShowVerifyIdentityModal(true);
     window.addEventListener('openVerifyIdentityModal', handleOpenVerify);
     return () => window.removeEventListener('openVerifyIdentityModal', handleOpenVerify);
   }, []);

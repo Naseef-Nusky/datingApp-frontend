@@ -144,7 +144,7 @@ export default function AboutModal({ isOpen, onClose, initialSectionId, asPage }
             </p>
             <h4 id="section-verified-users" className="font-semibold text-gray-900 mt-3 mb-1">Verified Users</h4>
             <p className="mb-3">
-              Users can obtain a &quot;Verified&quot; badge by completing identity verification through SumSub, including government ID submission and biometric checks. Verification is valid for six months and must be renewed to retain the badge.
+              Users can obtain a &quot;Verified&quot; badge after completing identity verification when offered by the platform, including government ID submission and biometric checks where applicable. Verification is valid for six months and must be renewed to retain the badge.
             </p>
             <h4 className="font-semibold text-gray-900 mt-3 mb-1">Paying Members</h4>
             <p className="mb-3">

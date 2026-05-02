@@ -1063,7 +1063,7 @@ const Dashboard = () => {
                         {profile.firstName} {profile.lastName ? profile.lastName : ''}, {profile.age}
                       </h3>
                       <div className="flex items-center space-x-1">
-                        {profile.user?.userType === 'streamer' && (
+                        {videoCount > 0 && (
                           <FaVideo className="text-teal-500 text-xs sm:text-sm flex-shrink-0" />
                         )}
                         <div
