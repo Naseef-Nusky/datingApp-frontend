@@ -105,8 +105,8 @@ const StoriesCarousel = () => {
 
   if (loading) {
     return (
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-[5]">
-        <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-4">
+      <div className="bg-white border-b border-gray-200 sticky top-14 sm:top-16 z-[5]">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-8 pt-1.5 pb-1 sm:py-4">
           <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto scrollbar-hide pb-2">
             <div className="text-gray-500 text-sm">Loading stories...</div>
           </div>
@@ -116,8 +116,8 @@ const StoriesCarousel = () => {
   }
 
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-16 z-[5]">
-      <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-1.5 sm:py-2">
+    <div className="bg-white border-b border-gray-200 sticky top-14 sm:top-16 z-[5]">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-8 pt-1.5 pb-0 sm:py-2">
         <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto scrollbar-hide pb-1">
           {/* Add Story Button */}
           <div 

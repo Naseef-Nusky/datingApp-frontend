@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
 import App from './App.jsx';
 import './index.css';
 import { initGoogleAnalytics } from './utils/analytics.js';
@@ -19,6 +22,13 @@ if (import.meta.env.PROD && !raw && typeof window !== 'undefined' && /^app\./.te
 
 initGoogleAnalytics();
 injectJsonLdWebsite();
+
+// Native iOS/Android shell (Capacitor)
+if (Capacitor.isNativePlatform()) {
+  StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+  StatusBar.setBackgroundColor({ color: '#0066cc' }).catch(() => {});
+  SplashScreen.hide().catch(() => {});
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
