@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 import { FaBars, FaTimes, FaInstagram, FaFacebookF, FaTwitter } from 'react-icons/fa';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
+
+const isIosNativeShell = () =>
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+const loginBtnClass =
+  'px-4 py-2 rounded-lg text-white text-sm font-semibold transition hover:opacity-90 shrink-0';
+const loginBtnStyle = { background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' };
 
 export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -13,12 +22,14 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   const [signupName, setSignupName] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('DummyPass123!');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [magicSentEmail, setMagicSentEmail] = useState('');
   const [resetSentEmail, setResetSentEmail] = useState('');
   const loginPopupRef = useRef(null);
+  /** Full-screen mobile / iOS login sheet — must be included in outside-click checks (desktop ref is absent on iOS). */
+  const mobileLoginPopupRef = useRef(null);
   const navigate = useNavigate();
   const { login } = useAuth();
   const { language, changeLanguage, languages, t } = useLanguage();
@@ -27,13 +38,19 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
 
   useEffect(() => {
     if (!showLoginPopup) return;
-    const onDocClick = (event) => {
-      if (!loginPopupRef.current?.contains(event.target)) {
-        setShowLoginPopup(false);
-      }
+    const isInsideLoginUi = (target) => {
+      if (!(target instanceof Node)) return false;
+      return (
+        Boolean(loginPopupRef.current?.contains(target)) ||
+        Boolean(mobileLoginPopupRef.current?.contains(target))
+      );
     };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    const onDocPointerDown = (event) => {
+      if (isInsideLoginUi(event.target)) return;
+      setShowLoginPopup(false);
+    };
+    document.addEventListener('pointerdown', onDocPointerDown);
+    return () => document.removeEventListener('pointerdown', onDocPointerDown);
   }, [showLoginPopup]);
 
   const openLoginPopup = () => {
@@ -64,7 +81,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     }
     setLoginLoading(true);
     try {
-      const res = await axios.post('/api/auth/send-login-link', { email: trimmed });
+      const res = await axios.post('/api/auth/send-login-link', buildSendLoginLinkPayload(trimmed));
       setMagicSentEmail(trimmed);
       setLoginMode('magicSent');
       // if dev link is returned, surface it in error text to help devs
@@ -101,7 +118,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     }
     setLoginLoading(true);
     try {
-      const res = await axios.post('/api/auth/send-login-link', { email: emailTrimmed });
+      const res = await axios.post('/api/auth/send-login-link', buildSendLoginLinkPayload(emailTrimmed));
       // store name for later steps if needed
       sessionStorage.setItem('signup_name', nameTrimmed);
       setMagicSentEmail(emailTrimmed);
@@ -184,20 +201,34 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     }
   };
 
+  const iosApp = isIosNativeShell();
+
   return (
     <section
-      className="relative min-h-screen flex flex-col"
+      className="relative min-h-app-screen flex flex-col"
     >
       {/* Desktop: full-screen image with overlay header + floating white card */}
       <div
-        className="hidden md:block relative min-h-screen bg-cover bg-center bg-no-repeat"
+        className="hidden md:block relative min-h-app-screen bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url('${backgroundImage}')`,
         }}
       >
         {/* Desktop header: logo top left, nav top right — over image */}
         <header className="absolute top-0 left-0 right-0 z-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-5">
+          <div
+            className={
+              iosApp
+                ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-4'
+                : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-5'
+            }
+          >
+            {iosApp ? (
+              <button type="button" onClick={openLoginPopup} className={loginBtnClass} style={loginBtnStyle}>
+                {t('home.login')}
+              </button>
+            ) : (
+              <>
             <Link to="/" className="inline-flex items-center">
               <Logo className="h-8 w-auto object-contain" />
             </Link>
@@ -242,7 +273,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
                           placeholder="Your Email"
-                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                           disabled={loginLoading}
                         />
                         {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
@@ -257,7 +288,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         <button
                           type="button"
                           className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                          onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                          onClick={() => { setLoginError(''); setLoginMode('password'); }}
                         >
                           SIGN IN WITH PASSWORD
                         </button>
@@ -285,7 +316,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                        onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                        onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginMode('password'); }}
                       >
                         SIGN IN
                       </button>
@@ -304,7 +335,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         value={signupName}
                         onChange={(e) => setSignupName(e.target.value)}
                         placeholder={t('landing.nameOrNicknamePlaceholder')}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
                       <div className="relative">
@@ -313,7 +344,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
                           placeholder="Your Email"
-                          className="w-full px-3 py-2.5 pr-9 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                          className="w-full px-3 py-2.5 pr-9 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                           disabled={loginLoading}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">i</span>
@@ -362,7 +393,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         placeholder="Your Email"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
                       <input
@@ -370,7 +401,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         placeholder="Password"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
                       <div className="text-center">
@@ -414,7 +445,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         placeholder="Your Email"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
                       {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
@@ -428,7 +459,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
-                        onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                        onClick={() => { setLoginError(''); setLoginMode('password'); }}
                       >
                         SIGN IN
                       </button>
@@ -491,6 +522,8 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 )}
               </div>
             </div>
+              </>
+            )}
           </div>
         </header>
 
@@ -498,11 +531,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-[420px] lg:max-w-[460px] bg-white rounded-2xl shadow-xl p-8 lg:p-10">
-          <Logo className="h-8 w-auto mb-6 text-gray-900" />
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
+          <div className="flex justify-center mb-6">
+            <Logo className="h-8 w-auto text-gray-900" />
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3 text-center">
             {t('landing.globalDating')}
           </h1>
-          <p className="text-gray-500 text-base lg:text-lg leading-relaxed mb-8">
+          <p className="text-gray-500 text-base lg:text-lg leading-relaxed mb-8 text-center">
             {t('landing.globalDatingSub')}
           </p>
           <div className="space-y-3">
@@ -539,32 +574,46 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
         </div>
 
         {/* Image disclaimer — bottom right */}
-        <p className="absolute bottom-4 right-4 text-[10px] text-white/80 max-w-[200px] text-right">
+        <p className="absolute bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[calc(1rem+env(safe-area-inset-right,0px))] text-[10px] text-white/80 max-w-[200px] text-right">
           For display purposes only. The individual in the image is not a user of this service.
         </p>
       </div>
 
       {/* Mobile: full-screen overlay layout */}
       <div
-        className="md:hidden relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat flex-1"
+        className="md:hidden relative min-h-app-screen flex flex-col bg-cover bg-center bg-no-repeat flex-1"
         style={{
           backgroundImage:
             "linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.25)), url('/hero%20img.png')",
         }}
       >
-      {/* Mobile Header: logo left, hamburger right */}
-      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-4">
-        <Link to="/" className="inline-flex items-center">
-          <Logo className="h-7 w-auto object-contain text-white" />
-        </Link>
-        <button
-          type="button"
-          onClick={() => setShowMobileMenu(true)}
-          className="p-2 text-white hover:bg-white/10 rounded-lg transition"
-          aria-label="Open menu"
-        >
-          <FaBars className="w-6 h-6" />
-        </button>
+      {/* Mobile Header: iOS app = Log in right only; else logo + hamburger */}
+      <header
+        className={
+          iosApp
+            ? 'absolute top-0 left-0 right-0 z-20 flex items-center justify-end px-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-4'
+            : 'absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-4'
+        }
+      >
+        {iosApp ? (
+          <button type="button" onClick={openLoginPopup} className={loginBtnClass} style={loginBtnStyle}>
+            {t('home.login')}
+          </button>
+        ) : (
+          <>
+            <Link to="/" className="inline-flex items-center">
+              <Logo className="h-7 w-auto object-contain text-white" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(true)}
+              className="p-2 text-white hover:bg-white/10 rounded-lg transition"
+              aria-label="Open menu"
+            >
+              <FaBars className="w-6 h-6" />
+            </button>
+          </>
+        )}
       </header>
 
       {/* Mobile menu overlay */}
@@ -575,7 +624,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
             onClick={() => setShowMobileMenu(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-[#0b1120] shadow-xl flex flex-col py-6 px-6">
+          <div className="absolute inset-0 bg-[#0b1120] shadow-xl flex flex-col px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
             <div className="flex justify-between items-center mb-10">
               <Logo className="h-8 text-white" />
               <button
@@ -601,9 +650,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
               <button
                 type="button"
                 className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
-                onClick={() => {
+                onClick={(e) => {
+                  // Some mobile WebViews can drop Link navigation when a state update closes the menu.
+                  // Navigate on the next tick after closing the menu.
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowMobileMenu(false);
-                  navigate('/online-dating-advice');
+                  setTimeout(() => navigate('/online-dating-advice'), 0);
                 }}
               >
                 Online Dating Advice
@@ -611,23 +664,22 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
               <button
                 type="button"
                 className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowMobileMenu(false);
-                  navigate('/online-dating-singles');
+                  setTimeout(() => navigate('/online-dating-singles'), 0);
                 }}
               >
                 Singles Online
               </button>
-              <button
-                type="button"
-                className="w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
-                onClick={() => {
-                  setShowMobileMenu(false);
-                  navigate('/about');
-                }}
+              <Link
+                to="/about"
+                onClick={() => setShowMobileMenu(false)}
+                className="block w-full py-3 px-4 rounded-xl text-white font-semibold text-center bg-[#1f2937]"
               >
                 About
-              </button>
+              </Link>
             </div>
             <div className="mt-auto pt-10 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -694,11 +746,14 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
         </div>
       )}
 
-      {/* Mobile login popup */}
+      {/* Mobile login popup (full-screen); on iOS native shell include md+ so iPad layout still has login UI */}
       {showLoginPopup && (
-        <div className="fixed inset-0 z-[60] md:hidden">
+        <div className={`fixed inset-0 z-[60] touch-manipulation ${iosApp ? '' : 'md:hidden'}`}>
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowLoginPopup(false)} aria-hidden="true" />
-          <div className="absolute left-4 right-4 top-24 bg-white rounded-2xl shadow-2xl p-5">
+          <div
+            ref={mobileLoginPopupRef}
+            className="absolute left-4 right-4 top-[calc(6rem+env(safe-area-inset-top,0px))] z-10 max-h-[min(70vh,calc(100dvh-8rem))] overflow-y-auto overscroll-contain ios-login-sheet-scroll touch-manipulation bg-white rounded-2xl shadow-2xl p-5"
+          >
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-gray-900">{t('landing.logIn')}</p>
               <button type="button" onClick={() => setShowLoginPopup(false)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-700">
@@ -716,7 +771,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="Your Email"
-                    className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                     disabled={loginLoading}
                   />
                   {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
@@ -731,7 +786,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   <button
                     type="button"
                     className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                    onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                    onClick={() => { setLoginError(''); setLoginMode('password'); }}
                   >
                     SIGN IN WITH PASSWORD
                   </button>
@@ -758,7 +813,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                  onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                  onClick={() => { setLoginError(''); setMagicSentEmail(''); setLoginMode('password'); }}
                 >
                   SIGN IN
                 </button>
@@ -777,7 +832,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
                   placeholder={t('landing.nameOrNicknamePlaceholder')}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
                 <input
@@ -785,7 +840,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="Your Email"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
                 {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
@@ -826,7 +881,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="Your Email"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
                 <input
@@ -834,7 +889,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="Password"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
                 <div className="text-center">
@@ -878,7 +933,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="Your Email"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
                 {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
@@ -892,7 +947,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
-                  onClick={() => { setLoginError(''); setLoginPassword((prev) => prev || 'DummyPass123!'); setLoginMode('password'); }}
+                  onClick={() => { setLoginError(''); setLoginMode('password'); }}
                 >
                   SIGN IN
                 </button>
@@ -902,13 +957,16 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
         </div>
       )}
 
-      {/* Main content: centered headline, subheadline, CTAs — over the image (mobile-first) */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-8 pb-32 sm:pt-24 sm:pb-24 text-center">
+      {/* Main content: centered logo, headline, subheadline, CTAs — over the image (mobile-first) */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-8 pb-[calc(8rem+env(safe-area-inset-bottom,0px))] sm:pt-24 sm:pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-center">
+        <div className="flex justify-center w-full mb-4 sm:mb-5">
+          <Logo className="h-10 sm:h-12 w-auto object-contain drop-shadow-md" />
+        </div>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 drop-shadow-md">
-          Worldwide Online Dating
+          {t('landing.globalDating')}
         </h1>
         <p className="text-white/95 text-base sm:text-lg md:text-xl max-w-md mb-8 sm:mb-10 drop-shadow-sm">
-          Connect virtually with like-minded people across the globe.
+          {t('landing.globalDatingSub')}
         </p>
 
         <div className="w-full max-w-[320px] sm:max-w-[340px] space-y-3">
@@ -935,7 +993,7 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
       </div>
 
       {/* Legal fine print at bottom — over the image */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-4 sm:py-5 bg-gradient-to-t from-black/70 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pt-5 sm:pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-black/70 to-transparent">
         <p className="text-xs sm:text-sm text-white/85 text-center leading-relaxed max-w-xl mx-auto">
           By clicking &quot;Take a chance!&quot; you agree with the{' '}
           <Link to="/terms" className="underline hover:text-white">Terms &amp; Conditions</Link>,{' '}

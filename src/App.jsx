@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import { RefillModalProvider } from './context/RefillModalContext';
@@ -93,11 +94,12 @@ function App() {
     }, [location.pathname, user?.id]);
 
     const showHeader = user && isAppRoute(location.pathname);
-    const showFooter = !showHeader;
+    const isIosNativeShell = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+    const showFooter = !showHeader && !isIosNativeShell;
     const [showInactivityModal, resetInactivity] = useInactivity(showHeader);
 
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-app-screen bg-gray-50 flex flex-col">
         <ScrollToTop />
         <RouteSeoAndAnalytics />
         {showHeader && <Header />}

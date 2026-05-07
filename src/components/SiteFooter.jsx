@@ -62,12 +62,20 @@ export default function SiteFooter() {
             <li><Link to="/about" className="hover:text-white">{t('footer.about')}</Link></li>
           </ul>
           <div className="flex items-center gap-3 mt-6">
-            {[FaFacebookF, FaInstagram, FaTwitter, FaMusic].map((Icon, idx) => (
+            {[
+              { Icon: FaFacebookF, href: 'https://facebook.com', label: 'Facebook' },
+              { Icon: FaInstagram, href: 'https://instagram.com', label: 'Instagram' },
+              { Icon: FaTwitter, href: 'https://twitter.com', label: 'Twitter' },
+              { Icon: FaMusic, href: 'https://tiktok.com', label: 'TikTok' },
+            ].map(({ Icon, href, label }) => (
               <a
-                key={idx}
-                href="#"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
                 className="w-8 h-8 rounded bg-white/10 hover:bg-white/20 transition flex items-center justify-center text-white/90"
-                aria-label={t('footer.socialLink')}
+                aria-label={label}
+                title={label}
               >
                 <Icon className="text-sm" />
               </a>

@@ -66,9 +66,10 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Use pointer events so mobile taps also close reliably
+    document.addEventListener('pointerdown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
     };
   }, []);
 
@@ -106,6 +107,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
     <div className="relative" ref={dropdownRef}>
       {/* Profile Picture Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 focus:outline-none"
       >
@@ -213,6 +215,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
                 return (
                   <button
                     key={item.id}
+                    type="button"
                     onClick={() => {
                       if (item.disabled) {
                         return;
@@ -413,6 +416,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
 
             {/* Sign Out */}
             <button
+              type="button"
               onClick={handleSignOut}
               className="w-full flex items-center px-6 py-3 text-gray-500 hover:bg-gray-50 transition cursor-pointer"
             >

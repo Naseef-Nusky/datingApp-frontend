@@ -752,9 +752,14 @@ const Dashboard = () => {
     }
   };
 
+  const isStreamerVideoEnabled = (profile) => {
+    const prefFlag = profile?.preferences?.availableForVideoChat;
+    return prefFlag === true || prefFlag === 'true';
+  };
+
   const getActionButton = (profile) => {
     // Determine action button based on profile status
-    if (profile.isOnline && profile.user?.userType === 'streamer') {
+    if (profile.isOnline && profile.user?.userType === 'streamer' && isStreamerVideoEnabled(profile)) {
       return (
         <button
           onClick={() => navigate(`/profile/${profile.userId}`)}

@@ -109,10 +109,21 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Login failed',
-      };
+      const status = error.response?.status;
+      const serverMsg = error.response?.data?.message;
+      const url = error.config?.baseURL ? `${error.config.baseURL}${error.config.url || ''}` : error.config?.url;
+      if (!error.response) {
+        console.error('[login] network error', { message: error.message, url, code: error.code });
+      }
+      const message =
+        serverMsg ||
+        (status === 401 ? 'Invalid credentials' : null) ||
+        (!error.response && (error.message === 'Network Error' || error.code === 'ERR_NETWORK')
+          ? 'Cannot reach the server. On iOS Simulator use your Mac LAN IP or https API in VITE_API_URL, then npm run cap:sync.'
+          : null) ||
+        error.message ||
+        'Login failed';
+      return { success: false, message };
     }
   };
 

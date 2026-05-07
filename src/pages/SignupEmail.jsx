@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
 import { useLanguage } from '../context/LanguageContext';
+import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
 
 /**
  * First registration page: email-based signup.
@@ -29,7 +30,7 @@ export default function SignupEmail() {
     }
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/send-login-link', { email: trimmed });
+      const res = await axios.post('/api/auth/send-login-link', buildSendLoginLinkPayload(trimmed));
       navigate('/auth/check-email', {
         state: {
           email: trimmed,

@@ -35,6 +35,19 @@ const AgoraVideoCall = ({
   const localUidRef = useRef(null); // Store local UID to filter out local user events
   const remoteVideoTrackRef = useRef(null); // Store remote video track reference
 
+  const refreshCameras = async () => {
+    try {
+      const cameras = await AgoraRTC.getCameras();
+      setAvailableCameras(cameras);
+      console.log(`📹 [CAMERA] Found ${cameras.length} camera(s):`, cameras.map(c => c.label || c.deviceId));
+      return cameras;
+    } catch (error) {
+      console.warn('⚠️ [CAMERA] Could not get camera list:', error);
+      setAvailableCameras([]);
+      return [];
+    }
+  };
+
   // Helper function to extract profile data (avoid duplication)
   const getProfileData = () => {
     const profileImage = 
@@ -323,17 +336,6 @@ const AgoraVideoCall = ({
         }
       }
 
-      // Get available cameras for switching
-      if (callType === 'video') {
-        try {
-          const cameras = await AgoraRTC.getCameras();
-          setAvailableCameras(cameras);
-          console.log(`📹 [CAMERA] Found ${cameras.length} camera(s):`, cameras.map(c => c.label || c.deviceId));
-        } catch (error) {
-          console.warn('⚠️ [CAMERA] Could not get camera list:', error);
-        }
-      }
-
       // CRITICAL: Create and publish local tracks AFTER joining channel
       // MUST join first, then create tracks, then publish (as per Agora documentation)
       console.log('🔄 [RTC TRACK] Creating local tracks...');
@@ -345,6 +347,9 @@ const AgoraVideoCall = ({
           setLocalVideoTrack(videoTrack);
           tracksToPublish.push(videoTrack);
           console.log('✅ [RTC TRACK] Video track created');
+
+          // Refresh camera list AFTER permission is granted (some browsers return empty before)
+          await refreshCameras();
         } catch (videoError) {
           console.error('❌ [RTC TRACK] Video track error:', videoError);
           // Continue with audio only if video fails
@@ -507,10 +512,47 @@ const AgoraVideoCall = ({
       console.log(`📹 [CAMERA] Switching to camera ${nextCameraIndex}:`, nextCamera.label || nextCamera.deviceId);
       
       // Switch camera device
-      await localVideoTrack.setDevice(nextCamera.deviceId);
-      setCurrentCameraIndex(nextCameraIndex);
-      
-      console.log('✅ [CAMERA] Camera switched successfully');
+      try {
+        await localVideoTrack.setDevice(nextCamera.deviceId);
+        setCurrentCameraIndex(nextCameraIndex);
+        console.log('✅ [CAMERA] Camera switched successfully');
+      } catch (setDeviceErr) {
+        // Some environments (including some iOS WebView setups) can fail setDevice().
+        // Fallback: recreate track with the desired device and republish.
+        console.warn('⚠️ [CAMERA] setDevice failed, recreating track:', setDeviceErr);
+
+        const client = clientRef.current;
+        if (!client) throw setDeviceErr;
+
+        // Unpublish and close old track
+        try {
+          await client.unpublish([localVideoTrack]);
+        } catch (e) {
+          // ignore
+        }
+        try {
+          localVideoTrack.stop();
+          localVideoTrack.close();
+        } catch (e) {
+          // ignore
+        }
+
+        const newVideoTrack = await AgoraRTC.createCameraVideoTrack({ cameraId: nextCamera.deviceId });
+        setLocalVideoTrack(newVideoTrack);
+        await client.publish([newVideoTrack]);
+
+        // Ensure it plays in the local PiP container
+        if (localVideoContainerRef.current) {
+          try {
+            newVideoTrack.play(localVideoContainerRef.current);
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        setCurrentCameraIndex(nextCameraIndex);
+        console.log('✅ [CAMERA] Camera switched successfully (recreated track)');
+      }
     } catch (error) {
       console.error('❌ [CAMERA] Error switching camera:', error);
       alert('Failed to switch camera. Please try again.');
@@ -560,7 +602,7 @@ const AgoraVideoCall = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen w-screen overflow-hidden">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col w-screen h-[100dvh] overflow-hidden pt-[env(safe-area-inset-top,0px)]">
       {/* Remote Video Container */}
       <div className="flex-1 relative bg-gray-900 overflow-hidden" style={{ minHeight: 0 }}>
         {/* Show waiting UI until remote user connects - Always show REMOTE user's profile */}
@@ -658,13 +700,13 @@ const AgoraVideoCall = ({
         
         {/* Local Video Container (Picture-in-Picture) - Only show when remote is connected */}
         {callType === 'video' && localVideoTrack && isRemoteConnected && (
-          <div className="absolute top-3 right-3 w-28 h-20 sm:top-4 sm:right-4 sm:w-40 sm:h-28 lg:w-48 lg:h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
+          <div className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 w-28 h-20 sm:top-[calc(1rem+env(safe-area-inset-top,0px))] sm:right-4 sm:w-40 sm:h-28 lg:w-48 lg:h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
             <div ref={localVideoContainerRef} className="w-full h-full" />
           </div>
         )}
 
         {/* Call Info Overlay */}
-        <div className="absolute top-4 left-4 bg-black bg-opacity-50 rounded-lg px-4 py-2 text-white">
+        <div className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] left-4 bg-black bg-opacity-50 rounded-lg px-4 py-2 text-white">
           <p className="text-sm font-semibold">
             {remoteUserProfile?.firstName || remoteUserId || 'Unknown'}
             {remoteUserProfile?.lastName && ` ${remoteUserProfile.lastName}`}
@@ -712,7 +754,7 @@ const AgoraVideoCall = ({
       </div>
 
       {/* Controls */}
-      <div className="bg-gray-900 p-4 flex items-center justify-center space-x-4 border-t border-gray-800 flex-shrink-0">
+      <div className="bg-gray-900 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex items-center justify-center space-x-4 border-t border-gray-800 flex-shrink-0">
         <button
           onClick={toggleMute}
           className={`p-4 rounded-full ${

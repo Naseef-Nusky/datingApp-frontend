@@ -429,7 +429,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-nex-blue shadow-md sticky top-0 z-50">
+    <header className="bg-nex-blue shadow-md sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)]">
       <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
         <div className="flex items-center justify-between">
           {/* Logo - Hidden on mobile, show on larger screens */}

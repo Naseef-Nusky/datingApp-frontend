@@ -1366,7 +1366,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     const isToday = lastMessageDate === today;
 
     return (
-      <div className="h-full flex flex-col bg-gray-100 relative overflow-hidden">
+      <div className="h-full min-h-0 flex flex-col bg-gray-100 relative overflow-hidden">
         {/* Background decorative hearts */}
         <div className="absolute inset-0 pointer-events-none opacity-10">
           <div className="absolute top-20 left-10 text-6xl">💗</div>
@@ -1375,22 +1375,22 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         </div>
 
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-          <div className="flex items-center space-x-3">
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3 flex items-center justify-between gap-2 z-10 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             {remoteUserAvatar ? (
               <img 
                 src={remoteUserAvatar} 
                 alt={remoteUserName}
-                className="w-10 h-10 rounded-full object-cover"
+                className="w-10 h-10 rounded-full object-cover shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center shrink-0">
                 <span className="text-white font-semibold">{remoteUserName?.[0]?.toUpperCase() || '?'}</span>
               </div>
             )}
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-900">{remoteUserName}</h3>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap gap-y-1">
+                <h3 className="font-semibold text-gray-900 truncate max-w-[10rem] sm:max-w-none">{remoteUserName}</h3>
                 <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
                   <FaFire className="text-white text-xs" />
                 </div>
@@ -1398,13 +1398,15 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="text-gray-600 hover:text-gray-800 p-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+            <button type="button" className="text-gray-600 hover:text-gray-800 p-2" aria-label="More">
               <FaEllipsisV />
             </button>
             <button
+              type="button"
               onClick={onClose}
               className="text-gray-600 hover:text-gray-800 p-2"
+              aria-label="Close chat"
             >
               <FaTimes />
             </button>
@@ -1431,7 +1433,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         )}
 
         {/* Messages Area */}
-        <div className={`flex-1 overflow-y-auto py-4 space-y-4 relative z-10 ${embedded ? 'px-4 sm:px-5 lg:px-6' : 'px-4 sm:px-6 lg:px-8'}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto py-4 space-y-4 relative z-10 ${embedded ? 'px-4 sm:px-5 lg:px-6' : 'px-4 sm:px-6 lg:px-8'}`}>
           <div className={`w-full mx-auto ${embedded ? 'max-w-full' : 'max-w-3xl'}`}>
           {/* View Older Messages Link */}
           {messages.length > 10 && (
@@ -1564,7 +1566,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                             <audio 
                               src={msg.mediaUrl || msg.media_url} 
                               controls 
-                              className="w-full min-w-[250px]"
+                              className="w-full min-w-0 max-w-full"
                               style={{ backgroundColor: 'transparent', padding: 0, margin: 0 }}
                               preload="metadata"
                               onError={(e) => {
@@ -1625,7 +1627,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         </div>
 
         {/* Bottom Section - Tabs, Input */}
-        <div className="border-t border-gray-200 bg-white z-10">
+        <div className="flex-shrink-0 border-t border-gray-200 bg-white z-10">
           {/* Always-visible virtual gifts row (no separate Gift tab) */}
           <div className="px-4 pt-3 border-t border-gray-200 bg-white">
             {loadingGifts ? (
@@ -1678,14 +1680,15 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           </div>
 
           {/* Tabs (Chat / Email / Media / Smiles) */}
-          <div className="px-4 border-t border-gray-200">
-            <div className="flex items-center space-x-6">
+          <div className="px-2 sm:px-4 border-t border-gray-200">
+            <div className="flex items-center gap-1 overflow-x-auto overflow-y-hidden pb-0 -mx-1 px-1 sm:gap-4 sm:pb-0 [scrollbar-width:thin]">
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('chat');
                   setShowEmojiPicker(false);
                 }}
-                className={`py-3 flex items-center space-x-2 ${
+                className={`py-3 flex items-center space-x-2 flex-shrink-0 whitespace-nowrap ${
                   activeTab === 'chat'
                     ? 'text-green-600 border-b-2 border-green-600'
                     : 'text-gray-600'
@@ -1694,6 +1697,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 <span className="font-medium">Chat</span>
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (onOpenEmail) {
                     // Open the email composer component
@@ -1704,7 +1708,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                   }
                   setShowEmojiPicker(false);
                 }}
-                className={`py-3 flex items-center space-x-2 ${
+                className={`py-3 flex items-center space-x-2 flex-shrink-0 whitespace-nowrap ${
                   activeTab === 'email'
                     ? 'text-green-600 border-b-2 border-green-600'
                     : 'text-gray-600'
@@ -1714,25 +1718,30 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 <span className="font-medium">Email</span>
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('media');
                   setShowEmojiPicker(false);
                 }}
-                className={`py-3 flex items-center space-x-2 ${
+                className={`py-3 flex items-center space-x-2 flex-shrink-0 whitespace-nowrap ${
                   activeTab === 'media'
                     ? 'text-green-600 border-b-2 border-green-600'
                     : 'text-gray-600'
                 }`}
               >
-                <FaPaperclip className="text-sm" />
-                <span className="font-medium">Photo/Video/Audio</span>
+                <FaPaperclip className="text-sm shrink-0" />
+                <span className="font-medium">
+                  <span className="sm:hidden">Media</span>
+                  <span className="hidden sm:inline">Photo/Video/Audio</span>
+                </span>
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('smiles');
                   setShowEmojiPicker(!showEmojiPicker);
                 }}
-                className={`py-3 flex items-center space-x-2 ${
+                className={`py-3 flex items-center space-x-2 flex-shrink-0 whitespace-nowrap ${
                   activeTab === 'smiles'
                     ? 'text-green-600 border-b-2 border-green-600'
                     : 'text-gray-600'
@@ -1819,8 +1828,8 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
           )}
 
           {/* Input Field */}
-          <div className="px-4 py-4 relative">
-            <div className="flex items-center space-x-3">
+          <div className="px-3 sm:px-4 py-3 sm:py-4 relative">
+            <div className="flex items-center gap-2 min-w-0">
               <input
                 type="text"
                 value={message}
@@ -1851,13 +1860,14 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 }}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
               />
               
               <button
+                type="button"
                 onClick={() => sendMessageWithContent(message, 'text')}
                 disabled={!message.trim() && !selectedFile}
-                className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-green-600 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0 text-sm sm:text-base"
               >
                 SEND
               </button>
@@ -2100,7 +2110,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                         <audio 
                           src={msg.mediaUrl || msg.media_url} 
                           controls 
-                          className="w-full min-w-[250px]"
+                          className="w-full min-w-0 max-w-full"
                           style={{ backgroundColor: 'transparent', padding: 0, margin: 0 }}
                           preload="metadata"
                           onError={(e) => {

@@ -1448,8 +1448,8 @@ const Profile = () => {
 
           {/* Chat Window - Middle Panel (when chat is open) */}
           {showChat && user?.id && (
-            <div className="w-full min-w-0 lg:w-[56%] h-[calc(92*var(--vh))] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
-              <div className="bg-white h-full rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
+            <div className="w-full min-w-0 lg:w-[56%] overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2 min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
+              <div className="bg-white h-full min-h-0 rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <AgoraChat
                   userId={user.id}
                   remoteUserId={id}
@@ -1466,7 +1466,7 @@ const Profile = () => {
 
           {/* Email Composer - Middle Panel (when email composer is open) */}
           {showEmailComposer && profile && (
-            <div className="w-full min-w-0 lg:w-[56%] h-[calc(92*var(--vh))] sticky top-16 overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2">
+            <div className="w-full min-w-0 lg:w-[56%] overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2 min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
               <ProfileEmailComposer
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}

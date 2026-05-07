@@ -12,8 +12,15 @@
   display: none;  /* Chrome, Safari and Opera */
 }
 
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
 body {
   margin: 0;
+  min-height: 100%;
+  min-height: -webkit-fill-available;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -21,6 +28,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Prevent layout shifts */
   overflow-x: hidden;
+}
+
+#root {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+}
+
+/* Full usable viewport height on iOS WKWebView (100vh ignores dynamic toolbars / overlays) */
+.min-h-app-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* iOS WKWebView: smoother scrolling inside modal sheets */
+.ios-login-sheet-scroll {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* iOS/Capacitor: fallback so `calc(…*var(--vh))` never becomes invalid on first paint */

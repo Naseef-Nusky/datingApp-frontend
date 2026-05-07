@@ -159,9 +159,9 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const commonEmojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full min-h-0">
       {/* Header with decorative background - watercolor style */}
-      <div className="flex-shrink-0 relative h-40 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
+      <div className="flex-shrink-0 relative h-28 sm:h-40 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-6 left-8 text-7xl transform rotate-12">🗼</div>
@@ -213,44 +213,51 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
 
       {/* Email Composition Area - scrollable */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 min-w-0">
           {/* Chat, Email, Photo/Video, Smiles - Same line, 2 corners */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 min-w-0">
             {/* Left corner - Chat and Email */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               {onOpenChat && (
                 <button
+                  type="button"
                   onClick={onOpenChat}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="flex items-center gap-2 px-2 py-2 sm:px-4 text-gray-600 hover:text-gray-800 transition-colors"
                 >
-                  <FaComments className="text-lg" />
+                  <FaComments className="text-lg shrink-0" />
                   <span className="font-medium">Chat</span>
                 </button>
               )}
               <button
-                className="flex items-center gap-2 px-4 py-2 text-teal-600 transition-colors"
+                type="button"
+                className="flex items-center gap-2 px-2 py-2 sm:px-4 text-teal-600 transition-colors"
               >
-                <FaEnvelope className="text-lg" />
+                <FaEnvelope className="text-lg shrink-0" />
                 <span className="font-medium">Email</span>
               </button>
             </div>
             
             {/* Right corner - Photo/Video and Smiles */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
               <button 
+                type="button"
                 onClick={handlePhotoVideoClick}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1.5 sm:px-3 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
                 title="Photo/Video"
               >
-                <FaCamera className="text-base" />
-                <span>Photo/Video</span>
+                <FaCamera className="text-base shrink-0" />
+                <span className="whitespace-nowrap">
+                  <span className="sm:hidden">Media</span>
+                  <span className="hidden sm:inline">Photo/Video</span>
+                </span>
               </button>
               <button 
+                type="button"
                 onClick={handleSmilesClick}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                className="flex items-center gap-1 px-2 py-1.5 sm:px-3 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
                 title="Smiles"
               >
-                <FaSmile className="text-base" />
+                <FaSmile className="text-base shrink-0" />
                 <span>Smiles</span>
               </button>
             </div>
@@ -386,8 +393,9 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         </div>
 
         {/* Send Button - fixed at bottom */}
-        <div className="flex-shrink-0 p-4 pt-0 border-t border-gray-200 bg-white">
+        <div className="flex-shrink-0 p-3 sm:p-4 pt-0 border-t border-gray-200 bg-white">
           <button
+            type="button"
             onClick={handleSend}
             disabled={sending || (!message.trim() && !selectedMedia && selectedGifts.length === 0)}
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

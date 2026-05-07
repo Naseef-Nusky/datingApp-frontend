@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import {
   FaArrowRight,
   FaChevronLeft,
@@ -10,6 +11,10 @@ import {
 import Logo from '../components/Logo';
 import LandingHero from '../components/LandingHero';
 import { useLanguage } from '../context/LanguageContext';
+
+/** Capacitor iOS app: marketing page is trimmed to hero only (full page stays on web). */
+const isIosNativeAppShell = () =>
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
 const Home = () => {
   const { t } = useLanguage();
@@ -297,10 +302,14 @@ const Home = () => {
   const centerReview = reviewCards[getWrappedReviewIndex(activeReviewIndex)];
   const rightReview = reviewCards[getWrappedReviewIndex(activeReviewIndex + 1)];
 
+  const iosAppHeroOnly = isIosNativeAppShell();
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <LandingHero />
 
+      {!iosAppHeroOnly && (
+        <>
       <section>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {featureCards.map((item) => (
@@ -840,6 +849,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+        </>
+      )}
 
     </div>
   );
