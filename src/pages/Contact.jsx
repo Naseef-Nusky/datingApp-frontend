@@ -19,8 +19,18 @@ export default function Contact() {
             </div>
             <div>
               <h3 className="font-bold text-gray-900 mb-2">Customer Support</h3>
-              <p className="font-semibold">Phone: +1 888 980-9770</p>
-              <p className="mt-2">Support is available via Live Chat or Contact Form within the app when you are logged in.</p>
+              <p className="font-semibold">
+                Email:{' '}
+                <a
+                  href="mailto:support@vantagedating.com"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
+                  support@vantagedating.com
+                </a>
+              </p>
+              <p className="mt-2">
+                When you are logged in, you can also reach us using the Contact Form in the app.
+              </p>
             </div>
             <p className="text-gray-600">
               For account-related issues, refund requests, or policy questions, please refer to our{' '}
