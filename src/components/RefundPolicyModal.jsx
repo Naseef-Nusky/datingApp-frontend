@@ -128,8 +128,12 @@ export default function RefundPolicyModal({ isOpen, onClose, asPage }) {
             <h3 className="text-base font-bold text-gray-900 mb-2">4. How to Request a Refund</h3>
             <p className="mb-2">To request a credit or monetary refund:</p>
             <ul className="list-disc pl-6 mb-2 space-y-1">
-              <li>Use the Contact Us form on the website or app</li>
-              <li>Or contact Live Support directly</li>
+              <li>
+                Email{' '}
+                <a href="mailto:support@vantagedating.com" className="text-blue-600 hover:underline">
+                  support@vantagedating.com
+                </a>
+              </li>
             </ul>
             <p>Our support team will review your request and provide an initial response within 72 hours.</p>
           </section>

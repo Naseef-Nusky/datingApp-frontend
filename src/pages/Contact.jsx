@@ -11,7 +11,7 @@ export default function Contact() {
           </div>
           <div className="px-6 py-8 text-gray-800 text-sm leading-relaxed space-y-6">
             <p>
-              We&apos;re here to help. If you have questions, feedback, or need assistance with your Vantage Dating account, please reach out using one of the options below.
+              We&apos;re here to help. If you have questions, feedback, or need assistance with your Vantage Dating account, please email us.
             </p>
             <div>
               <h3 className="font-bold text-gray-900 mb-2">Company</h3>
@@ -20,16 +20,12 @@ export default function Contact() {
             <div>
               <h3 className="font-bold text-gray-900 mb-2">Customer Support</h3>
               <p className="font-semibold">
-                Email:{' '}
                 <a
                   href="mailto:support@vantagedating.com"
                   className="text-blue-600 hover:underline font-semibold"
                 >
                   support@vantagedating.com
                 </a>
-              </p>
-              <p className="mt-2">
-                When you are logged in, you can also reach us using the Contact Form in the app.
               </p>
             </div>
             <p className="text-gray-600">

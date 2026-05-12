@@ -233,7 +233,12 @@ export default function TermsOfUseModal({ isOpen, onClose, asPage }) {
 
           <section id="section-23" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">23. Contact Us</h3>
-            <p>Support available via Live Support or Contact Form.</p>
+            <p>
+              Customer support:{' '}
+              <a href="mailto:support@vantagedating.com" className="text-blue-600 hover:underline">
+                support@vantagedating.com
+              </a>
+            </p>
           </section>
         </div>
     </>

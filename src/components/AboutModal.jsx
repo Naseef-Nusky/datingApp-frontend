@@ -195,7 +195,14 @@ export default function AboutModal({ isOpen, onClose, initialSectionId, asPage }
 
           <section className="mt-6 pt-4 border-t border-gray-200">
             <h3 className="text-base font-bold text-gray-900 mb-2">Customer Support</h3>
-            <p className="font-semibold">+1 888 980-9770</p>
+            <p className="font-semibold">
+              <a
+                href="mailto:support@vantagedating.com"
+                className="text-blue-600 hover:underline"
+              >
+                support@vantagedating.com
+              </a>
+            </p>
           </section>
         </div>
     </>

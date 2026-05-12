@@ -246,8 +246,12 @@ export default function PrivacyPolicyModal({ isOpen, onClose, asPage }) {
           <section id="section-15" className="mb-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">15. Contact Us</h3>
             <p className="mb-2"><strong>Data Controller:</strong></p>
-            <p className="mb-2"><strong>Customer Support:</strong> +1 888 980-9770</p>
-            <p>Support available via Live Chat or Contact Form.</p>
+            <p className="mb-2">
+              <strong>Customer Support:</strong>{' '}
+              <a href="mailto:support@vantagedating.com" className="text-blue-600 hover:underline">
+                support@vantagedating.com
+              </a>
+            </p>
           </section>
 
           <section id="section-16" className="mb-6">

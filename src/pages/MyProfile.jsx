@@ -2045,7 +2045,7 @@ const MyProfile = () => {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-4 sm:py-6 mt-6 sm:mt-12">
         <div className="container mx-auto px-2 sm:px-4 text-center text-xs sm:text-sm">
-          <p className="mb-1 sm:mb-2">Copyright Vantage Dating 2025. All rights reserved.</p>
+          <p className="mb-1 sm:mb-2">Copyright Vantage Dating {new Date().getFullYear()}. All rights reserved.</p>
         </div>
       </footer>
 

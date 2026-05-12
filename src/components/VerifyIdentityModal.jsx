@@ -126,7 +126,11 @@ export default function VerifyIdentityModal({ isOpen, onClose }) {
             <div className="rounded-lg bg-teal-50 border border-teal-200 p-4 text-teal-900">
               <p className="font-semibold mb-2">Thanks — request received</p>
               <p className="text-sm leading-relaxed">
-                Hang tight while our team reviews your submission. For questions, contact customer support (+1 888 980-9770).
+                Hang tight while our team reviews your submission. For questions, email{' '}
+                <a href="mailto:support@vantagedating.com" className="font-semibold text-teal-800 underline">
+                  support@vantagedating.com
+                </a>
+                .
               </p>
               <button
                 type="button"
