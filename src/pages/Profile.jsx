@@ -148,7 +148,7 @@ const Profile = () => {
     if (user?.id) {
       // Initialize socket connection - Socket.IO needs direct connection to backend
       // Vite proxy doesn't work for WebSockets, so connect directly to backend port
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
@@ -1441,7 +1441,7 @@ const Profile = () => {
             {/* Footer */}
             <footer className="bg-gray-800 text-white py-4 sm:py-6 mt-6 sm:mt-12">
               <div className="container mx-auto px-2 sm:px-4 text-center text-xs sm:text-sm">
-                <p className="mb-1 sm:mb-2">Copyright Vantage Dating 2025. All rights reserved.</p>
+                <p className="mb-1 sm:mb-2">Copyright Vantage Dating {new Date().getFullYear()}. All rights reserved.</p>
               </div>
             </footer>
           </div>

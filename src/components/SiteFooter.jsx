@@ -89,7 +89,7 @@ export default function SiteFooter() {
             />
           </div>
           <p className="mt-4 text-xs text-white/60">
-            {t('footer.allRightsReserved')}
+            © {new Date().getFullYear()} {t('footer.allRightsReserved')}
           </p>
         </div>
 

@@ -87,7 +87,7 @@ const Header = () => {
   // Socket: real-time updates for My Contacts sidebar (new message, gift, contact list change)
   useEffect(() => {
     if (!user?.id) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
     const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
     socketRef.current = socket;
     socket.emit('join-room', String(user.id));
@@ -218,7 +218,7 @@ const Header = () => {
 
   const fetchTodayStatus = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const base = apiUrl ? apiUrl.replace(/\/$/, '') : '';
       const response = await axios.get(base ? `${base}/api/user/status` : '/api/user/status');
       setTodayStatus(response.data.status ?? null);

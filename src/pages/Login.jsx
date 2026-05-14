@@ -156,12 +156,6 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link to="/password-reset" className="text-nex-orange hover:underline">
-            {t('pages.login.forgotPassword')}
-          </Link>
-        </div>
-
         <div className="mt-4 text-center">
           <p className="text-gray-600">
             {t('pages.login.noAccount')}{' '}
