@@ -7,6 +7,7 @@ import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
+import { authorizeAppleSignIn } from '../utils/nativeAppleSignIn';
 
 const isIosNativeShell = () =>
   Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
@@ -31,10 +32,11 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
   /** Full-screen mobile / iOS login sheet — must be included in outside-click checks (desktop ref is absent on iOS). */
   const mobileLoginPopupRef = useRef(null);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithToken } = useAuth();
   const { language, changeLanguage, languages, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showMobileLangMenu, setShowMobileLangMenu] = useState(false);
+  const [heroSocialError, setHeroSocialError] = useState('');
 
   useEffect(() => {
     if (!showLoginPopup) return;
@@ -183,6 +185,33 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
       setLoginError('');
     } catch (err) {
       setLoginError(err.response?.data?.message || 'Failed to send reset instructions. Please try again.');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleAppleHeroSignIn = async () => {
+    if (!isIosNativeShell()) return;
+    setHeroSocialError('');
+    setLoginLoading(true);
+    try {
+      const { identityToken, givenName, familyName } = await authorizeAppleSignIn();
+      const res = await axios.post('/api/auth/apple', { identityToken, givenName, familyName });
+      const { token, needsProfileCompletion, registrationComplete } = res.data;
+      if (token && loginWithToken) {
+        loginWithToken(token);
+        setShowLoginPopup(false);
+        setShowMobileMenu(false);
+        if (needsProfileCompletion === true || registrationComplete === false) {
+          navigate('/complete-profile');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    } catch (e) {
+      setHeroSocialError(
+        e.response?.data?.message || e.message || 'Apple sign-in failed.'
+      );
     } finally {
       setLoginLoading(false);
     }
@@ -560,6 +589,22 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
               </svg>
               {t('landing.signInWithGoogle')}
             </a>
+            {iosApp && (
+              <button
+                type="button"
+                onClick={handleAppleHeroSignIn}
+                disabled={loginLoading}
+                className="flex items-center justify-center gap-3 w-full bg-black text-white text-base font-medium py-3.5 px-6 rounded-xl hover:opacity-90 transition disabled:opacity-50"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.06 1.87-2.54 5.98.48 7.13-.57 1.48-1.31 2.96-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                </svg>
+                {t('landing.signInWithApple')}
+              </button>
+            )}
+            {heroSocialError && (
+              <p className="text-red-600 text-xs text-center">{heroSocialError}</p>
+            )}
           </div>
           <p className="text-xs text-gray-400 leading-relaxed mt-8">
             By clicking &quot;Take a chance!&quot; you agree with the{' '}
@@ -989,6 +1034,22 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
             </svg>
             Sign in with Google
           </a>
+          {iosApp && (
+            <button
+              type="button"
+              onClick={handleAppleHeroSignIn}
+              disabled={loginLoading}
+              className="flex items-center justify-center gap-3 w-full bg-black text-white text-base font-medium py-3.5 px-6 rounded-xl hover:opacity-90 transition disabled:opacity-50 shadow"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.06 1.87-2.54 5.98.48 7.13-.57 1.48-1.31 2.96-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+              </svg>
+              {t('landing.signInWithApple')}
+            </button>
+          )}
+          {heroSocialError && (
+            <p className="text-red-200 text-xs text-center drop-shadow">{heroSocialError}</p>
+          )}
         </div>
       </div>
 
