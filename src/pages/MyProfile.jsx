@@ -93,7 +93,7 @@ const MyProfile = () => {
   // Real-time: My Contacts sidebar updates on new message, gift, or contact change
   useEffect(() => {
     if (!user?.id) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
     const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
     socketRef.current = socket;
     socket.emit('join-room', String(user.id));

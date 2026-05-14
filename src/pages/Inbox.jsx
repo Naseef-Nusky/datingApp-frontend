@@ -40,7 +40,7 @@ const Inbox = () => {
   // Socket.IO setup for real-time email updates
   useEffect(() => {
     if (user?.id) {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       console.log('🔌 [INBOX] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
