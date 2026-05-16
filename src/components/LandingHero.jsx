@@ -55,6 +55,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     return () => document.removeEventListener('pointerdown', onDocPointerDown);
   }, [showLoginPopup]);
 
+  useEffect(() => {
+    if (isIosNativeShell() && loginMode === 'forgot') {
+      setLoginError('');
+      setLoginMode('password');
+    }
+  }, [loginMode]);
+
   const openLoginPopup = () => {
     setLoginError('');
     setMagicSentEmail('');
@@ -433,15 +440,17 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          className="text-xs text-blue-600 hover:underline"
-                          onClick={() => { setLoginError(''); setLoginMode('forgot'); }}
-                        >
-                          Forgot Password?
-                        </button>
-                      </div>
+                      {!isIosNativeShell() && (
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={() => { setLoginError(''); setLoginMode('forgot'); }}
+                          >
+                            Forgot Password?
+                          </button>
+                        </div>
+                      )}
                       {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
                       <button
                         type="submit"
@@ -937,15 +946,17 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
-                <div className="text-center">
-                  <button
-                    type="button"
-                    className="text-sm text-blue-600 hover:underline"
-                    onClick={() => { setLoginError(''); setLoginMode('forgot'); }}
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
+                {!isIosNativeShell() && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-sm text-blue-600 hover:underline"
+                      onClick={() => { setLoginError(''); setLoginMode('forgot'); }}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
                 {loginError && <p className="text-red-600 text-xs">{loginError}</p>}
                 <button
                   type="submit"
