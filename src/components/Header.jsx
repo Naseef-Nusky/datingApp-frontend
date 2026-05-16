@@ -7,6 +7,7 @@ import { Heart as LucideHeart, Users, Rose, CheckCircle, Smile } from 'lucide-re
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { getSocketServerUrl } from '../utils/socketServerUrl';
 import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
 import SettingsModal from './SettingsModal';
@@ -87,7 +88,7 @@ const Header = () => {
   // Socket: real-time updates for My Contacts sidebar (new message, gift, contact list change)
   useEffect(() => {
     if (!user?.id) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const apiUrl = getSocketServerUrl();
     const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
     socketRef.current = socket;
     socket.emit('join-room', String(user.id));
@@ -218,7 +219,7 @@ const Header = () => {
 
   const fetchTodayStatus = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = getSocketServerUrl();
       const base = apiUrl ? apiUrl.replace(/\/$/, '') : '';
       const response = await axios.get(base ? `${base}/api/user/status` : '/api/user/status');
       setTodayStatus(response.data.status ?? null);

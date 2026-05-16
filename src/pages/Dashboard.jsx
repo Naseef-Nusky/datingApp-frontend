@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { getSocketServerUrl } from '../utils/socketServerUrl';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -113,7 +114,7 @@ const Dashboard = () => {
     if (user?.id) {
       // Initialize socket connection - Socket.IO needs direct connection to backend
       // Vite proxy doesn't work for WebSockets, so connect directly to backend port
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = getSocketServerUrl();
       console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
