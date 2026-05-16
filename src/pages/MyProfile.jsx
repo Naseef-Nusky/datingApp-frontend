@@ -5,6 +5,7 @@ import { useRefillModal } from '../context/RefillModalContext';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { getSocketServerUrl } from '../utils/socketServerUrl';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, FaBook, FaCampground, FaUtensils, FaCompactDisc, FaShip, FaShoppingCart, FaGamepad, FaPalette, FaHockeyPuck, FaFilm, FaLandmark, FaMusic, FaLeaf, FaGlassMartiniAlt, FaFish, FaTv, FaPrayingHands, FaSwimmer, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
@@ -93,7 +94,7 @@ const MyProfile = () => {
   // Real-time: My Contacts sidebar updates on new message, gift, or contact change
   useEffect(() => {
     if (!user?.id) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const apiUrl = getSocketServerUrl();
     const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
     socketRef.current = socket;
     socket.emit('join-room', String(user.id));

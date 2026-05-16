@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { getSocketServerUrl } from '../utils/socketServerUrl';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,6 +14,7 @@ import ContactsSidebar from '../components/ContactsSidebar';
 import FreeUserBadge from '../components/FreeUserBadge';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { appendBrowseGenderQuery } from '../utils/browseGenderFilter';
+import StreamerMemberFilter from '../components/StreamerMemberFilter';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,7 +27,8 @@ const Dashboard = () => {
   const [chatRequests, setChatRequests] = useState([]);
   const [showLessChatRequests, setShowLessChatRequests] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  /** Streamer/talent: main grid filter — all | online | offline */
+  const [streamerUserFilter, setStreamerUserFilter] = useState('all');
   const [incomingCall, setIncomingCall] = useState(null);
   const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
   const socketRef = useRef(null);
@@ -111,7 +114,7 @@ const Dashboard = () => {
     if (user?.id) {
       // Initialize socket connection - Socket.IO needs direct connection to backend
       // Vite proxy doesn't work for WebSockets, so connect directly to backend port
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = getSocketServerUrl();
       console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
@@ -336,8 +339,12 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     fetchProfiles();
-    fetchOnlineUsers();
   }, [user, filters]);
+
+  useEffect(() => {
+    const isSt = user?.userType === 'streamer' || user?.userType === 'talent';
+    if (!isSt) setStreamerUserFilter('all');
+  }, [user?.userType]);
 
   // Check if we should open search modal, mingle intro, or redirect to complete profile
   useEffect(() => {
@@ -404,24 +411,6 @@ const Dashboard = () => {
       interests: Array.isArray(appliedFilters.interests) ? appliedFilters.interests : [],
       languages: Array.isArray(appliedFilters.languages) ? appliedFilters.languages : [],
     }));
-  };
-
-  const fetchOnlineUsers = async () => {
-    try {
-      const params = new URLSearchParams();
-      appendBrowseGenderQuery(params, filters.lookingFor);
-      params.append('limit', '20');
-      const response = await axios.get(`/api/profiles?${params.toString()}`);
-      if (response.data && response.data.profiles) {
-        const online = response.data.profiles.filter(p => p.isOnline).slice(0, 15);
-        setOnlineUsers(online);
-      } else {
-        setOnlineUsers([]);
-      }
-    } catch (error) {
-      console.error('Fetch online users error:', error);
-      setOnlineUsers([]);
-    }
   };
 
   const fetchProfiles = async () => {
@@ -546,7 +535,15 @@ const Dashboard = () => {
       
       if (response.data && response.data.profiles) {
         console.log('Setting profiles:', response.data.profiles.length);
-        setProfiles(response.data.profiles);
+        const raw = response.data.profiles;
+        const isTalentOrStreamer =
+          user?.userType === 'streamer' || user?.userType === 'talent';
+        const ordered = isTalentOrStreamer
+          ? [...raw].sort(
+              (a, b) => Number(!!b.isOnline) - Number(!!a.isOnline)
+            )
+          : raw;
+        setProfiles(ordered);
       } else {
         console.warn('No profiles in response:', response.data);
         setProfiles([]);
@@ -849,6 +846,15 @@ const Dashboard = () => {
     }
   };
 
+  const isStreamerTalent =
+    user?.userType === 'streamer' || user?.userType === 'talent';
+  const gridProfiles =
+    !isStreamerTalent || streamerUserFilter === 'all'
+      ? profiles
+      : streamerUserFilter === 'online'
+        ? profiles.filter((p) => p.isOnline)
+        : profiles.filter((p) => !p.isOnline);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -965,8 +971,16 @@ const Dashboard = () => {
         {/* Main Content */}
         <div className="flex-1 min-w-0 lg:mr-80">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 pt-2 pb-4 sm:pt-4 lg:py-6">
+            {isStreamerTalent && (
+              <div className="mb-5 flex justify-end">
+                <StreamerMemberFilter
+                  value={streamerUserFilter}
+                  onChange={setStreamerUserFilter}
+                />
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
-            {profiles.map((profile) => {
+            {gridProfiles.map((profile) => {
               // Count photos and videos from the photos array
               const allMedia = profile.photos || [];
               const photoCount = allMedia.filter(photo => {
@@ -1093,10 +1107,35 @@ const Dashboard = () => {
             })}
           </div>
 
-              {profiles.length === 0 && !loading && (
+              {gridProfiles.length === 0 && !loading && (
                 <div className="text-center py-12 col-span-full">
-                  <p className="text-gray-600 text-lg mb-2">{t('dashboard.noProfilesFound')}</p>
-                  <p className="text-gray-500 text-sm">{t('dashboard.tryRefresh')}</p>
+                  <p className="text-gray-600 text-lg mb-2">
+                    {isStreamerTalent &&
+                    profiles.length > 0 &&
+                    streamerUserFilter === 'online'
+                      ? t('dashboard.noOnlineMembersWithFilter')
+                      : isStreamerTalent &&
+                          profiles.length > 0 &&
+                          streamerUserFilter === 'offline'
+                        ? t('dashboard.noOfflineMembersWithFilter')
+                        : t('dashboard.noProfilesFound')}
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    {isStreamerTalent &&
+                    profiles.length > 0 &&
+                    (streamerUserFilter === 'online' ||
+                      streamerUserFilter === 'offline') ? (
+                      <button
+                        type="button"
+                        onClick={() => setStreamerUserFilter('all')}
+                        className="font-medium text-teal-600 underline hover:text-teal-800"
+                      >
+                        {t('dashboard.filterAllUsers')}
+                      </button>
+                    ) : (
+                      t('dashboard.tryRefresh')
+                    )}
+                  </p>
                 </div>
               )}
             </div>

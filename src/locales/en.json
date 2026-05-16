@@ -149,7 +149,13 @@
     "couldNotConfirmPayment": "Could not confirm payment. Credits may still be applied.",
     "couldNotConfirmRefill": "Could not confirm refill payment. Credits may still be applied.",
     "noProfilesFound": "No profiles found",
-    "tryRefresh": "Try refreshing the page or check back later"
+    "tryRefresh": "Try refreshing the page or check back later",
+    "filterAllUsers": "All Users",
+    "filterOnlineUsers": "Online Users",
+    "filterOfflineUsers": "Offline Users",
+    "memberListFilterLabel": "Filter members",
+    "noOnlineMembersWithFilter": "No members are online right now",
+    "noOfflineMembersWithFilter": "No offline members to show — everyone appears online right now"
   },
   "profile": {
     "back": "BACK",

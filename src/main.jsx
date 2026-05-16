@@ -16,7 +16,7 @@ axios.defaults.baseURL = raw.replace(/\/$/, '');
 
 if (Capacitor.isNativePlatform() && !axios.defaults.baseURL) {
   console.error(
-    '[Vantage Dating] Native app: VITE_API_URL is empty. Set it in .env.production (e.g. https://api.yourdomain.com or http://YOUR_MAC_IP:5001 for simulator), then run: npm run cap:sync',
+    '[Vantage Dating] Native app: VITE_API_URL is empty. Set it in .env.production (e.g. https://api.yourdomain.com or http://YOUR_MAC_IP:5000 for simulator), then run: npm run cap:sync',
   );
 }
 

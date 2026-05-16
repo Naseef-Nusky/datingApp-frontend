@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import io from 'socket.io-client';
+import { getSocketServerUrl } from '../utils/socketServerUrl';
 import { 
   FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, FaGift,
   FaLeaf, FaMedal, FaMapMarkerAlt, FaPlay,
@@ -148,7 +149,7 @@ const Profile = () => {
     if (user?.id) {
       // Initialize socket connection - Socket.IO needs direct connection to backend
       // Vite proxy doesn't work for WebSockets, so connect directly to backend port
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const apiUrl = getSocketServerUrl();
       console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
       
       const socket = io(apiUrl, {
