@@ -47,13 +47,10 @@ const Profile = () => {
   const [presentCheckoutState, setPresentCheckoutState] = useState(null);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
-  const [incomingCall, setIncomingCall] = useState(null);
   const [callChannelName, setCallChannelName] = useState(null); // Store channel name for RTC
-  const [callerProfile, setCallerProfile] = useState(null); // Store caller's profile info
   const [outgoingCall, setOutgoingCall] = useState(null); // Track outgoing call waiting for acceptance
   const outgoingCallRef = useRef(null); // Ref to track outgoing call (for socket handlers)
   const socketRef = useRef(null);
-  const ringtoneRef = useRef(null); // Ref for ringtone audio element
   const paymentSuccessHandledRef = useRef(null);
 
   // Open chat or email composer automatically when coming from dashboard with state
@@ -191,66 +188,6 @@ const Profile = () => {
         socket.emit('join-room', String(user.id));
       });
 
-      // Listen for incoming calls - CRITICAL: Must be set up before any calls are made
-      socket.on('incoming-call', async (data) => {
-        console.log('📞 [RECEIVER] ========== INCOMING CALL RECEIVED ==========');
-        console.log('📞 [RECEIVER] Full data:', JSON.stringify(data, null, 2));
-        console.log('📞 [RECEIVER] Caller ID:', data.callerId);
-        console.log('📞 [RECEIVER] Call Type:', data.callType);
-        console.log('📞 [RECEIVER] Channel Name:', data.channelName);
-        
-        // Use channel name from caller if provided, otherwise create one (should match caller's)
-        const channelName = data.channelName || createSafeChannelName('call', data.callerId, user.id);
-        console.log('🔑 [RECEIVER] Using channel name:', channelName, '(from caller:', !!data.channelName, ')');
-        
-        setIncomingCall({
-          callerId: data.callerId,
-          callType: data.callType,
-          channelName: channelName, // Store channel name to ensure both users use same channel
-        });
-        
-        // Fetch caller's profile to show in notification
-        try {
-          const profileResponse = await axios.get(`/api/profiles/${data.callerId}`);
-          setCallerProfile(profileResponse.data);
-          console.log('✅ [RECEIVER] Fetched caller profile:', profileResponse.data.firstName);
-        } catch (error) {
-          console.error('⚠️ [RECEIVER] Could not fetch caller profile:', error);
-          // Continue without profile - notification will still work
-        }
-        
-        // Play ringtone for incoming call
-        try {
-          // Get user's profile to check for custom ringtone
-          const userProfileResponse = await axios.get('/api/profiles/me');
-          const ringtoneFile = userProfileResponse.data.ringtone || 'defaultRingtone.mp3';
-          const ringtonePath = `/ringtones/${ringtoneFile}`;
-          
-          if (ringtoneRef.current) {
-            ringtoneRef.current.src = ringtonePath;
-            ringtoneRef.current.loop = true;
-            ringtoneRef.current.volume = 0.7;
-            ringtoneRef.current.play().catch(err => {
-              console.error('Error playing ringtone:', err);
-            });
-            console.log('🔔 Playing ringtone:', ringtonePath);
-          }
-        } catch (error) {
-          console.error('Error setting up ringtone:', error);
-          // Try default ringtone if user profile fetch fails
-          if (ringtoneRef.current) {
-            ringtoneRef.current.src = '/ringtones/defaultRingtone.mp3';
-            ringtoneRef.current.loop = true;
-            ringtoneRef.current.volume = 0.7;
-            ringtoneRef.current.play().catch(err => {
-              console.error('Error playing default ringtone:', err);
-            });
-          }
-        }
-        
-        console.log('✅ [RECEIVER] Incoming call state set - UI should show call notification');
-      });
-
       // Listen for call accepted (CALLER side - receiver accepted the call)
       socket.on('call-accepted', (data) => {
         console.log('✅ [CALLER] Call accepted by receiver:', data);
@@ -286,17 +223,16 @@ const Profile = () => {
         }
       });
 
+      socket.on('call-request-error', (data) => {
+        const msg = data?.message || 'Call could not be started.';
+        alert(msg);
+        setOutgoingCall(null);
+        outgoingCallRef.current = null;
+      });
+
       // Listen for call rejected
       socket.on('call-rejected', (data) => {
         console.log('❌ Call rejected:', data);
-        // Stop ringtone
-        if (ringtoneRef.current) {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.currentTime = 0;
-        }
-        setIncomingCall(null);
-        setCallerProfile(null);
-        // Also clear outgoing call if caller's call was rejected
         setOutgoingCall(null);
         outgoingCallRef.current = null;
         setShowVideoCall(false);
@@ -305,27 +241,14 @@ const Profile = () => {
 
       // Listen for call cancelled (when caller cancels before receiver accepts)
       socket.on('call-cancelled', (data) => {
-        console.log('❌ [RECEIVER] Call cancelled by caller:', data);
-        // Stop ringtone
-        if (ringtoneRef.current) {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.currentTime = 0;
-        }
-        setIncomingCall(null);
-        setCallerProfile(null);
+        console.log('❌ Call cancelled by caller:', data);
       });
 
       // Listen for call ended
       socket.on('call-ended', (data) => {
         console.log('📴 Call ended:', data);
-        // Stop ringtone
-        if (ringtoneRef.current) {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.currentTime = 0;
-        }
         setShowVideoCall(false);
         setShowVoiceCall(false);
-        setIncomingCall(null);
         setOutgoingCall(null);
         outgoingCallRef.current = null;
       });
@@ -416,6 +339,19 @@ const Profile = () => {
     return () => window.removeEventListener('openPresentShop', handler);
   }, [id]);
   
+  // Start call when accepted globally (same profile) or via sessionStorage after navigation
+  useEffect(() => {
+    const onAcceptIncoming = (e) => {
+      const { callType, channelName, callerId } = e.detail || {};
+      if (!callerId || String(callerId) !== String(id)) return;
+      if (channelName) setCallChannelName(channelName);
+      if (callType === 'video') setShowVideoCall(true);
+      else if (callType === 'voice') setShowVoiceCall(true);
+    };
+    window.addEventListener('accept-incoming-call', onAcceptIncoming);
+    return () => window.removeEventListener('accept-incoming-call', onAcceptIncoming);
+  }, [id]);
+
   // Handle call start from sessionStorage (when accepting incoming call)
   useEffect(() => {
     if (profile && id) {
@@ -942,74 +878,6 @@ const Profile = () => {
     }
   };
 
-  const handleAcceptCall = async () => {
-    if (incomingCall && socketRef.current && user?.id) {
-      console.log('✅ [RECEIVER] Accepting call:', incomingCall);
-      
-      // Stop ringtone
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-      
-      // Emit call accepted event
-      socketRef.current.emit('call-accept', {
-        callerId: incomingCall.callerId,
-        receiverId: user.id,
-      });
-
-      // CRITICAL: Use the channel name from incoming call (must match caller's exactly)
-      const callChannelName = incomingCall.channelName || createSafeChannelName('call', incomingCall.callerId, user.id);
-      console.log('🔑 [RECEIVER] Channel name for RTC:', callChannelName);
-      
-      // Store channel name in state for RTC connection
-      setCallChannelName(callChannelName);
-      
-      // Navigate to caller's profile if we're not already there
-      if (id !== incomingCall.callerId) {
-        // Store call info in sessionStorage for after navigation
-        sessionStorage.setItem('pendingCall', JSON.stringify({
-          callType: incomingCall.callType,
-          channelName: callChannelName, // CRITICAL: Must match caller's channel name
-          callerId: incomingCall.callerId
-        }));
-        console.log('🔑 [RECEIVER] Stored channel name in sessionStorage:', callChannelName);
-        navigate(`/profile/${incomingCall.callerId}`);
-      } else {
-        // Already on caller's profile, start call immediately
-        console.log('🔑 [RECEIVER] Already on caller profile, starting call with channel:', callChannelName);
-        if (incomingCall.callType === 'video') {
-          setShowVideoCall(true);
-        } else {
-          setShowVoiceCall(true);
-        }
-      }
-      setIncomingCall(null);
-    } else {
-      console.error('❌ [RECEIVER] Cannot accept call - missing data:', {
-        hasIncomingCall: !!incomingCall,
-        hasSocket: !!socketRef.current,
-        hasUserId: !!user?.id
-      });
-    }
-  };
-
-  const handleRejectCall = () => {
-    if (incomingCall && socketRef.current && user?.id) {
-      // Stop ringtone
-      if (ringtoneRef.current) {
-        ringtoneRef.current.pause();
-        ringtoneRef.current.currentTime = 0;
-      }
-      
-      socketRef.current.emit('call-reject', {
-        callerId: incomingCall.callerId,
-        receiverId: user.id,
-      });
-      setIncomingCall(null);
-    }
-  };
-
   const handleSendEmail = () => {
     setShowEmailComposer(true);
     setShowChat(false); // Close chat if open
@@ -1049,7 +917,6 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Ringtone Audio Element */}
-      <audio ref={ringtoneRef} preload="auto" />
       
       <div className={`container mx-auto max-w-[1920px] px-4 sm:px-6 lg:pr-80`}>
         <div className={`flex flex-col lg:flex-row ${(showChat || showEmailComposer) ? 'lg:gap-2' : ''}`}>
@@ -1516,69 +1383,6 @@ const Profile = () => {
           initialStep={presentCheckoutState?.initialStep || 'shop'}
           initialCartItems={presentCheckoutState?.initialCartItems || []}
         />
-      )}
-
-      {/* Incoming Call Notification */}
-      {incomingCall && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fade-in">
-            <div className="text-center mb-6">
-              {/* Caller Avatar or Icon */}
-              {(callerProfile?.photos?.[0]?.url || (typeof callerProfile?.photos?.[0] === 'string' ? callerProfile.photos[0] : null)) ? (
-                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-teal-400 shadow-lg">
-                  <img 
-                    src={callerProfile.photos[0]?.url || callerProfile.photos[0]} 
-                    alt={callerProfile.firstName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  {incomingCall.callType === 'video' ? (
-                    <FaVideo className="text-white text-4xl" />
-                  ) : (
-                    <FaPhone className="text-white text-4xl" />
-                  )}
-                </div>
-              )}
-              
-              {/* Caller Name */}
-              <h3 className="text-2xl font-bold text-gray-800 mb-1">
-                {callerProfile?.firstName || t('profilePage.incomingCall')}
-              </h3>
-              
-              {/* Call Type */}
-              <p className="text-gray-600 mb-4">
-                {incomingCall.callType === 'video' ? 'Video' : 'Voice'} Call
-              </p>
-              
-              {/* Animated indicator */}
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex space-x-4">
-              <button
-                onClick={handleRejectCall}
-                className="flex-1 bg-red-500 text-white py-4 px-6 rounded-xl hover:bg-red-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
-              >
-                <FaTimes size={18} />
-                <span>Decline</span>
-              </button>
-              <button
-                onClick={handleAcceptCall}
-                className="flex-1 bg-green-500 text-white py-4 px-6 rounded-xl hover:bg-green-600 transition-all duration-200 font-semibold flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
-              >
-                {incomingCall.callType === 'video' ? <FaVideo size={18} /> : <FaPhone size={18} />}
-                <span>Accept</span>
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Outgoing Call Waiting UI (Caller side - waiting for receiver to accept) */}

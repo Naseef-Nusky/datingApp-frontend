@@ -36,6 +36,7 @@ import RefundPolicyModal from './components/RefundPolicyModal';
 import SafetyPolicyModal from './components/SafetyPolicyModal';
 import AboutModal from './components/AboutModal';
 import InactivityModal from './components/InactivityModal';
+import IncomingCallManager from './components/IncomingCallManager';
 import { useInactivity } from './hooks/useInactivity';
 import Contact from './pages/Contact';
 import HelpCenter from './pages/HelpCenter';
@@ -102,6 +103,7 @@ function AppShell() {
       <ScrollToTop />
       <RouteSeoAndAnalytics />
       {showHeader && <Header />}
+      {user && <IncomingCallManager />}
       {showInactivityModal && (
         <InactivityModal onContinue={resetInactivity} />
       )}
