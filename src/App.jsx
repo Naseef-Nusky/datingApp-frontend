@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -73,6 +73,122 @@ function isAppRoute(pathname) {
   return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
 }
 
+function AppShell() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const lang = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || 'en';
+    if (lang === 'en' || lang === 'en-uk') return;
+    const t1 = setTimeout(() => translatePage(lang), 300);
+    const t2 = setTimeout(() => translatePage(lang), 1200);
+    const t3 = setTimeout(() => translatePage(lang), 2800);
+    const t4 = setTimeout(() => translatePage(lang), 5000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [location.pathname, user?.id]);
+
+  const showHeader = user && isAppRoute(location.pathname);
+  const isIosNativeShell = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+  const showFooter = !showHeader && !isIosNativeShell;
+  const [showInactivityModal, resetInactivity] = useInactivity(showHeader);
+
+  return (
+    <div className="min-h-app-screen bg-gray-50 flex flex-col">
+      <ScrollToTop />
+      <RouteSeoAndAnalytics />
+      {showHeader && <Header />}
+      {showInactivityModal && (
+        <InactivityModal onContinue={resetInactivity} />
+      )}
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/terms" element={<TermsOfUseModal asPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyModal asPage />} />
+          <Route path="/refund" element={<RefundPolicyModal asPage />} />
+          <Route path="/safety" element={<SafetyPolicyModal asPage />} />
+          <Route path="/about" element={<AboutModal asPage />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/online-dating-advice" element={<OnlineDatingAdvice />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/signup-email" element={<SignupEmail />} />
+          <Route path="/auth/check-email" element={<CheckEmail />} />
+          <Route path="/auth/login-callback" element={<LoginCallback />} />
+          <Route path="/auth/google-callback" element={<GoogleCallback />} />
+          <Route
+            path="/complete-profile"
+            element={
+              <ProtectedRoute>
+                <CompleteProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/:id"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/me"
+            element={
+              <ProtectedRoute>
+                <MyProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inbox"
+            element={
+              <ProtectedRoute>
+                <Inbox />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vip"
+            element={
+              <ProtectedRoute>
+                <VipPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compose-email"
+            element={
+              <ProtectedRoute>
+                <ComposeEmail />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/mature-online-dating" element={<MatureOnlineDating />} />
+          <Route path="/asian-online-dating" element={<AsianOnlineDating />} />
+          <Route path="/gay-online-dating" element={<GayDatingOnline />} />
+          <Route path="/online-dating-singles" element={<SinglesOnlineDating />} />
+        </Routes>
+      </div>
+      {showFooter && <SiteFooter />}
+    </div>
+  );
+}
+
 function App() {
   const [maintGate, setMaintGate] = useState({
     loading: true,
@@ -125,6 +241,17 @@ function App() {
     return () => window.removeEventListener('app-maintenance', onMaint);
   }, []);
 
+  // Fix iOS/Capacitor layout where `100vh` can be wrong when browser chrome collapses.
+  useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   if (maintGate.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600">
@@ -136,136 +263,6 @@ function App() {
   if (maintGate.blocked) {
     return <MaintenanceScreen siteName={maintGate.siteName} message={maintGate.message} />;
   }
-
-  function AppShell() {
-    const location = useLocation();
-    const { user } = useAuth();
-
-    // Whole-page translation: when language is not English, translate all visible text via API.
-    // Run on route change and when user logs in so all post-login content (dashboard, profile, inbox, etc.) is translated.
-    useEffect(() => {
-      const lang = localStorage.getItem('app_language') || localStorage.getItem('selectedLanguage') || 'en';
-      if (lang === 'en' || lang === 'en-uk') return;
-      const t1 = setTimeout(() => translatePage(lang), 300);
-      const t2 = setTimeout(() => translatePage(lang), 1200);
-      const t3 = setTimeout(() => translatePage(lang), 2800);
-      const t4 = setTimeout(() => translatePage(lang), 5000);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        clearTimeout(t4);
-      };
-    }, [location.pathname, user?.id]);
-
-    const showHeader = user && isAppRoute(location.pathname);
-    const isIosNativeShell = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
-    const showFooter = !showHeader && !isIosNativeShell;
-    const [showInactivityModal, resetInactivity] = useInactivity(showHeader);
-
-    return (
-      <div className="min-h-app-screen bg-gray-50 flex flex-col">
-        <ScrollToTop />
-        <RouteSeoAndAnalytics />
-        {showHeader && <Header />}
-        {showInactivityModal && (
-          <InactivityModal onContinue={resetInactivity} />
-        )}
-        <div className="flex-1">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/terms" element={<TermsOfUseModal asPage />} />
-            <Route path="/privacy" element={<PrivacyPolicyModal asPage />} />
-            <Route path="/refund" element={<RefundPolicyModal asPage />} />
-            <Route path="/safety" element={<SafetyPolicyModal asPage />} />
-            <Route path="/about" element={<AboutModal asPage />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/online-dating-advice" element={<OnlineDatingAdvice />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/signup-email" element={<SignupEmail />} />
-            <Route path="/auth/check-email" element={<CheckEmail />} />
-            <Route path="/auth/login-callback" element={<LoginCallback />} />
-            <Route path="/auth/google-callback" element={<GoogleCallback />} />
-            <Route
-              path="/complete-profile"
-              element={
-                <ProtectedRoute>
-                  <CompleteProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile/:id"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile/me"
-              element={
-                <ProtectedRoute>
-                  <MyProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inbox"
-              element={
-                <ProtectedRoute>
-                  <Inbox />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/vip"
-              element={
-                <ProtectedRoute>
-                  <VipPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/compose-email"
-              element={
-                <ProtectedRoute>
-                  <ComposeEmail />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/mature-online-dating" element={<MatureOnlineDating />} />
-            <Route path="/asian-online-dating" element={<AsianOnlineDating />} />
-            <Route path="/gay-online-dating" element={<GayDatingOnline />} />
-            <Route path="/online-dating-singles" element={<SinglesOnlineDating />} />
-          </Routes>
-        </div>
-        {showFooter && <SiteFooter />}
-      </div>
-    );
-  }
-
-  // Fix iOS/Capacitor layout where `100vh` can be wrong when browser chrome collapses.
-  // We expose the computed viewport height as `--vh` so we can use `calc(var(--vh) * X)` in styles.
-  useEffect(() => {
-    const setVh = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
-    setVh();
-    window.addEventListener('resize', setVh);
-    return () => window.removeEventListener('resize', setVh);
-  }, []);
 
   return (
     <AuthProvider>
