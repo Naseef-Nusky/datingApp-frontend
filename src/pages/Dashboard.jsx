@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import io from 'socket.io-client';
-import { getSocketServerUrl } from '../utils/socketServerUrl';
+import { connectAppSocket, getSocketServerUrl } from '../utils/socketServerUrl';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -109,25 +108,14 @@ const Dashboard = () => {
   // Socket.IO setup for real-time call notifications
   useEffect(() => {
     if (user?.id) {
-      // Initialize socket connection - Socket.IO needs direct connection to backend
-      // Vite proxy doesn't work for WebSockets, so connect directly to backend port
-      const apiUrl = getSocketServerUrl();
-      console.log('🔌 [RECEIVER] Connecting to Socket.IO server:', apiUrl);
-      
-      const socket = io(apiUrl, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 10,
-        timeout: 20000, // 20 seconds timeout
-        forceNew: false,
-        autoConnect: true,
-      });
+      const socketUrl = getSocketServerUrl() || window.location.origin;
+      console.log('🔌 [Dashboard] Socket.IO:', socketUrl);
+      const socket = connectAppSocket();
 
       socket.on('connect', () => {
         console.log('✅ [RECEIVER] Socket connected:', socket.id);
         console.log('✅ [RECEIVER] User ID:', user.id);
-        console.log('✅ [RECEIVER] Socket URL:', apiUrl);
+        console.log('✅ [RECEIVER] Socket URL:', socketUrl);
         // Join user's room
         socket.emit('join-room', String(user.id));
         console.log('📢 [RECEIVER] Emitted join-room for user-' + user.id);

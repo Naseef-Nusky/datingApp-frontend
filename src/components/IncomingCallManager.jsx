@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import io from 'socket.io-client';
 import { FaPhone, FaTimes, FaVideo } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { createSafeChannelName } from '../utils/agoraUtils';
-import { getSocketServerUrl } from '../utils/socketServerUrl';
+import { connectAppSocket, getSocketServerUrl } from '../utils/socketServerUrl';
 
 /**
  * Global incoming video/voice call UI — works on inbox, dashboard, profile, etc.
@@ -52,14 +51,9 @@ export default function IncomingCallManager() {
   useEffect(() => {
     if (!user?.id) return;
 
-    const apiUrl = getSocketServerUrl();
-    const socket = io(apiUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 10,
-      timeout: 20000,
-    });
+    const socketUrl = getSocketServerUrl() || window.location.origin;
+    console.log('[IncomingCall] Socket.IO:', socketUrl);
+    const socket = connectAppSocket();
     socketRef.current = socket;
 
     const join = () => socket.emit('join-room', String(user.id));

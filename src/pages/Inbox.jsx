@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import io from 'socket.io-client';
-import { getSocketServerUrl } from '../utils/socketServerUrl';
+import { connectAppSocket, getSocketServerUrl } from '../utils/socketServerUrl';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaReply, FaCamera, FaVideo, FaSpinner, FaSearch, FaVolumeUp, FaEllipsisV, FaPhone, FaGift } from 'react-icons/fa';
@@ -41,18 +40,11 @@ const Inbox = () => {
   // Socket.IO setup for real-time email updates
   useEffect(() => {
     if (user?.id) {
-      const apiUrl = getSocketServerUrl();
-      console.log('🔌 [INBOX] Connecting to Socket.IO server:', apiUrl);
-      
-      const socket = io(apiUrl, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
+      const socketUrl = getSocketServerUrl() || window.location.origin;
+      console.log('🔌 [INBOX] Socket.IO:', socketUrl);
+      const socket = connectAppSocket({
         reconnectionDelayMax: 5000,
         reconnectionAttempts: Infinity,
-        timeout: 20000,
-        forceNew: false,
-        autoConnect: true,
         upgrade: true,
         rememberUpgrade: true,
       });

@@ -6,8 +6,7 @@ import { FaSearch, FaInbox, FaHeart, FaComments, FaBell, FaEnvelope, FaTimes, Fa
 import { Heart as LucideHeart, Users, Rose, CheckCircle, Smile } from 'lucide-react';
 import ContactsSidebar from './ContactsSidebar';
 import axios from 'axios';
-import io from 'socket.io-client';
-import { getSocketServerUrl } from '../utils/socketServerUrl';
+import { connectAppSocket } from '../utils/socketServerUrl';
 import Logo from './Logo';
 import ProfileDropdown from './ProfileDropdown';
 import SettingsModal from './SettingsModal';
@@ -88,8 +87,7 @@ const Header = () => {
   // Socket: real-time updates for My Contacts sidebar (new message, gift, contact list change)
   useEffect(() => {
     if (!user?.id) return;
-    const apiUrl = getSocketServerUrl();
-    const socket = io(apiUrl, { transports: ['websocket', 'polling'], reconnection: true });
+    const socket = connectAppSocket();
     socketRef.current = socket;
     socket.emit('join-room', String(user.id));
     socket.on('new-message', () => {
