@@ -5,9 +5,11 @@ import { FaPhone, FaVideo, FaMicrophone, FaMicrophoneSlash, FaVideoSlash, FaTime
 import { validateChannelName } from '../utils/agoraUtils';
 import {
   getRtcCodec,
+  applyFrontCameraToTrack,
   getCameraTrackInitConfig,
   getLocalVideoPlayConfig,
   getRemoteVideoPlayConfig,
+  isMobileDevice,
   isNativeMobile,
   playAgoraVideoTrack,
   requestCallMediaPermissions,
@@ -361,15 +363,18 @@ const AgoraVideoCall = ({
 
       if (callType === 'video') {
         try {
-          if (isNativeMobile()) {
+          if (isMobileDevice()) {
             await requestCallMediaPermissions(true);
           }
-          const videoTrack = await AgoraRTC.createCameraVideoTrack(getCameraTrackInitConfig());
+          const cameras = await refreshCameras();
+          const videoTrack = await AgoraRTC.createCameraVideoTrack(
+            getCameraTrackInitConfig(cameras),
+          );
+          const frontIdx = await applyFrontCameraToTrack(videoTrack, cameras);
+          setCurrentCameraIndex(frontIdx);
           setLocalVideoTrack(videoTrack);
           tracksToPublish.push(videoTrack);
-          console.log('✅ [RTC TRACK] Video track created');
-
-          await refreshCameras();
+          console.log('✅ [RTC TRACK] Video track created (front camera on mobile)');
         } catch (videoError) {
           console.error('❌ [RTC TRACK] Video track error:', videoError);
           if (isNativeMobile()) {
@@ -573,7 +578,7 @@ const AgoraVideoCall = ({
 
         const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
           cameraId: nextCamera.deviceId,
-          ...getCameraTrackInitConfig(),
+          ...getCameraTrackInitConfig(availableCameras),
         });
         setLocalVideoTrack(newVideoTrack);
         await client.publish([newVideoTrack]);
