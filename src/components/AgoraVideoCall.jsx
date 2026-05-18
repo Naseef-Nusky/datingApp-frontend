@@ -3,6 +3,15 @@ import AgoraRTC from 'agora-rtc-sdk-ng';
 import axios from 'axios';
 import { FaPhone, FaVideo, FaMicrophone, FaMicrophoneSlash, FaVideoSlash, FaTimes } from 'react-icons/fa';
 import { validateChannelName } from '../utils/agoraUtils';
+import {
+  getRtcCodec,
+  getCameraTrackInitConfig,
+  getLocalVideoPlayConfig,
+  getRemoteVideoPlayConfig,
+  isNativeMobile,
+  playAgoraVideoTrack,
+  requestCallMediaPermissions,
+} from '../utils/agoraNative';
 
 const AgoraVideoCall = ({ 
   channelName, 
@@ -124,13 +133,14 @@ const AgoraVideoCall = ({
     if (!localVideoTrack) return;
     if (!localVideoContainerRef.current) return;
 
-    try {
-      localVideoTrack.play(localVideoContainerRef.current);
-      console.log('📹 [LOCAL VIDEO] Playing local video in container');
-    } catch (error) {
-      console.warn('⚠️ [LOCAL VIDEO] Error playing local video track:', error);
-    }
-  }, [callType, localVideoTrack]);
+    void playAgoraVideoTrack(
+      localVideoTrack,
+      localVideoContainerRef.current,
+      getLocalVideoPlayConfig(),
+    ).then((ok) => {
+      if (ok) console.log('📹 [LOCAL VIDEO] Playing local video in container');
+    });
+  }, [callType, localVideoTrack, isJoined, isRemoteConnected]);
 
   // Clear video container when remote video becomes inactive
   useEffect(() => {
@@ -150,27 +160,32 @@ const AgoraVideoCall = ({
     }
   }, [isRemoteVideoActive]);
 
-  // Play video when container becomes available and video is active
+  // Play remote video when container becomes available (common iOS timing issue)
   useEffect(() => {
-    if (isRemoteVideoActive && remoteVideoContainerRef.current && remoteVideoTrackRef.current) {
-      // Wait a bit for React to render the container
-      const timeoutId = setTimeout(() => {
-        if (remoteVideoContainerRef.current && remoteVideoTrackRef.current) {
-          try {
-            // Check if track is already playing
-            if (!remoteVideoTrackRef.current.isPlaying) {
-              remoteVideoTrackRef.current.play(remoteVideoContainerRef.current);
-              console.log('📹 [EFFECT] Playing remote video track in container');
-            }
-          } catch (error) {
-            console.warn('⚠️ [EFFECT] Error playing video track:', error);
-          }
-        }
-      }, 50);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isRemoteVideoActive]);
+    if (!isRemoteVideoActive || !remoteVideoTrackRef.current) return;
+
+    const playRemote = () => {
+      if (!remoteVideoContainerRef.current || !remoteVideoTrackRef.current) return;
+      if (remoteVideoTrackRef.current.isPlaying) return;
+      void playAgoraVideoTrack(
+        remoteVideoTrackRef.current,
+        remoteVideoContainerRef.current,
+        getRemoteVideoPlayConfig(),
+      ).then((ok) => {
+        if (ok) console.log('📹 [EFFECT] Playing remote video track in container');
+      });
+    };
+
+    const timeoutId = setTimeout(playRemote, 50);
+    const retryId = setInterval(playRemote, 250);
+    const stopRetry = setTimeout(() => clearInterval(retryId), 4000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(retryId);
+      clearTimeout(stopRetry);
+    };
+  }, [isRemoteVideoActive, isRemoteConnected]);
 
 
   const initializeAgora = async () => {
@@ -218,10 +233,13 @@ const AgoraVideoCall = ({
       // Use the UID from token response to ensure it matches
       console.log('Token received - AppID:', appId, 'UID from token:', tokenUid);
 
-      // Create Agora client
-      const client = AgoraRTC.createClient({ 
-        mode: 'rtc', 
-        codec: 'vp8',
+      // H.264 on native mobile (especially iOS WKWebView); VP8 on desktop web
+      const rtcCodec = getRtcCodec();
+      console.log('📹 [RTC] Using codec:', rtcCodec, 'native mobile:', isNativeMobile());
+
+      const client = AgoraRTC.createClient({
+        mode: 'rtc',
+        codec: rtcCodec,
       });
       clientRef.current = client;
 
@@ -340,19 +358,25 @@ const AgoraVideoCall = ({
       // MUST join first, then create tracks, then publish (as per Agora documentation)
       console.log('🔄 [RTC TRACK] Creating local tracks...');
       const tracksToPublish = [];
-      
+
       if (callType === 'video') {
         try {
-          const videoTrack = await AgoraRTC.createCameraVideoTrack();
+          if (isNativeMobile()) {
+            await requestCallMediaPermissions(true);
+          }
+          const videoTrack = await AgoraRTC.createCameraVideoTrack(getCameraTrackInitConfig());
           setLocalVideoTrack(videoTrack);
           tracksToPublish.push(videoTrack);
           console.log('✅ [RTC TRACK] Video track created');
 
-          // Refresh camera list AFTER permission is granted (some browsers return empty before)
           await refreshCameras();
         } catch (videoError) {
           console.error('❌ [RTC TRACK] Video track error:', videoError);
-          // Continue with audio only if video fails
+          if (isNativeMobile()) {
+            throw new Error(
+              'Camera access is required for video calls. Allow Camera and Microphone in Settings → Vantage Dating.',
+            );
+          }
         }
       }
 
@@ -413,9 +437,19 @@ const AgoraVideoCall = ({
 
     if (mediaType === 'video') {
       console.log('📹 [RTC EVENT] Remote video published - setting isRemoteVideoActive to true');
-      // Store the video track reference
       remoteVideoTrackRef.current = user.videoTrack;
       setIsRemoteVideoActive(true);
+
+      // Play immediately when container exists (don't rely only on useEffect timing on iOS)
+      requestAnimationFrame(() => {
+        if (remoteVideoContainerRef.current && remoteVideoTrackRef.current) {
+          void playAgoraVideoTrack(
+            remoteVideoTrackRef.current,
+            remoteVideoContainerRef.current,
+            getRemoteVideoPlayConfig(),
+          );
+        }
+      });
     }
 
     if (mediaType === 'audio') {
@@ -537,17 +571,19 @@ const AgoraVideoCall = ({
           // ignore
         }
 
-        const newVideoTrack = await AgoraRTC.createCameraVideoTrack({ cameraId: nextCamera.deviceId });
+        const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
+          cameraId: nextCamera.deviceId,
+          ...getCameraTrackInitConfig(),
+        });
         setLocalVideoTrack(newVideoTrack);
         await client.publish([newVideoTrack]);
 
-        // Ensure it plays in the local PiP container
         if (localVideoContainerRef.current) {
-          try {
-            newVideoTrack.play(localVideoContainerRef.current);
-          } catch (e) {
-            // ignore
-          }
+          void playAgoraVideoTrack(
+            newVideoTrack,
+            localVideoContainerRef.current,
+            getLocalVideoPlayConfig(),
+          );
         }
 
         setCurrentCameraIndex(nextCameraIndex);
@@ -639,7 +675,7 @@ const AgoraVideoCall = ({
           // Show remote video when connected and video is active
           <div
             ref={remoteVideoContainerRef}
-            className="w-full h-full bg-black relative z-10"
+            className="w-full h-full bg-black relative z-10 [&_video]:object-cover [&_video]:w-full [&_video]:h-full"
             key="remote-video-active"
           />
         ) : isRemoteConnected ? (
@@ -698,10 +734,10 @@ const AgoraVideoCall = ({
           </div>
         ) : null}
         
-        {/* Local Video Container (Picture-in-Picture) - Only show when remote is connected */}
-        {callType === 'video' && localVideoTrack && isRemoteConnected && (
+        {/* Local preview (PiP) — show as soon as joined so iOS users see their camera */}
+        {callType === 'video' && localVideoTrack && isJoined && (
           <div className="absolute top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 w-28 h-20 sm:top-[calc(1rem+env(safe-area-inset-top,0px))] sm:right-4 sm:w-40 sm:h-28 lg:w-48 lg:h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border-2 border-white z-30">
-            <div ref={localVideoContainerRef} className="w-full h-full" />
+            <div ref={localVideoContainerRef} className="w-full h-full [&_video]:object-cover [&_video]:w-full [&_video]:h-full" />
           </div>
         )}
 

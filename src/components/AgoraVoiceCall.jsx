@@ -3,6 +3,7 @@ import AgoraRTC from 'agora-rtc-sdk-ng';
 import axios from 'axios';
 import { FaPhone, FaMicrophone, FaMicrophoneSlash, FaTimes } from 'react-icons/fa';
 import { validateChannelName } from '../utils/agoraUtils';
+import { getRtcCodec, isNativeMobile, requestCallMediaPermissions } from '../utils/agoraNative';
 
 const AgoraVoiceCall = ({ 
   channelName, 
@@ -78,10 +79,9 @@ const AgoraVoiceCall = ({
       // Use the UID from token response to ensure it matches
       console.log('Token received - AppID:', appId, 'UID from token:', tokenUid);
 
-      // Create Agora client
-      const client = AgoraRTC.createClient({ 
-        mode: 'rtc', 
-        codec: 'vp8',
+      const client = AgoraRTC.createClient({
+        mode: 'rtc',
+        codec: getRtcCodec(),
       });
       clientRef.current = client;
 
@@ -180,6 +180,9 @@ const AgoraVoiceCall = ({
       // We're already joined at this point (join completed above)
       try {
         console.log('🔄 [RTC TRACK] Creating audio track...');
+        if (isNativeMobile()) {
+          await requestCallMediaPermissions(false);
+        }
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         setLocalAudioTrack(audioTrack);
         console.log('✅ [RTC TRACK] Audio track created');
