@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import MaintenanceScreen from './components/MaintenanceScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import { RefillModalProvider } from './context/RefillModalContext';
@@ -72,7 +74,70 @@ function isAppRoute(pathname) {
 }
 
 function App() {
-  const AppShell = () => {
+  const [maintGate, setMaintGate] = useState({
+    loading: true,
+    blocked: false,
+    siteName: 'Vantage Dating',
+    message: '',
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const { data } = await axios.get('/api/auth/site-status', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (cancelled) return;
+        if (data.appInMaintenance) {
+          setMaintGate({
+            loading: false,
+            blocked: true,
+            siteName: data.siteName || 'Vantage Dating',
+            message: data.maintenanceMessage || '',
+          });
+        } else {
+          setMaintGate((s) => ({ ...s, loading: false, blocked: false }));
+        }
+      } catch {
+        if (!cancelled) {
+          setMaintGate((s) => ({ ...s, loading: false, blocked: false }));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onMaint = (e) => {
+      const d = e.detail || {};
+      setMaintGate({
+        loading: false,
+        blocked: true,
+        siteName: d.siteName || 'Vantage Dating',
+        message: d.message || d.maintenanceMessage || '',
+      });
+    };
+    window.addEventListener('app-maintenance', onMaint);
+    return () => window.removeEventListener('app-maintenance', onMaint);
+  }, []);
+
+  if (maintGate.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600">
+        Loading…
+      </div>
+    );
+  }
+
+  if (maintGate.blocked) {
+    return <MaintenanceScreen siteName={maintGate.siteName} message={maintGate.message} />;
+  }
+
+  function AppShell() {
     const location = useLocation();
     const { user } = useAuth();
 
@@ -188,7 +253,7 @@ function App() {
         {showFooter && <SiteFooter />}
       </div>
     );
-  };
+  }
 
   // Fix iOS/Capacitor layout where `100vh` can be wrong when browser chrome collapses.
   // We expose the computed viewport height as `--vh` so we can use `calc(var(--vh) * X)` in styles.

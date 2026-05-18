@@ -14,6 +14,24 @@ import { injectJsonLdWebsite } from './utils/seo.js';
 const raw = import.meta.env.VITE_API_URL || '';
 axios.defaults.baseURL = raw.replace(/\/$/, '');
 
+axios.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err.response?.status === 503 && err.response?.data?.code === 'MAINTENANCE') {
+      const d = err.response.data || {};
+      window.dispatchEvent(
+        new CustomEvent('app-maintenance', {
+          detail: {
+            message: d.message,
+            maintenanceMessage: d.maintenanceMessage,
+          },
+        })
+      );
+    }
+    return Promise.reject(err);
+  }
+);
+
 if (Capacitor.isNativePlatform() && !axios.defaults.baseURL) {
   console.error(
     '[Vantage Dating] Native app: VITE_API_URL is empty. Set it in .env.production (e.g. https://api.yourdomain.com or http://YOUR_MAC_IP:5000 for simulator), then run: npm run cap:sync',
