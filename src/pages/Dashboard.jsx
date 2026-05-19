@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [typingUsers, setTypingUsers] = useState(new Set()); // Track which users are typing
   /** Streamer/talent: main grid filter — all | online | offline */
   const [streamerUserFilter, setStreamerUserFilter] = useState('all');
+  const [streamerNameSearch, setStreamerNameSearch] = useState('');
   const socketRef = useRef(null);
   const paymentSuccessHandledRef = useRef(null); // Prevent duplicate success alert (e.g. Strict Mode double-mount)
   
@@ -679,12 +680,26 @@ const Dashboard = () => {
 
   const isStreamerTalent =
     user?.userType === 'streamer' || user?.userType === 'talent';
-  const gridProfiles =
+
+  const profileMatchesNameSearch = (profile, query) => {
+    if (!query.trim()) return true;
+    const q = query.toLowerCase().trim();
+    const first = (profile.firstName || '').toLowerCase();
+    const last = (profile.lastName || '').toLowerCase();
+    const full = `${first} ${last}`.trim();
+    return first.includes(q) || last.includes(q) || full.includes(q);
+  };
+
+  const statusFilteredProfiles =
     !isStreamerTalent || streamerUserFilter === 'all'
       ? profiles
       : streamerUserFilter === 'online'
         ? profiles.filter((p) => p.isOnline)
         : profiles.filter((p) => !p.isOnline);
+
+  const gridProfiles = isStreamerTalent
+    ? statusFilteredProfiles.filter((p) => profileMatchesNameSearch(p, streamerNameSearch))
+    : statusFilteredProfiles;
 
   if (loading) {
     return (
@@ -737,7 +752,21 @@ const Dashboard = () => {
         <div className="flex-1 min-w-0 lg:mr-80">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 pt-2 pb-4 sm:pt-4 lg:py-6">
             {isStreamerTalent && (
-              <div className="mb-5 flex justify-end">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:max-w-sm">
+                  <FaSearch
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                    aria-hidden
+                  />
+                  <input
+                    type="search"
+                    value={streamerNameSearch}
+                    onChange={(e) => setStreamerNameSearch(e.target.value)}
+                    placeholder={t('dashboard.searchMembersByName')}
+                    aria-label={t('dashboard.searchMembersByName')}
+                    className="h-10 w-full rounded-2xl border border-gray-200/80 bg-white/90 pl-10 pr-4 text-sm text-gray-900 shadow-sm backdrop-blur-sm transition-all placeholder:text-gray-400 focus:border-teal-400/60 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  />
+                </div>
                 <StreamerMemberFilter
                   value={streamerUserFilter}
                   onChange={setStreamerUserFilter}
@@ -876,20 +905,34 @@ const Dashboard = () => {
                 <div className="text-center py-12 col-span-full">
                   <p className="text-gray-600 text-lg mb-2">
                     {isStreamerTalent &&
-                    profiles.length > 0 &&
-                    streamerUserFilter === 'online'
-                      ? t('dashboard.noOnlineMembersWithFilter')
+                    statusFilteredProfiles.length > 0 &&
+                    streamerNameSearch.trim()
+                      ? t('dashboard.noMembersMatchNameSearch')
                       : isStreamerTalent &&
                           profiles.length > 0 &&
-                          streamerUserFilter === 'offline'
-                        ? t('dashboard.noOfflineMembersWithFilter')
-                        : t('dashboard.noProfilesFound')}
+                          streamerUserFilter === 'online'
+                        ? t('dashboard.noOnlineMembersWithFilter')
+                        : isStreamerTalent &&
+                            profiles.length > 0 &&
+                            streamerUserFilter === 'offline'
+                          ? t('dashboard.noOfflineMembersWithFilter')
+                          : t('dashboard.noProfilesFound')}
                   </p>
                   <p className="text-gray-500 text-sm">
                     {isStreamerTalent &&
-                    profiles.length > 0 &&
-                    (streamerUserFilter === 'online' ||
-                      streamerUserFilter === 'offline') ? (
+                    statusFilteredProfiles.length > 0 &&
+                    streamerNameSearch.trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => setStreamerNameSearch('')}
+                        className="font-medium text-teal-600 underline hover:text-teal-800"
+                      >
+                        {t('dashboard.clearNameSearch')}
+                      </button>
+                    ) : isStreamerTalent &&
+                      profiles.length > 0 &&
+                      (streamerUserFilter === 'online' ||
+                        streamerUserFilter === 'offline') ? (
                       <button
                         type="button"
                         onClick={() => setStreamerUserFilter('all')}

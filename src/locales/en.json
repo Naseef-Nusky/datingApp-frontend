@@ -154,6 +154,9 @@
     "filterOnlineUsers": "Online Users",
     "filterOfflineUsers": "Offline Users",
     "memberListFilterLabel": "Filter members",
+    "searchMembersByName": "Search by name…",
+    "noMembersMatchNameSearch": "No members match this name",
+    "clearNameSearch": "Clear search",
     "noOnlineMembersWithFilter": "No members are online right now",
     "noOfflineMembersWithFilter": "No offline members to show — everyone appears online right now"
   },
