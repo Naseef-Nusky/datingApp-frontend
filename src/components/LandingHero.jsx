@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { FaBars, FaTimes, FaInstagram, FaFacebookF, FaTwitter } from 'react-icons/fa';
 import Logo from './Logo';
+import PasswordInput from './PasswordInput';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
@@ -432,13 +433,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
                       />
-                      <input
-                        type="password"
+                      <PasswordInput
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         placeholder="Password"
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
+                        inputClassName="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                         disabled={loginLoading}
+                        autoComplete="current-password"
                       />
                       {!isIosNativeShell() && (
                         <div className="text-center">
@@ -938,13 +939,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                   className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
                 />
-                <input
-                  type="password"
+                <PasswordInput
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="Password"
-                  className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
+                  inputClassName="px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-vantage-purple focus:border-transparent outline-none text-base"
                   disabled={loginLoading}
+                  autoComplete="current-password"
                 />
                 {!isIosNativeShell() && (
                   <div className="text-center">

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import PasswordInput from '../components/PasswordInput';
 import Logo from '../components/Logo';
 import { authorizeAppleSignIn } from '../utils/nativeAppleSignIn';
 
@@ -138,12 +139,12 @@ const Login = () => {
 
           <div>
             <label className="block text-gray-700 mb-2">{t('pages.login.password')}</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              inputClassName="px-4 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              autoComplete="current-password"
             />
           </div>
 

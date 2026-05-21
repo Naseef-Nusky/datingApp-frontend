@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PasswordInput from './PasswordInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -418,14 +419,14 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
 
             <div>
               <label className="block text-gray-700 mb-2">Password (min 6 characters)</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                inputClassName="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="Create a password"
                 minLength={6}
                 required
+                autoComplete="new-password"
               />
             </div>
           </div>
