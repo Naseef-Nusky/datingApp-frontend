@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import axios from 'axios';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 import { useNavigate } from 'react-router-dom';
 
 const QuickPresentsModal = ({ isOpen, onClose, receiverId, receiverPool = [] }) => {
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCredits, isInsufficientCreditsError } = useInsufficientCreditsHandler();
   const navigate = useNavigate();
 
   const [receiver, setReceiver] = useState(null);
@@ -150,7 +150,7 @@ const QuickPresentsModal = ({ isOpen, onClose, receiverId, receiverPool = [] }) 
       onClose?.();
     } catch (error) {
       const msg = error.response?.data?.message;
-      if (msg === 'Insufficient credits') {
+      if (isInsufficientCreditsError(error) || msg === 'Insufficient credits') {
         const requiredCredits = Number(gift?.creditCost) || 0;
         const currentPath = window.location.pathname + window.location.search;
         const joiner = currentPath.includes('?') ? '&' : '?';
@@ -158,7 +158,7 @@ const QuickPresentsModal = ({ isOpen, onClose, receiverId, receiverPool = [] }) 
           String(targetReceiverId)
         )}`;
 
-        openRefillModal({
+        handleInsufficientCredits({
           requiredCredits,
           returnPath,
         });

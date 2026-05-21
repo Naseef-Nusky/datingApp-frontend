@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaEdit } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 
 const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
   const { user, fetchUser } = useAuth();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [gender, setGender] = useState('female');
   const [ageMin, setAgeMin] = useState(20);
   const [ageMax, setAgeMax] = useState(35);
@@ -99,8 +99,7 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
       console.error('Error response:', error.response?.data);
       const data = error.response?.data;
       const errorMsg = data?.message || error.message || 'Failed to send mingle requests';
-      if (error.response?.status === 400 && String(errorMsg).toLowerCase().includes('insufficient')) {
-        openRefillModal();
+      if (handleInsufficientCreditsError(error)) {
         setError('');
       } else {
         setError(errorMsg);

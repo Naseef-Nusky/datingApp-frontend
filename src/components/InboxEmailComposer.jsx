@@ -2,13 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaVideo, FaPaperPlane, FaTimes, FaEllipsisV } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 
 const VIDEO_THUMBNAIL_URL = 'https://nexdatingmedia.lon1.digitaloceanspaces.com/Icons/video_thumbnail.png';
 
 const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const { fetchUser } = useAuth();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -96,9 +96,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
         } catch (giftErr) {
           const data = giftErr.response?.data;
           const msg = data?.message || 'Failed to send gift';
-          if (giftErr.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
-            openRefillModal();
-          } else {
+          if (!handleInsufficientCreditsError(giftErr)) {
             alert(msg);
           }
           setSending(false);
@@ -149,9 +147,7 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
       console.error('Error sending email:', error);
       const data = error.response?.data;
       const msg = data?.message || 'Failed to send email';
-      if (error.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
-        openRefillModal();
-      } else {
+      if (!handleInsufficientCreditsError(error)) {
         alert(msg);
       }
     } finally {

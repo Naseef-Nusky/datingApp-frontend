@@ -22,6 +22,7 @@ import TermsOfUseModal from './TermsOfUseModal';
 import HelpCenterModal from './HelpCenterModal';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
 import { useLanguage } from '../context/LanguageContext';
+import { hasActiveSubscription } from '../utils/subscription';
 
 const Header = () => {
   const { user } = useAuth();
@@ -417,10 +418,8 @@ const Header = () => {
     return () => clearInterval(timer);
   }, [latestPendingChatRequestKey, dismissedChatRequestKey]);
 
-  const hasSubscription = !!(user?.subscriptionPlan && user.subscriptionPlan !== 'free');
-
   const handleRefillOrUpgrade = () => {
-    if (hasSubscription) {
+    if (hasActiveSubscription(user)) {
       openRefillModal();
     } else {
       openUpgradeModal();
@@ -504,7 +503,7 @@ const Header = () => {
                     onClick={handleRefillOrUpgrade}
                     className="bg-gradient-nex text-white px-4 py-2 rounded hover:opacity-90 transition"
                   >
-                    {hasSubscription ? t('common.refillAccount') : t('common.upgradeAccount')}
+                    {hasActiveSubscription(user) ? t('common.refillAccount') : t('common.upgradeAccount')}
                   </button>
                 )}
               </div>
@@ -575,7 +574,7 @@ const Header = () => {
                     type="button"
                     onClick={handleRefillOrUpgrade}
                     className="text-white hover:text-nex-orange transition p-1.5 sm:p-2"
-                    title={hasSubscription ? t('common.refillAccount') : t('common.upgradeAccount')}
+                    title={hasActiveSubscription(user) ? t('common.refillAccount') : t('common.upgradeAccount')}
                   >
                     <FaCoins className="text-lg sm:text-xl" />
                   </button>

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { FaTimes, FaGift } from 'react-icons/fa';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 import { useAuth } from '../context/AuthContext';
 
 const PresentShopModal = ({ isOpen, onClose, receiver, initialStep = 'shop', initialCartItems = [] }) => {
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCredits, isInsufficientCreditsError } = useInsufficientCreditsHandler();
   const { user, fetchUser } = useAuth();
   const [gifts, setGifts] = useState([]);
   const [presentCategories, setPresentCategories] = useState([]);
@@ -160,7 +160,7 @@ const PresentShopModal = ({ isOpen, onClose, receiver, initialStep = 'shop', ini
       onClose?.();
     } catch (e) {
       const msg = e.response?.data?.message;
-      if (msg === 'Insufficient credits') {
+      if (isInsufficientCreditsError(e) || msg === 'Insufficient credits') {
         const pendingCheckout = {
           receiverId: String(receiverUserId),
           cart: cart.map((item) => ({
@@ -177,7 +177,7 @@ const PresentShopModal = ({ isOpen, onClose, receiver, initialStep = 'shop', ini
         const returnPath = `${currentPath}${joiner}openPresentShop=1&presentReceiverId=${encodeURIComponent(
           String(receiverUserId)
         )}&presentStep=checkout`;
-        openRefillModal({
+        handleInsufficientCredits({
           requiredCredits: creditsShortfall || totalCredits,
           returnPath,
         });

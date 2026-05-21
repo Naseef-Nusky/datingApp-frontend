@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { FaEnvelope, FaSmile, FaCamera, FaTimes, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 
 const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const { fetchUser } = useAuth();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -46,9 +46,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         } catch (giftErr) {
           const data = giftErr.response?.data;
           const msg = data?.message || 'Failed to send gift';
-          if (giftErr.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
-            openRefillModal();
-          } else {
+          if (!handleInsufficientCreditsError(giftErr)) {
             alert(msg);
           }
           setSending(false);
@@ -92,9 +90,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
       console.error('Error sending email:', error);
       const data = error.response?.data;
       const msg = data?.message || 'Failed to send email';
-      if (error.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
-        openRefillModal();
-      } else {
+      if (!handleInsufficientCreditsError(error)) {
         alert(msg);
       }
     } finally {

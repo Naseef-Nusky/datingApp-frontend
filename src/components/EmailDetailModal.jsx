@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaEnvelope, FaUser, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import axios from 'axios';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 
 const VIDEO_THUMBNAIL_URL = 'https://nexdatingmedia.lon1.digitaloceanspaces.com/Icons/video_thumbnail.png';
 
 const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
   const navigate = useNavigate();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [emailState, setEmailState] = useState(email);
   const [unlockingIndex, setUnlockingIndex] = useState(null);
   const [viewAttachmentIndex, setViewAttachmentIndex] = useState(null);
@@ -88,9 +88,7 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
       });
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to unlock';
-      if (err.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
-        openRefillModal();
-      } else {
+      if (!handleInsufficientCreditsError(err)) {
         alert(msg);
       }
     } finally {

@@ -6,11 +6,11 @@ import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 import TypingIndicator from './TypingIndicator';
 import { useAuth } from '../context/AuthContext';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 
 const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
   const { fetchUser } = useAuth();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -807,10 +807,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
             updated.pop();
             return updated;
           });
-          // Open refill modal so user can add credits
-          if (openRefillModal) {
-            openRefillModal();
-          } else {
+          if (!handleInsufficientCreditsError(dbError)) {
             alert(msg);
           }
           return;
@@ -960,9 +957,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     } catch (err) {
       const data = err.response?.data;
       const msg = data?.message || 'Failed to send gift';
-      if (err.response?.status === 400 && msg.toLowerCase().includes('insufficient')) {
-        openRefillModal();
-      } else {
+      if (!handleInsufficientCreditsError(err)) {
         alert(msg);
       }
     } finally {
@@ -1156,9 +1151,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
         // Remove optimistic message on insufficient credits
         const tempId = optimisticMessage.id;
         setMessages((prev) => prev.filter(m => m.id !== tempId));
-        if (openRefillModal) {
-          openRefillModal();
-        } else {
+        if (!handleInsufficientCreditsError(error)) {
           alert(msg);
         }
         return;

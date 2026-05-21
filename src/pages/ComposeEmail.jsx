@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useRefillModal } from '../context/RefillModalContext';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 import { FaPaperPlane, FaSpinner, FaTimes, FaUser, FaSearch } from 'react-icons/fa';
 
 const ComposeEmail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, fetchUser } = useAuth();
-  const { openRefillModal } = useRefillModal();
+  const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [receiverId, setReceiverId] = useState(searchParams.get('to') || '');
   const [receiverProfile, setReceiverProfile] = useState(null);
   const [subject, setSubject] = useState('');
@@ -84,9 +84,7 @@ const ComposeEmail = () => {
       console.error('Error sending email:', error);
       const data = error.response?.data;
       const msg = data?.message || 'Failed to send email';
-      if (error.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
-        openRefillModal();
-      } else {
+      if (!handleInsufficientCreditsError(error)) {
         alert(msg);
       }
     } finally {
