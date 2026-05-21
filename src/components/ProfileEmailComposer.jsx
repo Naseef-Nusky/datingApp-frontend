@@ -78,6 +78,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
+      if (fetchUser) fetchUser();
       alert('Email sent successfully!');
       setSubject('');
       setMessage('');
@@ -89,7 +90,13 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error('Error sending email:', error);
-      alert(error.response?.data?.message || 'Failed to send email');
+      const data = error.response?.data;
+      const msg = data?.message || 'Failed to send email';
+      if (error.response?.status === 400 && String(msg).toLowerCase().includes('insufficient')) {
+        openRefillModal();
+      } else {
+        alert(msg);
+      }
     } finally {
       setSending(false);
     }

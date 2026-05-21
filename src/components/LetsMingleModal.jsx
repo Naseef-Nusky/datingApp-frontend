@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaEdit } from 'react-icons/fa';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useRefillModal } from '../context/RefillModalContext';
 import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 
 const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
-  const { user } = useAuth();
+  const { user, fetchUser } = useAuth();
+  const { openRefillModal } = useRefillModal();
   const [gender, setGender] = useState('female');
   const [ageMin, setAgeMin] = useState(20);
   const [ageMax, setAgeMax] = useState(35);
@@ -82,6 +84,7 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (response.data && response.data.success) {
         console.log('Mingle successful, matched profiles:', response.data.matchedProfiles);
+        if (fetchUser) fetchUser();
         onSuccess(response.data.matchedProfiles || []);
         // Reset form
         setMessage('');
@@ -94,8 +97,14 @@ const LetsMingleModal = ({ isOpen, onClose, onSuccess }) => {
     } catch (error) {
       console.error('Mingle error:', error);
       console.error('Error response:', error.response?.data);
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to send mingle requests';
-      setError(errorMsg);
+      const data = error.response?.data;
+      const errorMsg = data?.message || error.message || 'Failed to send mingle requests';
+      if (error.response?.status === 400 && String(errorMsg).toLowerCase().includes('insufficient')) {
+        openRefillModal();
+        setError('');
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       // Always reset sending state so button doesn't get stuck
       setSending(false);
