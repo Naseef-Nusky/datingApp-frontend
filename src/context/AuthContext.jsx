@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { autoRegisterInChat } from '../utils/autoRegisterChat';
 
@@ -16,10 +16,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  /** Skip one /me fetch after magic-link verify (user already returned from API). */
+  const skipNextTokenFetchRef = useRef(false);
 
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      if (skipNextTokenFetchRef.current) {
+        skipNextTokenFetchRef.current = false;
+        return;
+      }
       fetchUser();
     } else {
       setLoading(false);
@@ -153,14 +159,19 @@ export const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common['Authorization'];
   };
 
-  const loginWithToken = (newToken) => {
+  const loginWithToken = useCallback((newToken, userData = null) => {
     localStorage.setItem('token', newToken);
-    setToken(newToken);
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-  };
+    if (userData) {
+      skipNextTokenFetchRef.current = true;
+      setUser(userData);
+      setLoading(false);
+    }
+    setToken(newToken);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, fetchUser, loginWithToken }}>
+    <AuthContext.Provider value={{ user, loading, token, login, register, logout, fetchUser, loginWithToken }}>
       {children}
     </AuthContext.Provider>
   );
