@@ -162,9 +162,9 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
   const commonEmojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'];
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full min-h-0">
+    <div className="bg-white rounded-none lg:rounded-lg shadow-lg overflow-hidden flex flex-col h-full min-h-0 w-full max-w-full">
       {/* Header with decorative background - watercolor style */}
-      <div className="flex-shrink-0 relative h-28 sm:h-40 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
+      <div className="flex-shrink-0 relative h-24 sm:h-32 lg:h-40 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-6 left-8 text-7xl transform rotate-12">🗼</div>
@@ -172,12 +172,12 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
           <div className="absolute bottom-6 left-1/3 text-4xl transform rotate-6">🌸</div>
           <div className="absolute bottom-8 right-1/4 text-3xl">🌺</div>
         </div>
-        {/* PARIS text vertically */}
-        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 -rotate-90 origin-left">
-          <span className="text-2xl font-bold text-gray-700 opacity-40">PARIS</span>
+        {/* PARIS text vertically - hidden on very small screens to avoid overflow */}
+        <div className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 -rotate-90 origin-left hidden sm:block pointer-events-none">
+          <span className="text-xl sm:text-2xl font-bold text-gray-700 opacity-40">PARIS</span>
         </div>
-        <div className="relative h-full flex flex-col items-center justify-center p-4">
-          <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center mb-3 overflow-hidden">
+        <div className="relative h-full flex flex-col items-center justify-center p-3 sm:p-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 border-4 border-white shadow-lg flex items-center justify-center mb-2 sm:mb-3 overflow-hidden shrink-0">
             {profile.photos && profile.photos.length > 0 ? (
               <img 
                 src={profile.photos[0]?.url || profile.photos[0]} 
@@ -192,7 +192,7 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
               <span className="text-3xl">👤</span>
             )}
           </div>
-          <h3 className="text-xl font-bold text-gray-800">
+          <h3 className="text-base sm:text-xl font-bold text-gray-800 text-center px-2 break-words">
             My Email to {profile.firstName}
           </h3>
         </div>
@@ -309,8 +309,8 @@ const ProfileEmailComposer = ({ profile, onClose, onSent, onOpenChat }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message..."
-            rows={8}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+            rows={5}
+            className="w-full min-w-0 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base"
           />
 
           {/* Media Preview */}

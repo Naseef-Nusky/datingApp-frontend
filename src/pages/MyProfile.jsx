@@ -10,6 +10,11 @@ import PhotoUploadModal from '../components/PhotoUploadModal';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
 import { interestIcons } from '../utils/interestIcons';
+import {
+  mapChatRequestFromApi,
+  enrichChatRequestsWithProfiles,
+  acceptChatRequestAndNavigate,
+} from '../utils/chatRequests';
 
 const MyProfile = () => {
   const { user, fetchUser } = useAuth();
@@ -807,54 +812,9 @@ const MyProfile = () => {
   const fetchChatRequests = async () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
-      
       if (response.data && Array.isArray(response.data)) {
-        // Transform chat requests to include user profile data
-        const requests = await Promise.all(
-          response.data.map(async (request) => {
-            try {
-              // Fetch sender profile if available
-              let senderName = 'Unknown';
-              let senderAvatar = null;
-              
-              if (request.senderData?.id) {
-                try {
-                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
-                  if (profileResponse.data) {
-                    senderName = profileResponse.data.firstName || senderName;
-                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
-                  }
-                } catch (profileError) {
-                  // Use email as fallback
-                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
-                }
-              }
-              
-              return {
-                id: request.id,
-                name: senderName,
-                message: request.firstMessage || request.content || request.message || 'New message',
-                avatar: senderAvatar,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-              };
-            } catch (err) {
-              return {
-                id: request.id,
-                name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                message: request.firstMessage || request.content || 'New message',
-                avatar: null,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-              };
-            }
-          })
-        );
-        
+        const mapped = response.data.map((r) => mapChatRequestFromApi(r, 'New message'));
+        const requests = await enrichChatRequestsWithProfiles(mapped);
         setChatRequests(requests);
       } else {
         setChatRequests([]);
@@ -865,22 +825,12 @@ const MyProfile = () => {
     }
   };
 
-  const acceptChatRequestAndOpenChat = async (request) => {
-    try {
-      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
-    } catch (error) {
-      console.error('Accept chat request error (myprofile):', error);
-    } finally {
-      fetchChatRequests();
-      fetchContacts();
-
-      if (request.senderId) {
-        navigate(`/profile/${request.senderId}`, {
-          state: { openChat: true, from: 'chat-request', requestId: request.id },
-        });
-      }
-    }
-  };
+  const acceptChatRequestAndOpenChat = (request) =>
+    acceptChatRequestAndNavigate(request, {
+      navigate,
+      fetchChatRequests,
+      fetchContacts,
+    });
 
   if (loading) {
     return (

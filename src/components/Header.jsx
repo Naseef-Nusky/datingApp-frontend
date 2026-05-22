@@ -23,6 +23,11 @@ import HelpCenterModal from './HelpCenterModal';
 import { useUpgradeModal } from '../context/UpgradeModalContext';
 import { useLanguage } from '../context/LanguageContext';
 import { hasActiveSubscription } from '../utils/subscription';
+import {
+  mapChatRequestFromApi,
+  enrichChatRequestsWithProfiles,
+  acceptChatRequestAndNavigate,
+} from '../utils/chatRequests';
 
 const Header = () => {
   const { user } = useAuth();
@@ -150,71 +155,25 @@ const Header = () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
       if (response.data && Array.isArray(response.data)) {
-        const requests = await Promise.all(
-          response.data.map(async (request) => {
-            try {
-              let senderName = 'Unknown';
-              let senderAvatar = null;
-              let senderAge = null;
-              if (request.senderData?.id) {
-                try {
-                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
-                  if (profileResponse.data) {
-                    senderName = profileResponse.data.firstName || senderName;
-                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
-                    senderAge = profileResponse.data.age ?? null;
-                  }
-                } catch (profileError) {
-                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
-                }
-              }
-              return {
-                id: request.id,
-                name: senderName,
-                age: senderAge,
-                message: request.firstMessage || request.content || t('sidebar.newMessage'),
-                avatar: senderAvatar,
-                senderId: request.senderData?.id || request.senderId,
-                createdAt: request.createdAt,
-                updatedAt: request.updatedAt,
-              };
-            } catch (err) {
-              return {
-                id: request.id,
-                name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                age: null,
-                message: request.firstMessage || request.content || t('sidebar.newMessage'),
-                avatar: null,
-                senderId: request.senderData?.id || request.senderId,
-                createdAt: request.createdAt,
-                updatedAt: request.updatedAt,
-              };
-            }
-          })
+        const mapped = response.data.map((r) =>
+          mapChatRequestFromApi(r, t('sidebar.newMessage'))
         );
-        setChatRequests(requests.filter(r => r.senderId));
+        const requests = (await enrichChatRequestsWithProfiles(mapped)).filter(
+          (r) => r.senderId
+        );
+        setChatRequests(requests);
       }
     } catch (error) {
       console.error('Error fetching chat requests:', error);
     }
   };
 
-  const acceptChatRequestAndOpenChat = async (request) => {
-    try {
-      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
-    } catch (error) {
-      console.error('Accept chat request error (header):', error);
-    } finally {
-      fetchChatRequests();
-      fetchContacts();
-
-      if (request.senderId) {
-        navigate(`/profile/${request.senderId}`, {
-          state: { openChat: true, from: 'chat-request', requestId: request.id },
-        });
-      }
-    }
-  };
+  const acceptChatRequestAndOpenChat = (request) =>
+    acceptChatRequestAndNavigate(request, {
+      navigate,
+      fetchChatRequests,
+      fetchContacts,
+    });
 
   const fetchTodayStatus = async () => {
     try {

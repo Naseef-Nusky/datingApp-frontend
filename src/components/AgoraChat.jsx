@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AgoraChat from 'agora-chat';
 import axios from 'axios';
 import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
 import io from 'socket.io-client';
 import { FaPaperPlane, FaTimes, FaSync, FaFire, FaCheckCircle, FaEllipsisV, FaEnvelope, FaPaperclip, FaSmile, FaGift, FaCamera, FaVideo, FaMicrophone, FaStop } from 'react-icons/fa';
 import TypingIndicator from './TypingIndicator';
+import ChatEmailMessageCard from './ChatEmailMessageCard';
 import { useAuth } from '../context/AuthContext';
 import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
+import { connectAppSocket } from '../utils/socketServerUrl';
 
 const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, onOpenEmail = null }) => {
+  const navigate = useNavigate();
   const { fetchUser } = useAuth();
   const { handleInsufficientCreditsError } = useInsufficientCreditsHandler();
   const [messages, setMessages] = useState([]);
@@ -285,6 +289,43 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [userId, remoteUserId, chatId]);
+
+  // Real-time: reload when a new email (or message) arrives for this user
+  useEffect(() => {
+    if (!userId) return;
+    const socket = connectAppSocket();
+    socket.emit('join-room', String(userId));
+    const onRefresh = () => {
+      if (remoteUserId) reloadMessages();
+    };
+    socket.on('new-email', onRefresh);
+    socket.on('new-message', onRefresh);
+    return () => {
+      socket.off('new-email', onRefresh);
+      socket.off('new-message', onRefresh);
+      socket.disconnect();
+    };
+  }, [userId, remoteUserId, chatId]);
+
+  const handleReadEmailMessage = (messageId) => {
+    if (!messageId) return;
+    navigate(`/inbox?messageId=${messageId}`);
+  };
+
+  const openEmailComposerFromChat = () => {
+    if (onOpenEmail) {
+      onOpenEmail();
+    } else {
+      setActiveTab('email');
+    }
+    setShowEmojiPicker(false);
+  };
+
+  const openMediaFromEmailActions = () => {
+    setActiveTab('media');
+    setShowEmojiPicker(false);
+    setTimeout(() => fileInputRef.current?.click(), 150);
+  };
 
   const initializeAgoraChat = async () => {
     if (isInitializing.current) {
@@ -1462,11 +1503,21 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                   .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
                   .map((msg, index) => {
                   const isOwn = msg.senderId === userId.toString();
+                  const isEmailMsg = msg.messageType === 'email';
                   return (
                     <div
                       key={msg.id || index}
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3`}
                     >
+                      {isEmailMsg ? (
+                        <ChatEmailMessageCard
+                          previewText={msg.text}
+                          isOwn={isOwn}
+                          onReadEmail={() => handleReadEmailMessage(msg.id)}
+                          onOpenComposer={openEmailComposerFromChat}
+                          onPhotoVideo={openMediaFromEmailActions}
+                        />
+                      ) : (
                       <div
                         className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                           isOwn
@@ -1588,6 +1639,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                           </div>
                         )}
                       </div>
+                      )}
                     </div>
                   );
                 })}
@@ -2001,11 +2053,22 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                 displayText = isOwn ? 'Added to my contacts' : 'Added you to contacts';
               }
 
+              const isEmailMsg = msg.messageType === 'email';
+
               return (
                 <div
                   key={msg.id || index}
                   className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                 >
+                  {isEmailMsg ? (
+                    <ChatEmailMessageCard
+                      previewText={displayText || msg.text}
+                      isOwn={isOwn}
+                      onReadEmail={() => handleReadEmailMessage(msg.id)}
+                      onOpenComposer={openEmailComposerFromChat}
+                      onPhotoVideo={openMediaFromEmailActions}
+                    />
+                  ) : (
                   <div
                     className={`max-w-[70%] rounded-lg px-4 py-2 ${
                       isOwn
@@ -2146,6 +2209,7 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
                       )}
                     </div>
                   </div>
+                  )}
                 </div>
               );
             })

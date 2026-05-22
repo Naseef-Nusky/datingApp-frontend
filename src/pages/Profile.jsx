@@ -21,6 +21,11 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { createSafeChannelName } from '../utils/agoraUtils';
 import { interestIcons, defaultInterestIcon } from '../utils/interestIcons';
 import { CONTACT_INFO_WARNING, hasBlockedContactInfo } from '../utils/contactInfoBlock';
+import {
+  mapChatRequestFromApi,
+  enrichChatRequestsWithProfiles,
+  acceptChatRequestAndNavigate,
+} from '../utils/chatRequests';
 
 const Profile = () => {
   const { id } = useParams();
@@ -623,54 +628,11 @@ const Profile = () => {
   const fetchChatRequests = async () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
-      
       if (response.data && Array.isArray(response.data)) {
-        // Transform chat requests to include user profile data
-        const requests = await Promise.all(
-          response.data.map(async (request) => {
-            try {
-              // Fetch sender profile if available
-              let senderName = 'Unknown';
-              let senderAvatar = null;
-              
-              if (request.senderData?.id) {
-                try {
-                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
-                  if (profileResponse.data) {
-                    senderName = profileResponse.data.firstName || senderName;
-                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
-                  }
-                } catch (profileError) {
-                  // Use email as fallback
-                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
-                }
-              }
-              
-              return {
-                id: request.id,
-                name: senderName,
-                message: request.firstMessage || request.content || request.message || t('sidebar.newMessage'),
-                avatar: senderAvatar,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-              };
-            } catch (err) {
-              return {
-                id: request.id,
-                name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                message: request.firstMessage || request.content || t('sidebar.newMessage'),
-                avatar: null,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-              };
-            }
-          })
+        const mapped = response.data.map((r) =>
+          mapChatRequestFromApi(r, t('sidebar.newMessage'))
         );
-        
+        const requests = await enrichChatRequestsWithProfiles(mapped);
         setChatRequests(requests);
       } else {
         setChatRequests([]);
@@ -681,22 +643,12 @@ const Profile = () => {
     }
   };
 
-  const acceptChatRequestAndOpenChat = async (request) => {
-    try {
-      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
-    } catch (error) {
-      console.error('Accept chat request error (profile):', error);
-    } finally {
-      fetchChatRequests();
-      fetchContacts();
-
-      if (request.senderId) {
-        navigate(`/profile/${request.senderId}`, {
-          state: { openChat: true, from: 'chat-request', requestId: request.id },
-        });
-      }
-    }
-  };
+  const acceptChatRequestAndOpenChat = (request) =>
+    acceptChatRequestAndNavigate(request, {
+      navigate,
+      fetchChatRequests,
+      fetchContacts,
+    });
 
   const handleAddToContacts = async (e) => {
     if (e) e.stopPropagation();
@@ -1304,7 +1256,7 @@ const Profile = () => {
 
           {/* Chat Window - Middle Panel (when chat is open) */}
           {showChat && user?.id && (
-            <div className="w-full min-w-0 lg:w-[56%] overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2 min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
+            <div className="w-full min-w-0 max-w-[100vw] lg:w-[56%] overflow-hidden flex flex-col min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
               <div className="bg-white h-full min-h-0 rounded-lg shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <AgoraChat
                   userId={user.id}
@@ -1322,7 +1274,7 @@ const Profile = () => {
 
           {/* Email Composer - Middle Panel (when email composer is open) */}
           {showEmailComposer && profile && (
-            <div className="w-full min-w-0 lg:w-[56%] overflow-hidden flex flex-col pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-2 lg:pr-2 lg:mr-2 min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
+            <div className="w-full min-w-0 max-w-[100vw] lg:w-[56%] overflow-hidden flex flex-col min-h-0 max-lg:fixed max-lg:inset-x-0 max-lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] max-lg:bottom-0 max-lg:z-40 max-lg:pb-[env(safe-area-inset-bottom,0px)] lg:sticky lg:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] lg:max-h-[calc(100dvh-3.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
               <ProfileEmailComposer
                 profile={profile}
                 onClose={() => setShowEmailComposer(false)}

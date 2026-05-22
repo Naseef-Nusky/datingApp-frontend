@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { connectAppSocket, getSocketServerUrl } from '../utils/socketServerUrl';
+import {
+  mapChatRequestFromApi,
+  enrichChatRequestsWithProfiles,
+  acceptChatRequestAndNavigate,
+} from '../utils/chatRequests';
 import { FaHeart, FaCamera, FaEnvelope, FaVideo, FaGift, FaSearch, FaVolumeUp, FaChevronDown, FaFire, FaCheckCircle, FaPlay, FaPhone, FaTimes, FaComment } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -537,72 +542,11 @@ const Dashboard = () => {
   const fetchChatRequests = async () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
-      
       if (response.data && Array.isArray(response.data)) {
-        // Transform chat requests to include user profile data
-        const requests = await Promise.all(
-          response.data.map(async (request) => {
-            try {
-              // Fetch sender profile if available
-              let senderName = 'Unknown';
-              let senderAvatar = null;
-              let senderAge = null;
-              
-              if (request.senderData?.id) {
-                try {
-                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
-                  if (profileResponse.data) {
-                    senderName = profileResponse.data.firstName || senderName;
-                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
-                    senderAge = profileResponse.data.age ?? senderAge;
-                  }
-                } catch (profileError) {
-                  // Use email as fallback
-                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
-                }
-              }
-              
-              // Check if it's a video/audio call request or regular message
-              const messageText = request.firstMessage || request.content || request.message || t('sidebar.newMessage');
-              const isVideoChat = messageText.toLowerCase().includes('video chat') || messageText.toLowerCase().includes('inviting you to video');
-              const isAudioChat = messageText.toLowerCase().includes('audio chat') || messageText.toLowerCase().includes('voice chat');
-              const hasEmail = messageText.toLowerCase().includes('email') || request.messageType === 'email';
-              
-              return {
-                id: request.id,
-                name: senderName,
-                age: senderAge,
-                message: messageText,
-                avatar: senderAvatar,
-                createdAt: request.createdAt,
-                updatedAt: request.updatedAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-                isVideoChat: isVideoChat,
-                isAudioChat: isAudioChat,
-                hasEmail: hasEmail,
-              };
-            } catch (err) {
-              return {
-                id: request.id,
-                name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                age: null,
-                message: request.firstMessage || request.content || t('sidebar.newMessage'),
-                avatar: null,
-                createdAt: request.createdAt,
-                updatedAt: request.updatedAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-                senderData: request.senderData,
-                isVideoChat: false,
-                isAudioChat: false,
-                hasEmail: false,
-              };
-            }
-          })
+        const mapped = response.data.map((r) =>
+          mapChatRequestFromApi(r, t('sidebar.newMessage'))
         );
-        
+        const requests = await enrichChatRequestsWithProfiles(mapped);
         setChatRequests(requests);
       } else {
         setChatRequests([]);
@@ -616,25 +560,12 @@ const Dashboard = () => {
   const displayedChatRequests = showLessChatRequests ? chatRequests.slice(0, 5) : chatRequests;
 
 
-  const acceptChatRequestAndOpenChat = async (request) => {
-    try {
-      // Accept the chat request so it becomes a real chat/conversation
-      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
-    } catch (error) {
-      console.error('Accept chat request error (dashboard):', error);
-      // If already accepted, backend may return an error – ignore for navigation
-    } finally {
-      // Ensure contacts/chat lists update
-      fetchChatRequests();
-      fetchContacts();
-
-      if (request.senderId) {
-        navigate(`/profile/${request.senderId}`, {
-          state: { openChat: true, from: 'chat-request', requestId: request.id },
-        });
-      }
-    }
-  };
+  const acceptChatRequestAndOpenChat = (request) =>
+    acceptChatRequestAndNavigate(request, {
+      navigate,
+      fetchChatRequests,
+      fetchContacts,
+    });
 
   const isStreamerVideoEnabled = (profile) => {
     const prefFlag = profile?.preferences?.availableForVideoChat;

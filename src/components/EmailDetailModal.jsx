@@ -97,15 +97,15 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top,0px)]"
       onClick={onClose}
       style={{
         background: 'rgba(0, 0, 0, 0.5)',
       }}
     >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[calc(90*var(--vh))] overflow-hidden relative"
+      <div
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[min(90dvh,calc(90*var(--vh,1vh)))] flex flex-col overflow-hidden relative min-h-0 pb-[env(safe-area-inset-bottom,0px)]"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(to bottom, #fff 0%, #fff 25%, #fff 100%)',
@@ -114,13 +114,14 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 shadow-md transition"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 text-gray-500 hover:text-gray-700 bg-white rounded-full p-2 shadow-md transition"
+          aria-label="Close"
         >
           <FaTimes size={20} />
         </button>
 
         {/* Header Section with Decorative Background */}
-        <div className="relative h-56 overflow-hidden rounded-t-2xl">
+        <div className="relative flex-shrink-0 h-36 sm:h-48 md:h-56 overflow-hidden rounded-t-2xl sm:rounded-t-2xl">
           {/* Decorative Background - Sunset Scene */}
           <div 
             className="absolute inset-0"
@@ -216,16 +217,16 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
                 </div>
               )}
             </div>
-            <p className="text-white font-semibold text-xl drop-shadow-2xl">
+            <p className="text-white font-semibold text-base sm:text-xl drop-shadow-2xl px-4 text-center break-words">
               Email from {senderName}
             </p>
           </div>
         </div>
 
-        {/* Content Section */}
-        <div className="p-6 bg-white">
+        {/* Content Section - scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 bg-white">
           {/* Subject Line */}
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 break-words pr-10">
             {subject}
           </h3>
 
@@ -324,16 +325,19 @@ const EmailDetailModal = ({ isOpen, onClose, email, onReply, user }) => {
             </div>
           )}
 
-          {/* Reply Button */}
+        </div>
+
+        {/* Reply Button - fixed at bottom */}
+        <div className="flex-shrink-0 p-3 sm:p-4 border-t border-gray-100 bg-white">
           <button
             onClick={() => {
               if (onReply) {
                 onReply(currentEmail);
               }
             }}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors shadow-lg"
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 sm:py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors shadow-lg text-sm sm:text-base"
           >
-            <FaEnvelope className="text-xl" />
+            <FaEnvelope className="text-lg sm:text-xl shrink-0" />
             <span>REPLY</span>
           </button>
         </div>

@@ -224,23 +224,23 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
   const senderImage = getSenderImage();
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top,0px)]"
       onClick={onClose}
       style={{
         background: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(4px)',
       }}
     >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[calc(90*var(--vh))] overflow-hidden relative"
+      <div
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-3xl w-full h-[100dvh] sm:h-auto sm:max-h-[min(90dvh,calc(90*var(--vh,1vh)))] flex flex-col overflow-hidden relative min-h-0 pb-[env(safe-area-inset-bottom,0px)]"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #fafafa 100%)',
         }}
       >
         {/* Header with recipient profile - centered like reference */}
-        <div className="relative p-6 pt-8 pb-8 border-b border-gray-200 flex flex-col items-center justify-center text-center">
+        <div className="relative flex-shrink-0 p-4 sm:p-6 pt-5 sm:pt-8 pb-4 sm:pb-8 border-b border-gray-200 flex flex-col items-center justify-center text-center">
           {/* Options and Close - top right */}
           <div className="absolute top-3 right-3 flex items-center gap-2">
             <div className="relative">
@@ -286,15 +286,15 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
             </div>
           )}
           {/* Centered "My Email to ..." */}
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 px-2 break-words">
             My Email to {senderName}
           </h2>
         </div>
 
-        {/* Email Composition Area */}
-        <div className="p-6">
-            {/* Photo/Video & Smiles - top right of white area */}
-            <div className="flex items-center justify-end gap-4 text-xs text-gray-600 mb-4">
+        {/* Email Composition Area - scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6">
+            {/* Photo/Video & Smiles */}
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-4 text-xs text-gray-600 mb-4">
               <button 
                 onClick={handlePhotoVideoClick}
                 className="flex items-center gap-1 hover:text-gray-900 transition-colors"
@@ -361,8 +361,8 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              rows={8}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
+              rows={6}
+              className="w-full min-w-0 px-3 sm:px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white text-base"
             />
 
             {/* Thumbnails for all selected attachments (each can be removed) */}
@@ -462,17 +462,19 @@ const InboxEmailComposer = ({ email, onClose, onSent, user }) => {
                 </div>
               )}
             </div>
+        </div>
 
-            {/* Send Button */}
+        {/* Send Button - fixed at bottom */}
+        <div className="flex-shrink-0 p-3 sm:p-4 pt-2 border-t border-gray-200/80 bg-white/90 backdrop-blur-sm">
             <button
               onClick={handleSend}
               disabled={sending || (!message.trim() && !selectedMedia && selectedGifts.length === 0 && emailAttachments.length === 0)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 sm:py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg text-sm sm:text-base"
             >
-              <FaEnvelope className="text-xl" />
+              <FaEnvelope className="text-lg sm:text-xl shrink-0" />
               <span>{sending ? 'SENDING...' : 'SEND EMAIL'}</span>
             </button>
-          </div>
+        </div>
       </div>
     </div>
   );

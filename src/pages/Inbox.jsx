@@ -8,6 +8,11 @@ import { FaEnvelope, FaEnvelopeOpen, FaTrash, FaReply, FaCamera, FaVideo, FaSpin
 import EmailDetailModal from '../components/EmailDetailModal';
 import InboxEmailComposer from '../components/InboxEmailComposer';
 import ContactsSidebar from '../components/ContactsSidebar';
+import {
+  mapChatRequestFromApi,
+  enrichChatRequestsWithProfiles,
+  acceptChatRequestAndNavigate,
+} from '../utils/chatRequests';
 
 const Inbox = () => {
   const navigate = useNavigate();
@@ -322,46 +327,10 @@ const Inbox = () => {
     try {
       const response = await axios.get('/api/messages/chat-requests');
       if (response.data && Array.isArray(response.data)) {
-        const requests = await Promise.all(
-          response.data.map(async (request) => {
-            try {
-              let senderName = 'Unknown';
-              let senderAvatar = null;
-              
-              if (request.senderData?.id) {
-                try {
-                  const profileResponse = await axios.get(`/api/profiles/${request.senderData.id}`);
-                  if (profileResponse.data) {
-                    senderName = profileResponse.data.firstName || senderName;
-                    senderAvatar = profileResponse.data.photos?.[0]?.url || null;
-                  }
-                } catch (profileError) {
-                  senderName = request.senderData.email?.split('@')[0] || 'Unknown';
-                }
-              }
-              
-              return {
-                id: request.id,
-                name: senderName,
-                message: request.firstMessage || request.content || request.message || t('sidebar.newMessage'),
-                avatar: senderAvatar,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-              };
-            } catch (err) {
-              return {
-                id: request.id,
-                name: request.senderData?.email?.split('@')[0] || 'Unknown',
-                message: request.firstMessage || request.content || t('sidebar.newMessage'),
-                avatar: null,
-                createdAt: request.createdAt,
-                status: request.status || 'pending',
-                senderId: request.senderData?.id || request.senderId,
-              };
-            }
-          })
+        const mapped = response.data.map((r) =>
+          mapChatRequestFromApi(r, t('sidebar.newMessage'))
         );
+        const requests = await enrichChatRequestsWithProfiles(mapped);
         setChatRequests(requests);
       }
     } catch (error) {
@@ -370,22 +339,12 @@ const Inbox = () => {
     }
   };
 
-  const acceptChatRequestAndOpenChat = async (request) => {
-    try {
-      await axios.put(`/api/messages/chat-requests/${request.id}/accept`);
-    } catch (error) {
-      console.error('Accept chat request error (inbox):', error);
-    } finally {
-      fetchChatRequests();
-      fetchContacts();
-
-      if (request.senderId) {
-        navigate(`/profile/${request.senderId}`, {
-          state: { openChat: true, from: 'chat-request', requestId: request.id },
-        });
-      }
-    }
-  };
+  const acceptChatRequestAndOpenChat = (request) =>
+    acceptChatRequestAndNavigate(request, {
+      navigate,
+      fetchChatRequests,
+      fetchContacts,
+    });
 
   const handleEmailClick = async (email) => {
     try {
