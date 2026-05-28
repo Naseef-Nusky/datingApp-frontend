@@ -1010,8 +1010,7 @@ const MyProfile = () => {
               </p>
             </div>
 
-            {/* Hidden for now: Your Wishlist section + edit modal — set to true to show again */}
-            {false && (
+            {/* Your Wishlist section + edit modal */}
             <>
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -1221,7 +1220,6 @@ const MyProfile = () => {
               </div>
             )}
             </>
-            )}
 
             {/* Photos Section */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
