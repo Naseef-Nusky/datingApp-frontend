@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaGlobe, FaUser, FaHeart, /* FaGift, */ FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 function formatVipDeadline(isoDate) {
   if (!isoDate) return '';
@@ -83,7 +83,8 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
     { id: 'profile', labelKey: 'nav.myProfile', icon: FaUser, path: '/profile/me', active: true, color: 'text-red-600' },
     { id: 'mingle', labelKey: 'nav.letsMingle', icon: FaHeart, path: null, color: 'text-gray-800', action: 'openMingleModal' },
     { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-500', disabled: true },
-    { id: 'presents', labelKey: 'nav.presents', icon: FaGift, path: null, color: 'text-gray-800', action: 'openPresents' },
+    // Hidden for now: presents entry
+    // { id: 'presents', labelKey: 'nav.presents', icon: FaGift, path: null, color: 'text-gray-800', action: 'openPresents' },
     { id: 'settings', labelKey: 'nav.settings', icon: FaCog, path: null, color: 'text-gray-800', action: 'openSettings' },
     { id: 'help', labelKey: 'home.helpCenter', icon: FaQuestionCircle, path: null, color: 'text-gray-800', action: 'openHelp' },
     { 
@@ -275,31 +276,32 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
                 );
               }
 
-              if (item.action === 'openPresents') {
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (!onOpenPresents) return;
-                      setIsOpen(false);
-                      onOpenPresents();
-                    }}
-                    className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
-                      isActive ? 'bg-red-50' : ''
-                    }`}
-                  >
-                    <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
-                    <span
-                      className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
-                        item.underline ? 'underline' : ''
-                      }`}
-                    >
-                      {item.labelKey ? t(item.labelKey) : item.label}
-                    </span>
-                  </button>
-                );
-              }
+              // Hidden for now: Presents menu button
+              // if (item.action === 'openPresents') {
+              //   return (
+              //     <button
+              //       key={item.id}
+              //       type="button"
+              //       onClick={() => {
+              //         if (!onOpenPresents) return;
+              //         setIsOpen(false);
+              //         onOpenPresents();
+              //       }}
+              //       className={`w-full flex items-center px-6 py-3 transition hover:bg-gray-50 cursor-pointer ${
+              //         isActive ? 'bg-red-50' : ''
+              //       }`}
+              //     >
+              //       <Icon className={`mr-3 ${item.color} ${isActive ? 'text-red-600' : ''}`} />
+              //       <span
+              //         className={`${item.color} ${isActive ? 'font-semibold text-red-600' : ''} ${
+              //           item.underline ? 'underline' : ''
+              //         }`}
+              //       >
+              //         {item.labelKey ? t(item.labelKey) : item.label}
+              //       </span>
+              //     </button>
+              //   );
+              // }
 
               if (item.action === 'openHelp') {
                 return (

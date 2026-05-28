@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { connectAppSocket, getSocketServerUrl } from '../utils/socketServerUrl';
 import { 
-  FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, FaGift,
+  FaHeart, FaCamera, FaVideo, FaEnvelope, FaPhone, FaStar, /* FaGift, */
   FaLeaf, FaMedal, FaMapMarkerAlt, FaPlay,
   FaSearch, FaVolumeUp, FaChevronDown, FaTimes
 } from 'react-icons/fa';
@@ -1028,6 +1028,7 @@ const Profile = () => {
                   <FaPhone className="text-base sm:text-lg" />
                   <span>AUDIO CALL</span>
                 </button>
+                {/* Hidden for now: SEND PRESENT
                 <button
                   onClick={() => setShowPresentShop(true)}
                   className="flex-1 bg-red-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-red-600 transition font-semibold text-sm sm:text-base flex items-center justify-center space-x-2"
@@ -1035,6 +1036,7 @@ const Profile = () => {
                   <FaGift className="text-base sm:text-lg" />
                   <span>SEND PRESENT</span>
                 </button>
+                */}
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 border-t border-gray-200 gap-3 sm:gap-0">
