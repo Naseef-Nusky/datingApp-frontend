@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { openEmailInbox } from '../utils/emailInbox';
+import { trackGoogleAdsConversion } from '../utils/analytics';
 
 const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
   const navigate = useNavigate();
   const [isResending, setIsResending] = useState(false);
+  const conversionTracked = useRef(false);
+
+  useEffect(() => {
+    if (conversionTracked.current) return;
+    conversionTracked.current = true;
+    trackGoogleAdsConversion();
+  }, []);
 
   const handleResendEmail = async () => {
     setIsResending(true);

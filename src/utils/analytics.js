@@ -1,7 +1,19 @@
 /**
  * Google Analytics 4 (gtag). Enabled when VITE_GA_MEASUREMENT_ID is set at build time.
+ * Google Ads (AW-18191033904) is loaded globally from index.html.
  * @see https://developers.google.com/analytics/devguides/collection/ga4
  */
+
+export const GOOGLE_ADS_ID = 'AW-18191033904';
+
+/** Replace CONVERSION_LABEL with the label from Google Ads when provided. */
+export const GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO = 'AW-18191033904/CONVERSION_LABEL';
+
+/** Google Ads conversion — user registration confirmed (no env required). */
+export function trackGoogleAdsConversion() {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  window.gtag('event', 'conversion', { send_to: GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO });
+}
 
 export function initGoogleAnalytics() {
   const id = import.meta.env.VITE_GA_MEASUREMENT_ID;
