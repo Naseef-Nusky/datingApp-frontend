@@ -81,7 +81,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/user-login', { email, password });
+      // Use general login so streamers/talent can sign in too.
+      // Backend still blocks CRM staff from using the dating-app frontend login.
+      const response = await axios.post('/api/auth/login', { email, password });
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);
