@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaCamera, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
+import ImageCropEditor from './ImageCropEditor';
 
 const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uploading = false, buttonPosition = null }) => {
   const [showOptions, setShowOptions] = useState(true); // Show dropdown options first
   const [uploadMode, setUploadMode] = useState(null); // 'file' or 'webcam' or null
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [cropSource, setCropSource] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [webcamError, setWebcamError] = useState(null);
   
@@ -13,6 +15,39 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
   const webcamVideoRef = useRef(null);
   const webcamStreamRef = useRef(null);
   const modalRef = useRef(null);
+
+  const revokeCropSource = () => {
+    setCropSource((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const clearPreview = () => {
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const resetToOptions = () => {
+    setShowOptions(true);
+    setUploadMode(null);
+    setSelectedFile(null);
+    clearPreview();
+    revokeCropSource();
+    stopWebcam();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropConfirm = (file) => {
+    revokeCropSource();
+    setSelectedFile(file);
+    setPreview(URL.createObjectURL(file));
+    setUploadMode('file');
+  };
 
   // Start webcam when webcam mode is selected
   useEffect(() => {
@@ -31,7 +66,8 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
   useEffect(() => {
     if (!isOpen) {
       setSelectedFile(null);
-      setPreview(null);
+      clearPreview();
+      revokeCropSource();
       setUploadMode(null);
       setShowOptions(true);
       setIsPublic(true);
@@ -97,11 +133,10 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
       
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          setSelectedFile(file);
-          setPreview(URL.createObjectURL(blob));
-          setUploadMode('file'); // Switch to file mode to show preview
           stopWebcam();
+          revokeCropSource();
+          setCropSource(URL.createObjectURL(blob));
+          setUploadMode('file');
         }
       }, 'image/jpeg', 0.9);
     } catch (error) {
@@ -119,9 +154,10 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
       return;
     }
 
-    setSelectedFile(file);
-    setPreview(URL.createObjectURL(file));
+    revokeCropSource();
+    setCropSource(URL.createObjectURL(file));
     setShowOptions(false);
+    setUploadMode('file');
   };
 
   const handleChooseFromDevice = () => {
@@ -246,23 +282,21 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
     );
   }
 
-  // Full modal for webcam or preview
+  // Full modal for webcam, crop, or preview
+  const modalTitle = cropSource && !preview
+    ? 'Adjust your photo'
+    : uploadMode === 'webcam' && !cropSource
+      ? 'Take Photo'
+      : 'Preview Photo';
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[calc(90*var(--vh))] overflow-y-auto" ref={modalRef}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-semibold">
-            {uploadMode === 'webcam' ? 'Take Photo' : 'Preview Photo'}
-          </h2>
+          <h2 className="text-xl font-semibold">{modalTitle}</h2>
           <button
-            onClick={() => {
-              setShowOptions(true);
-              setUploadMode(null);
-              setSelectedFile(null);
-              setPreview(null);
-              stopWebcam();
-            }}
+            onClick={resetToOptions}
             className="text-gray-500 hover:text-gray-700"
             disabled={uploading}
           >
@@ -273,7 +307,7 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
         {/* Content */}
         <div className="p-6">
           {/* Webcam Mode */}
-          {uploadMode === 'webcam' && !selectedFile && (
+          {uploadMode === 'webcam' && !cropSource && !preview && (
             <div className="mb-6">
               {webcamError ? (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -306,6 +340,16 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
             </div>
           )}
 
+          {/* Crop / reposition step */}
+          {cropSource && !preview && (
+            <ImageCropEditor
+              imageSrc={cropSource}
+              aspect={1}
+              onConfirm={handleCropConfirm}
+              onCancel={resetToOptions}
+            />
+          )}
+
           {/* Preview */}
           {preview && (
             <div className="mb-6">
@@ -317,15 +361,7 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
                   className="w-full h-auto rounded-lg border-2 border-gray-200"
                 />
                 <button
-                  onClick={() => {
-                    setSelectedFile(null);
-                    setPreview(null);
-                    setShowOptions(true);
-                    setUploadMode(null);
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = '';
-                    }
-                  }}
+                  onClick={resetToOptions}
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition"
                   disabled={uploading}
                 >
@@ -375,15 +411,7 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
         {preview && (
           <div className="flex items-center justify-end space-x-3 p-4 border-t bg-gray-50">
             <button
-              onClick={() => {
-                setShowOptions(true);
-                setUploadMode(null);
-                setSelectedFile(null);
-                setPreview(null);
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = '';
-                }
-              }}
+              onClick={resetToOptions}
               className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition"
               disabled={uploading}
             >

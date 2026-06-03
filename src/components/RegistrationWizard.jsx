@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import RegistrationSuccessModal from './RegistrationSuccessModal';
+import ImageCropEditor from './ImageCropEditor';
 
 const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null, onComplete }) => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
   const [emailError, setEmailError] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
+  const [photoCropSource, setPhotoCropSource] = useState(null);
 
   const [formData, setFormData] = useState({
     // Step 0: Account credentials
@@ -154,12 +156,32 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
   };
 
   const handlePhotoChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({
-        ...prev,
-        photo: e.target.files[0],
-      }));
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
     }
+    setPhotoCropSource((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handlePhotoCropConfirm = (file) => {
+    setPhotoCropSource((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setFormData((prev) => ({ ...prev, photo: file }));
+  };
+
+  const handlePhotoCropCancel = () => {
+    setPhotoCropSource((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   };
 
   const calculateAge = () => {
@@ -655,6 +677,14 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
         return (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-center mb-6">Add photo. Get noticed.</h2>
+            {photoCropSource ? (
+              <ImageCropEditor
+                imageSrc={photoCropSource}
+                aspect={1}
+                onConfirm={handlePhotoCropConfirm}
+                onCancel={handlePhotoCropCancel}
+              />
+            ) : (
             <div className="flex justify-center">
               <div className="w-64 h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center relative">
                 {formData.photo ? (
@@ -686,16 +716,32 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
                   </div>
                 )}
                 {formData.photo && (
-                  <button
-                    type="button"
-                    onClick={() => handleChange('photo', null)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
-                  >
-                    ×
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, photo: null }))}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                    <label
+                      htmlFor="photo-upload-replace"
+                      className="absolute bottom-2 left-2 right-2 bg-gray-800 bg-opacity-90 text-white text-xs py-2 text-center rounded cursor-pointer hover:bg-opacity-100"
+                    >
+                      CHANGE PHOTO
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                        id="photo-upload-replace"
+                      />
+                    </label>
+                  </>
                 )}
               </div>
             </div>
+            )}
           </div>
         );
 
