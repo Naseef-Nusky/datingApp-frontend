@@ -124,6 +124,7 @@
     "loginFailed": "Login failed",
     "failedSendReset": "Failed to send reset instructions. Please try again.",
     "checkYourEmail": "Check your email",
+    "loginLinkSpamHint": "Can't find it? Check your Junk or Spam folder.",
     "weSentLink": "We sent a sign-in link to",
     "signInWithPassword": "Sign in with password",
     "createAccount": "Create account",
@@ -338,7 +339,7 @@
       "devLinkLabel": "Development login link (expires in 1 hour):",
       "openLoginLink": "Open login link",
       "checkGmail": "Open my email",
-      "spamHint": "Can't find it? Check your Junk or Spam folder (Outlook and iCloud often put sign-in emails there). Mark the message as Not junk, then open the sign-in link.",
+      "spamHint": "Can't find it? Check your Junk or Spam folder.",
       "backToSignIn": "Back to sign in"
     }
   }

@@ -351,6 +351,9 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                       >
                         {getCheckInboxButtonLabel(magicSentEmail)}
                       </button>
+                      <p className="text-[11px] text-amber-900 text-left bg-amber-50 border border-amber-200 rounded-lg p-2.5 leading-relaxed">
+                        {t('auth.loginLinkSpamHint')}
+                      </p>
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
@@ -866,6 +869,9 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 >
                   {getCheckInboxButtonLabel(magicSentEmail)}
                 </button>
+                <p className="text-xs text-amber-900 text-left bg-amber-50 border border-amber-200 rounded-lg p-3 leading-relaxed">
+                  {t('auth.loginLinkSpamHint')}
+                </p>
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
