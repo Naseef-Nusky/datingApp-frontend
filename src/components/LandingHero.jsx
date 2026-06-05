@@ -8,6 +8,7 @@ import PasswordInput from './PasswordInput';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
+import { getCheckInboxButtonLabel, openEmailInbox } from '../utils/emailInbox';
 import { authorizeAppleSignIn } from '../utils/nativeAppleSignIn';
 
 const isIosNativeShell = () =>
@@ -346,9 +347,9 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         type="button"
                         className="w-full py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50 transition hover:opacity-90"
                         style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
-                        onClick={() => window.open('https://mail.google.com', '_blank')}
+                        onClick={() => openEmailInbox(magicSentEmail)}
                       >
-                        CHECK YOUR GMAIL ACCOUNT
+                        {getCheckInboxButtonLabel(magicSentEmail)}
                       </button>
                       <button
                         type="button"
@@ -861,9 +862,9 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition bg-red-600 hover:bg-red-700"
-                  onClick={() => window.open('https://mail.google.com', '_blank')}
+                  onClick={() => openEmailInbox(magicSentEmail)}
                 >
-                  CHECK YOUR GMAIL ACCOUNT
+                  {getCheckInboxButtonLabel(magicSentEmail)}
                 </button>
                 <button
                   type="button"

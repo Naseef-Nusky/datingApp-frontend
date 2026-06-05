@@ -337,7 +337,8 @@
       "devMode": "SMTP is not configured (dev mode). Use the link below to log in:",
       "devLinkLabel": "Development login link (expires in 1 hour):",
       "openLoginLink": "Open login link",
-      "checkGmail": "Check your email",
+      "checkGmail": "Open my email",
+      "spamHint": "Can't find it? Check your Junk or Spam folder (Outlook and iCloud often put sign-in emails there). Mark the message as Not junk, then open the sign-in link.",
       "backToSignIn": "Back to sign in"
     }
   }
