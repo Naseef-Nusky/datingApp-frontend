@@ -7,6 +7,7 @@ import axios from 'axios';
 import { connectAppSocket } from '../utils/socketServerUrl';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, FaBook, FaCampground, FaUtensils, FaCompactDisc, FaShip, FaShoppingCart, FaGamepad, FaPalette, FaHockeyPuck, FaFilm, FaLandmark, FaMusic, FaLeaf, FaGlassMartiniAlt, FaFish, FaTv, FaPrayingHands, FaSwimmer, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
+import { isAllowedProfileImageFile, prepareProfileImageForUpload, PROFILE_IMAGE_HINT } from '../utils/profileImage';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
 import { interestIcons } from '../utils/interestIcons';
@@ -304,15 +305,16 @@ const MyProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!isAllowedProfileImageFile(file)) {
+      alert(`Please select a supported image (${PROFILE_IMAGE_HINT})`);
       return;
     }
 
     setUploadingCover(true);
     try {
+      const ready = await prepareProfileImageForUpload(file);
       const formData = new FormData();
-      formData.append('coverPhoto', file);
+      formData.append('coverPhoto', ready);
 
       const response = await axios.post('/api/profiles/me/cover-photo', formData);
 

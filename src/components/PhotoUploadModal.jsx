@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaCamera, FaTimes, FaLock, FaUnlock } from 'react-icons/fa';
 import ImageCropEditor from './ImageCropEditor';
+import {
+  PROFILE_IMAGE_ACCEPT,
+  PROFILE_IMAGE_HINT,
+  isAllowedProfileImageFile,
+  prepareProfileImageForUpload,
+} from '../utils/profileImage';
 
 const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uploading = false, buttonPosition = null }) => {
   const [showOptions, setShowOptions] = useState(true); // Show dropdown options first
@@ -145,19 +151,25 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
     }
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!isAllowedProfileImageFile(file)) {
+      alert(`Please select a supported image (${PROFILE_IMAGE_HINT})`);
       return;
     }
 
-    revokeCropSource();
-    setCropSource(URL.createObjectURL(file));
-    setShowOptions(false);
-    setUploadMode('file');
+    try {
+      const ready = await prepareProfileImageForUpload(file);
+      revokeCropSource();
+      setCropSource(URL.createObjectURL(ready));
+      setShowOptions(false);
+      setUploadMode('file');
+    } catch (err) {
+      console.error('Photo prepare error:', err);
+      alert('Could not open this photo. Try JPG or PNG, or take a new photo.');
+    }
   };
 
   const handleChooseFromDevice = () => {
@@ -259,7 +271,7 @@ const PhotoUploadModal = ({ isOpen, onClose, onUpload, isMainPhoto = false, uplo
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={PROFILE_IMAGE_ACCEPT}
               onChange={handleFileSelect}
               className="hidden"
               disabled={uploading}

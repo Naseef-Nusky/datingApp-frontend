@@ -5,6 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import RegistrationSuccessModal from './RegistrationSuccessModal';
 import ImageCropEditor from './ImageCropEditor';
+import {
+  PROFILE_IMAGE_ACCEPT,
+  PROFILE_IMAGE_HINT,
+  isAllowedProfileImageFile,
+  prepareProfileImageForUpload,
+} from '../utils/profileImage';
 
 const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null, onComplete }) => {
   const navigate = useNavigate();
@@ -155,17 +161,23 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
     }));
   };
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!isAllowedProfileImageFile(file)) {
+      alert(`Please select a supported image (${PROFILE_IMAGE_HINT})`);
       return;
     }
-    setPhotoCropSource((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
+    try {
+      const ready = await prepareProfileImageForUpload(file);
+      setPhotoCropSource((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(ready);
+      });
+    } catch (err) {
+      console.error('Photo prepare error:', err);
+      alert('Could not open this photo. Try JPG or PNG, or take a new photo.');
+    }
     e.target.value = '';
   };
 
@@ -702,7 +714,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
                     />
                     <input
                       type="file"
-                      accept="image/*"
+                      accept={PROFILE_IMAGE_ACCEPT}
                       onChange={handlePhotoChange}
                       className="hidden"
                       id="photo-upload"
@@ -713,6 +725,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
                     >
                       UPLOAD PROFILE PHOTO
                     </label>
+                    <p className="text-xs text-gray-500 mt-2">Supported: {PROFILE_IMAGE_HINT}</p>
                   </div>
                 )}
                 {formData.photo && (
@@ -731,7 +744,7 @@ const RegistrationWizard = ({ completeProfileOnly = false, initialProfile = null
                       CHANGE PHOTO
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={PROFILE_IMAGE_ACCEPT}
                         onChange={handlePhotoChange}
                         className="hidden"
                         id="photo-upload-replace"
