@@ -151,9 +151,17 @@ const MyProfile = () => {
   const fetchProfile = async () => {
     try {
       const response = await axios.get('/api/auth/me');
-      setProfile(response.data.profile);
+      const loaded = response.data.profile;
+      if (!loaded) {
+        navigate('/complete-profile', { replace: true });
+        return;
+      }
+      setProfile(loaded);
     } catch (error) {
       console.error('Fetch profile error:', error);
+      if (error.response?.status === 404) {
+        navigate('/complete-profile', { replace: true });
+      }
     } finally {
       setLoading(false);
     }
@@ -845,7 +853,7 @@ const MyProfile = () => {
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-red-500">Profile not found</div>
+        <div className="text-xl text-gray-600">Redirecting to complete your profile...</div>
       </div>
     );
   }
