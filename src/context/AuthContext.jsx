@@ -81,9 +81,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Use general login so streamers/talent can sign in too.
-      // Backend still blocks CRM staff from using the dating-app frontend login.
-      const response = await axios.post('/api/auth/login', { email, password });
+      // General login supports member + streamer (same email can exist for both).
+      // Fallback to streamer-login if an older API only matched the member row first.
+      let response;
+      try {
+        response = await axios.post('/api/auth/login', { email, password });
+      } catch (firstErr) {
+        if (firstErr.response?.status === 401) {
+          response = await axios.post('/api/auth/streamer-login', { email, password });
+        } else {
+          throw firstErr;
+        }
+      }
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);
