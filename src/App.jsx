@@ -42,6 +42,7 @@ import Contact from './pages/Contact';
 import HelpCenter from './pages/HelpCenter';
 import OnlineDatingAdvice from './pages/OnlineDatingAdvice';
 import RouteSeoAndAnalytics from './components/RouteSeoAndAnalytics';
+import { isAppRoute, isRegistrationRoute } from './utils/routePaths';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -67,13 +68,6 @@ function ScrollToTop() {
   return null;
 }
 
-// App routes: show header only when logged in and on these paths
-const APP_ROUTES = ['/dashboard', '/profile', '/inbox', '/vip', '/compose-email', '/complete-profile'];
-
-function isAppRoute(pathname) {
-  return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
-}
-
 function AppShell() {
   const location = useLocation();
   const { user } = useAuth();
@@ -93,10 +87,13 @@ function AppShell() {
     };
   }, [location.pathname, user?.id]);
 
-  const showHeader = user && isAppRoute(location.pathname);
+  const onRegistrationWizard = isRegistrationRoute(location.pathname);
+  const showHeader =
+    user && (isAppRoute(location.pathname) || onRegistrationWizard);
+  const showFullHeaderNav = showHeader && !onRegistrationWizard;
   const isIosNativeShell = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
-  const showFooter = !showHeader && !isIosNativeShell;
-  const [showInactivityModal, resetInactivity] = useInactivity(showHeader);
+  const showFooter = !showHeader && !isIosNativeShell && !onRegistrationWizard;
+  const [showInactivityModal, resetInactivity] = useInactivity(showFullHeaderNav);
 
   return (
     <div className="min-h-app-screen bg-gray-50 flex flex-col">
