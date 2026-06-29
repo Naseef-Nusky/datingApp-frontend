@@ -7,6 +7,7 @@ import axios from 'axios';
 import { connectAppSocket } from '../utils/socketServerUrl';
 import { FaEdit, FaCamera, FaHeart, FaGift, FaUmbrellaBeach, FaCar, FaBicycle, FaBook, FaCampground, FaUtensils, FaCompactDisc, FaShip, FaShoppingCart, FaGamepad, FaPalette, FaHockeyPuck, FaFilm, FaLandmark, FaMusic, FaLeaf, FaGlassMartiniAlt, FaFish, FaTv, FaPrayingHands, FaSwimmer, FaSearch, FaVolumeUp, FaChevronDown, FaTimes, FaLock, FaUnlock, FaMapMarkerAlt } from 'react-icons/fa';
 import PhotoUploadModal from '../components/PhotoUploadModal';
+import { isAllowedProfileImageFile, prepareProfileImageForUpload, PROFILE_IMAGE_HINT } from '../utils/profileImage';
 import PhotoViewModal from '../components/PhotoViewModal';
 import ContactsSidebar from '../components/ContactsSidebar';
 import { interestIcons } from '../utils/interestIcons';
@@ -150,9 +151,17 @@ const MyProfile = () => {
   const fetchProfile = async () => {
     try {
       const response = await axios.get('/api/auth/me');
-      setProfile(response.data.profile);
+      const loaded = response.data.profile;
+      if (!loaded) {
+        navigate('/complete-profile', { replace: true });
+        return;
+      }
+      setProfile(loaded);
     } catch (error) {
       console.error('Fetch profile error:', error);
+      if (error.response?.status === 404) {
+        navigate('/complete-profile', { replace: true });
+      }
     } finally {
       setLoading(false);
     }
@@ -304,15 +313,16 @@ const MyProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+    if (!isAllowedProfileImageFile(file)) {
+      alert(`Please select a supported image (${PROFILE_IMAGE_HINT})`);
       return;
     }
 
     setUploadingCover(true);
     try {
+      const ready = await prepareProfileImageForUpload(file);
       const formData = new FormData();
-      formData.append('coverPhoto', file);
+      formData.append('coverPhoto', ready);
 
       const response = await axios.post('/api/profiles/me/cover-photo', formData);
 
@@ -843,7 +853,7 @@ const MyProfile = () => {
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-red-500">Profile not found</div>
+        <div className="text-xl text-gray-600">Redirecting to complete your profile...</div>
       </div>
     );
   }
@@ -1010,7 +1020,6 @@ const MyProfile = () => {
               </p>
             </div>
 
-            {/* Your Wishlist */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <h2 className="text-lg sm:text-xl font-semibold">Your Wishlist</h2>

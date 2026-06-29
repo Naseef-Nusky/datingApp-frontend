@@ -20,6 +20,11 @@ export default function CompleteProfile() {
         setProfile(res.data || null);
       })
       .catch((err) => {
+        // Legacy API or network — still allow wizard if profile missing (404).
+        if (err.response?.status === 404) {
+          setProfile(null);
+          return;
+        }
         setError(err.response?.data?.message || 'Failed to load profile');
       })
       .finally(() => setLoading(false));

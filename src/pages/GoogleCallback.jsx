@@ -24,8 +24,11 @@ export default function GoogleCallback() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
           <h1 className="text-xl font-bold text-gray-900 mb-2">Check your email</h1>
-          <p className="text-gray-600 text-sm mb-6">
+          <p className="text-gray-600 text-sm mb-3">
             We sent a login link to <strong>{email}</strong>. Click the link in that email to sign in.
+          </p>
+          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6 text-left leading-relaxed">
+            Can&apos;t find it? Check Junk or Spam (Outlook and iCloud often filter sign-in mail). Mark as Not junk, then open the link.
           </p>
           <a
             href="/"

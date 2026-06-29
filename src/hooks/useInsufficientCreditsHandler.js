@@ -26,9 +26,44 @@ export function useInsufficientCreditsHandler() {
     return true;
   };
 
+  /** API / socket payload: subscription required vs insufficient credits. */
+  const handleCallAccessDenied = (payload = {}) => {
+    const code = String(payload.code || '').toUpperCase();
+    if (code === 'SUBSCRIPTION_REQUIRED') {
+      openUpgradeModal();
+      return true;
+    }
+    if (code === 'INSUFFICIENT_CREDITS') {
+      openRefillModal({
+        requiredCredits: payload.required ?? payload.costPerMinute,
+        balance: payload.balance,
+      });
+      return true;
+    }
+    if (
+      typeof payload.message === 'string' &&
+      payload.message.toLowerCase().includes('insufficient')
+    ) {
+      handleInsufficientCredits({
+        requiredCredits: payload.required ?? payload.costPerMinute,
+        balance: payload.balance,
+      });
+      return true;
+    }
+    if (
+      typeof payload.message === 'string' &&
+      payload.message.toLowerCase().includes('upgrade')
+    ) {
+      openUpgradeModal();
+      return true;
+    }
+    return false;
+  };
+
   return {
     handleInsufficientCredits,
     handleInsufficientCreditsError,
+    handleCallAccessDenied,
     isInsufficientCreditsError,
     hasActiveSubscription: () => hasActiveSubscription(user),
   };

@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { openEmailInbox } from '../utils/emailInbox';
+import { getCheckInboxButtonLabel, openEmailInbox } from '../utils/emailInbox';
+import { trackGoogleAdsConversion } from '../utils/analytics';
 
 const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
   const navigate = useNavigate();
   const [isResending, setIsResending] = useState(false);
+  const conversionTracked = useRef(false);
+
+  useEffect(() => {
+    if (conversionTracked.current) return;
+    conversionTracked.current = true;
+    trackGoogleAdsConversion();
+  }, []);
 
   const handleResendEmail = async () => {
     setIsResending(true);
@@ -80,12 +88,12 @@ const RegistrationSuccessModal = ({ user, email, onClose, onResendEmail }) => {
           onClick={handleCheckEmail}
           className="w-full bg-red-500 text-white py-4 rounded-lg font-semibold text-lg hover:bg-red-600 transition mb-4"
         >
-          CHECK YOUR EMAIL
+          {getCheckInboxButtonLabel(email)}
         </button>
 
         {/* Troubleshooting text */}
         <p className="text-sm text-gray-600 text-center">
-          Didn't get the email? Check your Spam folder or{' '}
+          Didn&apos;t get the email? Check Junk or Spam (especially Outlook and iCloud), mark as Not junk, then{' '}
           <button
             onClick={handleResendEmail}
             disabled={isResending}

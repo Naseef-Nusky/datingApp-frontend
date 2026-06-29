@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
-import { FaGlobe, FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaHeart, FaGift, FaCog, FaQuestionCircle, FaTag, FaFileContract, FaSignOutAlt, FaCrown, FaPhotoVideo, FaInfoCircle, FaLock, FaShieldAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 function formatVipDeadline(isoDate) {
   if (!isoDate) return '';
@@ -82,7 +82,7 @@ const ProfileDropdown = ({ onOpenSettings, onOpenPresents, onOpenAbout, onOpenHe
   const menuItems = [
     { id: 'profile', labelKey: 'nav.myProfile', icon: FaUser, path: '/profile/me', active: true, color: 'text-red-600' },
     { id: 'mingle', labelKey: 'nav.letsMingle', icon: FaHeart, path: null, color: 'text-gray-800', action: 'openMingleModal' },
-    { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-500', disabled: true },
+    // { id: 'network', labelKey: 'nav.ourDatingNetwork', icon: FaGlobe, path: '/network', color: 'text-gray-500', disabled: true },
     { id: 'presents', labelKey: 'nav.presents', icon: FaGift, path: null, color: 'text-gray-800', action: 'openPresents' },
     { id: 'settings', labelKey: 'nav.settings', icon: FaCog, path: null, color: 'text-gray-800', action: 'openSettings' },
     { id: 'help', labelKey: 'home.helpCenter', icon: FaQuestionCircle, path: null, color: 'text-gray-800', action: 'openHelp' },

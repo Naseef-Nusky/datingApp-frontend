@@ -1,7 +1,50 @@
 /**
  * Google Analytics 4 (gtag). Enabled when VITE_GA_MEASUREMENT_ID is set at build time.
+ * Google Ads (AW-18191033904) is loaded globally from index.html.
  * @see https://developers.google.com/analytics/devguides/collection/ga4
  */
+
+export const GOOGLE_ADS_ID = 'AW-18191033904';
+
+/** Sign-up conversion (Google Ads event snippet). */
+export const GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO =
+  'AW-18191033904/2xsKCMyhg7QcELDMlOJD';
+
+export const GOOGLE_ADS_SIGNUP_CONVERSION_VALUE = 1.0;
+export const GOOGLE_ADS_SIGNUP_CONVERSION_CURRENCY = 'GBP';
+
+/**
+ * Google Ads sign-up conversion — fires on registration confirmed page/modal.
+ * @param {() => void} [eventCallback] optional, e.g. navigate after ping
+ */
+export function trackGoogleAdsConversion(eventCallback) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  const params = {
+    send_to: GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO,
+    value: GOOGLE_ADS_SIGNUP_CONVERSION_VALUE,
+    currency: GOOGLE_ADS_SIGNUP_CONVERSION_CURRENCY,
+  };
+  if (typeof eventCallback === 'function') {
+    params.event_callback = eventCallback;
+  }
+  window.gtag('event', 'conversion', params);
+}
+
+/**
+ * Click-based conversion (optional). Use on submit if you need redirect after track.
+ * @param {string} [url]
+ * @returns {false}
+ */
+export function gtagReportConversion(url) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') {
+    if (typeof url !== 'undefined') window.location = url;
+    return false;
+  }
+  trackGoogleAdsConversion(() => {
+    if (typeof url !== 'undefined') window.location = url;
+  });
+  return false;
+}
 
 export function initGoogleAnalytics() {
   const id = import.meta.env.VITE_GA_MEASUREMENT_ID;

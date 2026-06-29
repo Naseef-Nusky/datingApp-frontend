@@ -28,6 +28,7 @@ import {
   enrichChatRequestsWithProfiles,
   acceptChatRequestAndNavigate,
 } from '../utils/chatRequests';
+import { isRegistrationRoute } from '../utils/routePaths';
 
 const Header = () => {
   const { user } = useAuth();
@@ -384,6 +385,18 @@ const Header = () => {
       openUpgradeModal();
     }
   };
+
+  const onRegistrationWizard = isRegistrationRoute(location.pathname);
+
+  if (user && onRegistrationWizard) {
+    return (
+      <header className="bg-nex-blue shadow-md sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)]">
+        <div className="container mx-auto px-4 py-2 sm:py-3 flex justify-center">
+          <Logo />
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="bg-nex-blue shadow-md sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)]">

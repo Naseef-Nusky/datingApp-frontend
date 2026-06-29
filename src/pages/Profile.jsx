@@ -26,6 +26,7 @@ import {
   enrichChatRequestsWithProfiles,
   acceptChatRequestAndNavigate,
 } from '../utils/chatRequests';
+import { useInsufficientCreditsHandler } from '../hooks/useInsufficientCreditsHandler';
 
 const Profile = () => {
   const { id } = useParams();
@@ -33,6 +34,10 @@ const Profile = () => {
   const location = useLocation();
   const { user, fetchUser } = useAuth();
   const { t } = useLanguage();
+  const {
+    handleInsufficientCreditsError,
+    handleCallAccessDenied,
+  } = useInsufficientCreditsHandler();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [similarProfiles, setSimilarProfiles] = useState([]);
@@ -217,10 +222,19 @@ const Profile = () => {
       });
 
       socket.on('call-request-error', (data) => {
+        if (handleCallAccessDenied(data)) {
+          setOutgoingCall(null);
+          outgoingCallRef.current = null;
+          setShowVideoCall(false);
+          setShowVoiceCall(false);
+          return;
+        }
         const msg = data?.message || 'Call could not be started.';
         alert(msg);
         setOutgoingCall(null);
         outgoingCallRef.current = null;
+        setShowVideoCall(false);
+        setShowVoiceCall(false);
       });
 
       // Listen for call rejected
@@ -704,7 +718,25 @@ const Profile = () => {
     setShowEmailComposer(false); // Close email if open
   };
 
+  const ensureCanStartCall = async (callType) => {
+    try {
+      const { data } = await axios.get('/api/credits/call-access', {
+        params: { callType },
+      });
+      if (data?.allowed) return true;
+      handleCallAccessDenied(data);
+      return false;
+    } catch (error) {
+      if (handleInsufficientCreditsError(error)) return false;
+      const payload = error.response?.data;
+      if (payload && handleCallAccessDenied(payload)) return false;
+      alert(payload?.message || 'Call could not be started.');
+      return false;
+    }
+  };
+
   const handleVideoCall = async () => {
+    if (!(await ensureCanStartCall('video'))) return;
     try {
       // Create channel name BEFORE emitting call request (must match receiver's channel name)
       const channelName = createSafeChannelName('call', user.id, id);
@@ -762,6 +794,7 @@ const Profile = () => {
   };
 
   const handleAudioCall = async () => {
+    if (!(await ensureCanStartCall('voice'))) return;
     try {
       // Create channel name BEFORE emitting call request (must match receiver's channel name)
       const channelName = createSafeChannelName('call', user.id, id);

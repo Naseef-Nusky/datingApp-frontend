@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { openEmailInbox } from '../utils/emailInbox';
+import { getCheckInboxButtonLabel, openEmailInbox } from '../utils/emailInbox';
 
 /**
  * Shown after user enters email and clicks Continue: "Check your email", login link sent to [email].
@@ -49,14 +49,19 @@ export default function CheckEmail() {
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={handleOpenEmail}
-            className="w-full py-3.5 px-6 rounded-xl font-semibold text-white uppercase text-sm tracking-wide mb-3 transition hover:opacity-90"
-            style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
-          >
-            {t('pages.checkEmail.checkGmail')}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={handleOpenEmail}
+              className="w-full py-3.5 px-6 rounded-xl font-semibold text-white uppercase text-sm tracking-wide mb-3 transition hover:opacity-90"
+              style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
+            >
+              {getCheckInboxButtonLabel(email)}
+            </button>
+            <p className="text-xs text-gray-600 text-left bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 leading-relaxed">
+              {t('pages.checkEmail.spamHint')}
+            </p>
+          </>
         )}
 
         <Link

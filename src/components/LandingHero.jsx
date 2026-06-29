@@ -8,6 +8,7 @@ import PasswordInput from './PasswordInput';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { buildSendLoginLinkPayload } from '../utils/sendLoginLinkPayload';
+import { getCheckInboxButtonLabel, openEmailInbox } from '../utils/emailInbox';
 import { authorizeAppleSignIn } from '../utils/nativeAppleSignIn';
 
 const isIosNativeShell = () =>
@@ -346,10 +347,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                         type="button"
                         className="w-full py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50 transition hover:opacity-90"
                         style={{ background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' }}
-                        onClick={() => window.open('https://mail.google.com', '_blank')}
+                        onClick={() => openEmailInbox(magicSentEmail)}
                       >
-                        CHECK YOUR GMAIL ACCOUNT
+                        {getCheckInboxButtonLabel(magicSentEmail)}
                       </button>
+                      <p className="text-[11px] text-amber-900 text-left bg-amber-50 border border-amber-200 rounded-lg p-2.5 leading-relaxed">
+                        {t('auth.loginLinkSpamHint')}
+                      </p>
                       <button
                         type="button"
                         className="block w-full text-center py-2.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition"
@@ -861,10 +865,13 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
                 <button
                   type="button"
                   className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 transition bg-red-600 hover:bg-red-700"
-                  onClick={() => window.open('https://mail.google.com', '_blank')}
+                  onClick={() => openEmailInbox(magicSentEmail)}
                 >
-                  CHECK YOUR GMAIL ACCOUNT
+                  {getCheckInboxButtonLabel(magicSentEmail)}
                 </button>
+                <p className="text-xs text-amber-900 text-left bg-amber-50 border border-amber-200 rounded-lg p-3 leading-relaxed">
+                  {t('auth.loginLinkSpamHint')}
+                </p>
                 <button
                   type="button"
                   className="block w-full text-center py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
