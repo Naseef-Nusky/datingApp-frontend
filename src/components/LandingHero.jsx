@@ -18,7 +18,7 @@ const loginBtnClass =
   'px-4 py-2 rounded-lg text-white text-sm font-semibold transition hover:opacity-90 shrink-0';
 const loginBtnStyle = { background: 'linear-gradient(to right, #5A2D8A, #B5458F, #E97672)' };
 
-export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
+export default function LandingHero({ backgroundImage = "/hero-modern.jpg" }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [loginMode, setLoginMode] = useState('magic'); // 'magic' | 'password' | 'signup' | 'forgot'
@@ -247,9 +247,10 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
     >
       {/* Desktop: full-screen image with overlay header + floating white card */}
       <div
-        className="hidden md:block relative min-h-app-screen bg-cover bg-center bg-no-repeat"
+        className="hidden md:block relative min-h-app-screen bg-cover bg-no-repeat"
         style={{
           backgroundImage: `url('${backgroundImage}')`,
+          backgroundPosition: 'center top',
         }}
       >
         {/* Desktop header: logo top left, nav top right — over image */}
@@ -640,10 +641,11 @@ export default function LandingHero({ backgroundImage = "/hero%20img.png" }) {
 
       {/* Mobile: full-screen overlay layout */}
       <div
-        className="md:hidden relative min-h-app-screen flex flex-col bg-cover bg-center bg-no-repeat flex-1"
+        className="md:hidden relative min-h-app-screen flex flex-col bg-cover bg-no-repeat flex-1"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.25)), url('/hero%20img.png')",
+            `linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.25)), url('${backgroundImage}')`,
+          backgroundPosition: '75% top',
         }}
       >
       {/* Mobile Header: iOS app = Log in right only; else logo + hamburger */}

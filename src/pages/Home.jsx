@@ -23,10 +23,10 @@ const Home = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   const featureCards = useMemo(() => [
-    { titleKey: 'home.secureExperience', textKey: 'home.secureExperienceText', image: '/SecureExperience.png' },
-    { titleKey: 'home.meaningfulMatches', textKey: 'home.meaningfulMatchesText', image: '/MeaningfulMatches.png' },
-    { titleKey: 'home.verifiedMembers', textKey: 'home.verifiedMembersText', image: '/VerifiedMembers.png' },
-    { titleKey: 'home.diverseCommunity', textKey: 'home.diverseCommunityText', image: '/DiverseCommunity.png' },
+    { titleKey: 'home.secureExperience', textKey: 'home.secureExperienceText', image: '/feature-secure.jpg' },
+    { titleKey: 'home.meaningfulMatches', textKey: 'home.meaningfulMatchesText', image: '/feature-matches.jpg' },
+    { titleKey: 'home.verifiedMembers', textKey: 'home.verifiedMembersText', image: '/feature-verified.jpg' },
+    { titleKey: 'home.diverseCommunity', textKey: 'home.diverseCommunityText', image: '/feature-diverse.jpg' },
   ], []);
 
   const reviewCards = [
@@ -92,21 +92,21 @@ const Home = () => {
       text: 'Interested in connecting with Uruguayan women? Discover how personality, lifestyle, and relationship values influence communication, dating etiquette, and early connections.',
       author: 'Editorial Team',
       date: '23/02/2026',
-      image: '/Dating%20Uruguayan%20Women.png',
+      image: '/insight-uruguayan.jpg',
     },
     {
       title: 'Dating Vietnamese Women: Culture & Modern Love',
       text: 'Explore what it’s like to date Vietnamese women. Learn how culture, family values, and modern expectations shape communication, dating behavior, and online relationships.',
       author: 'Salina Owens',
       date: '18/02/2026',
-      image: '/Dating%20Vietnamese%20Women.png',
+      image: '/insight-vietnamese.jpg',
     },
     {
       title: '50+ Flirty Text Messages for Him',
       text: 'Looking to spark attraction? Find playful, romantic, and clever flirty messages that help you connect, tease, and make him smile effortlessly.',
       author: 'Salina Owens',
       date: '20/08/2025',
-      image: '/Flirty%20Text%20Messages%20for%20Him.png',
+      image: '/insight-flirty.jpg',
     },
   ];
 
@@ -317,7 +317,7 @@ const Home = () => {
               <img
                 src={item.image}
                 alt={t(item.titleKey)}
-                className="w-full h-28 object-contain rounded-lg"
+                className="w-36 h-36 sm:w-40 sm:h-40 mx-auto object-cover rounded-full"
                 loading="lazy"
               />
               <div className="p-4">
@@ -339,17 +339,17 @@ const Home = () => {
               </p>
             </div>
             <img
-              src="/onlineChat.png"
+              src="/landing-male.jpg"
               alt={t('home.connectOnlineTitle')}
-              className="object-contain w-full h-80 sm:h-96"
+              className="object-cover w-64 h-64 sm:w-80 sm:h-80 rounded-full mx-auto"
             />
           </div>
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <img
-              src="/virtualdating.png"
+              src="/landing-female.jpg"
               alt="Interactive virtual dating tools"
-              className="object-contain w-full h-80 sm:h-96 order-2 md:order-1"
+              className="object-cover w-64 h-64 sm:w-80 sm:h-80 rounded-full mx-auto order-2 md:order-1"
             />
             <div className="order-1 md:order-2">
               <h2 className="text-2xl font-bold mb-3">{t('home.virtualDatingTitle')}</h2>
@@ -377,9 +377,9 @@ const Home = () => {
               </p>
             </div>
             <img
-              src="/diverseprofiles.png"
+              src="/landing-explore-profiles.jpg"
               alt={t('home.exploreProfilesTitle')}
-              className="object-contain w-full h-80 sm:h-96"
+              className="object-cover w-64 h-64 sm:w-80 sm:h-80 rounded-full mx-auto"
             />
           </div>
         </div>
@@ -551,7 +551,7 @@ const Home = () => {
         className="w-full min-h-[500px] sm:min-h-[620px] flex items-center justify-center"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(20,24,35,.45), rgba(20,24,35,.45)), url('/lookingForGreatConnection.png')",
+            "linear-gradient(rgba(20,24,35,.45), rgba(20,24,35,.45)), url('/landing-connection.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -667,13 +667,13 @@ const Home = () => {
       <section
         className="w-full relative min-h-[420px] sm:min-h-[520px] lg:min-h-[620px] flex flex-col items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: "url('/OurSharedSuccess.png')",
+          backgroundImage: "url('/landing-shared-journey.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
         {/* subtle overlay to improve readability */}
-        <div className="absolute inset-0 bg-slate-700/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-slate-900/35 pointer-events-none" />
 
         <div className="relative z-10 w-full px-4 sm:px-6 py-8 sm:py-10 flex flex-col items-center">
           <h3 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-2 sm:mb-3 px-2">
@@ -781,7 +781,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="w-full bg-white px-4 sm:px-6 pb-12">
+      <section className="w-full bg-white px-4 sm:px-6 pt-16 sm:pt-20 pb-12">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-3">
             Online Dating Insights
@@ -818,8 +818,16 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="w-full bg-gray-50 px-4 sm:px-6 py-12">
-        <div className="max-w-4xl mx-auto">
+      <section
+        className="w-full relative px-4 sm:px-6 py-12 overflow-hidden"
+        style={{
+          backgroundImage: "url('/faq-bg.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-white/75 pointer-events-none" />
+        <div className="relative z-10 max-w-4xl mx-auto">
           <h3 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-3">FAQ</h3>
           <p className="text-center text-gray-600 text-base sm:text-lg max-w-3xl mx-auto mb-8 leading-relaxed">
             Want advice on online dating? Need tips on polishing your profile? Match better with trusted guidance and turn your next virtual relationship into real success.
@@ -829,7 +837,7 @@ const Home = () => {
             {homeFaqs.map((item, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
-                <article key={item.question} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <article key={item.question} className="bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex((prev) => (prev === idx ? -1 : idx))}
