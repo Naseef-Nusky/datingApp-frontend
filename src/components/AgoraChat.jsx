@@ -1425,6 +1425,11 @@ const AgoraChatComponent = ({ userId, remoteUserId, onClose, embedded = false, o
             <div className="min-w-0">
               <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap gap-y-1">
                 <h3 className="font-semibold text-gray-900 truncate max-w-[10rem] sm:max-w-none">{remoteUserName}</h3>
+                {(remoteUserProfile?.isAiCompanion || remoteUserProfile?.user?.isAiCompanion) && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-800">
+                    AI companion
+                  </span>
+                )}
                 <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
                   <FaFire className="text-white text-xs" />
                 </div>

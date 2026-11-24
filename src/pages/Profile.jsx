@@ -987,6 +987,11 @@ const Profile = () => {
                     {profile.user?.isVerified && (
                       <VerifiedBadge className="flex-shrink-0" size="lg" />
                     )}
+                    {(profile.isAiCompanion || profile.user?.isAiCompanion) && (
+                      <span className="flex-shrink-0 text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-500/90 text-white">
+                        AI companion
+                      </span>
+                    )}
                     <h1 className="text-base sm:text-xl lg:text-3xl font-bold text-white">
                       , {profile.age}
                     </h1>
